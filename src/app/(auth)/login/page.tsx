@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, AlertCircle, LayoutGrid } from "lucide-react";
+import { Loader2, ShieldCheck, LockKeyhole, Mail } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function LoginPage() {
@@ -41,12 +41,11 @@ export default function LoginPage() {
         router.push("/");
         router.refresh();
       } else {
-        setError(res.message || "Invalid credentials");
+        setError(res.message || "Kredensial tidak valid");
       }
     } catch (err: any) {
       setError(
-        err.response?.data?.message ||
-          "Failed to connect to the authentication server.",
+        err.response?.data?.message || "Gagal terhubung ke server autentikasi.",
       );
     } finally {
       setLoading(false);
@@ -54,83 +53,92 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F8F9FB]">
-      {/* Background Gradient: #ff6249 to a lighter vibrant orange */}
-      <div className="absolute top-0 h-[45vh] w-full bg-gradient-to-b from-[#FF2200] to-[#FF6249]" />
+    <div className="relative flex min-h-screen items-center justify-center bg-[#F9FAFB] selection:bg-[#FF4500]/10">
+      {/* Background Aesthetic */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] h-[40%] w-[40%] rounded-full bg-gradient-to-br from-[#FF4500]/10 to-transparent blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] h-[40%] w-[40%] rounded-full bg-gradient-to-tl from-slate-200 to-transparent blur-[100px]" />
+      </div>
 
-      {/* Soft Glow Elements */}
-      <div className="absolute top-[5%] right-[2%] h-80 w-80 rounded-full bg-white/10 blur-[80px]" />
-      <div className="absolute top-[15%] left-[2%] h-64 w-64 rounded-full bg-[#FF4500]/20 blur-[60px]" />
-
-      <div className="z-10 w-full max-w-md px-6">
-        <div className="mb-10 text-center text-whi  te">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white/20 backdrop-blur-xl shadow-2xl border border-white/30">
-            <LayoutGrid className="h-10 w-10 text-white" />
+      <div className="z-10 w-full max-w-[420px] px-6 py-12">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 transition-transform hover:rotate-3">
+            <ShieldCheck className="h-8 w-8 text-[#FF4500]" />
           </div>
-          <h1 className="text-4xl font-black tracking-tighter uppercase italic">
-            AyoCuci
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+            AyoCuci <span className="text-[#FF4500]">Admin</span>
           </h1>
-          <p className="mt-2 text-white/90 font-bold text-sm tracking-widest uppercase">
-            Admin Control
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            Silakan masuk untuk mengelola ekosistem
           </p>
         </div>
 
-        <Card className="border-none shadow-[0_20px_50px_rgba(255,69,0,0.15)] rounded-[3rem] bg-white/95 backdrop-blur-md p-2">
-          <CardHeader className="space-y-1 pt-10 text-center">
-            <CardTitle className="text-3xl font-black text-slate-800 tracking-tight">
-              LOGIN
+        <Card className="border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] bg-white/80 backdrop-blur-xl overflow-hidden">
+          <CardHeader className="space-y-1 pt-8 pb-6 text-center border-b border-slate-50">
+            <CardTitle className="text-xl font-bold text-slate-800">
+              Sign In
             </CardTitle>
-            <CardDescription className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">
-              Authorized Personnel Only
+            <CardDescription className="text-slate-400 font-medium text-xs tracking-wide uppercase">
+              Secure Gateway
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="pb-10 px-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="pt-8 pb-10 px-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label
                   htmlFor="email"
-                  className="text-slate-500 ml-1 text-xs font-black uppercase tracking-wider"
+                  className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1"
                 >
-                  Email
+                  Email Address
                 </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@ayocuci.id"
-                  className="h-14 border-slate-100 bg-slate-50/50 rounded-2xl focus-visible:ring-[#FF4500] font-medium"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
-                  required
-                />
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#FF4500] transition-colors">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="admin@ayocuci.id"
+                    className="h-12 pl-11 border-slate-200 bg-white rounded-xl focus-visible:ring-[#FF4500]/20 focus-visible:border-[#FF4500] transition-all"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
               </div>
+
               <div className="space-y-2">
                 <Label
                   htmlFor="password"
-                  className="text-slate-500 ml-1 text-xs font-black uppercase tracking-wider"
+                  className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1"
                 >
-                  Password
+                  Secret Password
                 </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  className="h-14 border-slate-100 bg-slate-50/50 rounded-2xl focus-visible:ring-[#FF4500]"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  required
-                />
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#FF4500] transition-colors">
+                    <LockKeyhole className="h-4 w-4" />
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="h-12 pl-11 border-slate-200 bg-white rounded-xl focus-visible:ring-[#FF4500]/20 focus-visible:border-[#FF4500] transition-all"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    required
+                  />
+                </div>
               </div>
 
               {error && (
                 <Alert
                   variant="destructive"
-                  className="bg-red-50 border-none text-red-600 rounded-2xl animate-in fade-in zoom-in duration-300"
+                  className="bg-rose-50 border border-rose-100 text-rose-600 rounded-xl py-3 animate-in slide-in-from-top-2 duration-300"
                 >
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="font-bold text-xs uppercase italic">
+                  <AlertDescription className="font-semibold text-xs text-center">
                     {error}
                   </AlertDescription>
                 </Alert>
@@ -138,25 +146,26 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-16 bg-gradient-to-r from-[#FF4500] to-[#FF6347] hover:brightness-110 text-white font-black text-xl rounded-2xl shadow-xl shadow-orange-500/30 transition-all active:scale-[0.97] uppercase tracking-tighter italic"
+                className="w-full h-12 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all active:scale-[0.98] shadow-md shadow-slate-200 group mt-2"
                 disabled={loading}
               >
                 {loading ? (
-                  <Loader2 className="h-7 w-7 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  "Sign In"
+                  <span className="flex items-center gap-2">
+                    Masuk ke Dashboard
+                  </span>
                 )}
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        <footer className="mt-10 text-center">
-          <div className="h-1 w-12 bg-slate-200 mx-auto rounded-full mb-4" />
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-            System.AyoCuci.v1.6
+        <div className="mt-8 text-center">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+            &copy; 2026 AyoCuci Cloud Infrastructure
           </p>
-        </footer>
+        </div>
       </div>
     </div>
   );
