@@ -24,6 +24,7 @@ import {
   ChevronsUpDown,
   CreditCard,
   ArrowRightLeft,
+  Ban,
 } from "lucide-react";
 import {
   Dialog,
@@ -51,11 +52,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.ayocuci.id";
 
 export default function TopupsManagementPage() {
-  const [data, setData] = useState<any[]>([]); // Default ke array kosong
+  const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
 
@@ -105,11 +107,10 @@ export default function TopupsManagementPage() {
       if (endDate) params.append("end_date", format(endDate, "yyyy-MM-dd"));
 
       const res = await topupService.getAll(params.toString());
-      // 🛡️ PROTEKSI: Pastikan data selalu array, jangan biarkan null masuk ke state
       setData(res.data || []);
     } catch (err) {
       toast.error("Gagal mengambil data transaksi");
-      setData([]); // Reset ke array kosong jika error
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -119,7 +120,6 @@ export default function TopupsManagementPage() {
     fetchTopups();
   }, [fetchTopups]);
 
-  // 🛡️ PROTEKSI: Tambahkan optional chaining (?.) dan default array ([])
   const uniqueOutlets = useMemo(
     () =>
       Array.from(
@@ -179,6 +179,22 @@ export default function TopupsManagementPage() {
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Gagal memproses aksi");
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const handleCancelMidtrans = async (id: string) => {
+    setConfirming(true);
+    try {
+      const res = await topupService.cancelMidtrans(id);
+      if (res.status) {
+        toast.success("Transaksi Midtrans berhasil dibatalkan sistem");
+        setIsPreviewOpen(false);
+        fetchTopups();
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal membatalkan Midtrans");
     } finally {
       setConfirming(false);
     }
@@ -252,7 +268,6 @@ export default function TopupsManagementPage() {
             </div>
           </div>
 
-          {/* Searchable Outlet */}
           <div className="space-y-1.5">
             <label className="font-black uppercase text-slate-400 ml-2 tracking-widest text-[10px]">
               Outlet
@@ -324,7 +339,6 @@ export default function TopupsManagementPage() {
             </Popover>
           </div>
 
-          {/* Searchable Owner */}
           <div className="space-y-1.5">
             <label className="font-black uppercase text-slate-400 ml-2 tracking-widest text-[10px]">
               Pemilik
@@ -394,7 +408,6 @@ export default function TopupsManagementPage() {
             </Popover>
           </div>
 
-          {/* Shadcn Calendar - Mulai */}
           <div className="space-y-1.5">
             <label className="font-black uppercase text-slate-400 ml-2 tracking-widest text-[10px]">
               Tgl Mulai
@@ -428,7 +441,6 @@ export default function TopupsManagementPage() {
             </Popover>
           </div>
 
-          {/* Shadcn Calendar - Selesai */}
           <div className="space-y-1.5">
             <label className="font-black uppercase text-slate-400 ml-2 tracking-widest text-[10px]">
               Tgl Selesai
@@ -483,7 +495,7 @@ export default function TopupsManagementPage() {
                 className={cn(
                   "px-5 py-2 rounded-full font-black uppercase transition-all border",
                   statusFilter === s
-                    ? "bg-slate-900 text-white border-slate-900 shadow-md"
+                    ? "bg-[#FF4500] text-white border-[#FF4500] shadow-md"
                     : "bg-white text-slate-400 border-slate-100 hover:border-slate-300",
                 )}
               >
@@ -516,7 +528,6 @@ export default function TopupsManagementPage() {
 
       {/* DATA TABLE */}
       <Card className="border-none shadow-xl shadow-slate-100/50 rounded-[45px] overflow-hidden bg-white border border-slate-50 relative min-h-[400px]">
-        {/* 🚀 LOGIC LOADING STATE */}
         {loading ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-10">
             <LoaderIcon className="h-12 w-12 animate-spin text-[#FF4500]" />
@@ -525,7 +536,6 @@ export default function TopupsManagementPage() {
             </p>
           </div>
         ) : filteredData.length === 0 ? (
-          /* 🚀 LOGIC EMPTY STATE (PROPER CENTERED) */
           <div className="py-32 flex flex-col items-center justify-center space-y-6">
             <div className="relative">
               <div className="absolute inset-0 bg-slate-100 rounded-full scale-150 blur-2xl opacity-50" />
@@ -550,7 +560,6 @@ export default function TopupsManagementPage() {
             </div>
           </div>
         ) : (
-          /* 🚀 TABLE CONTENT (ONLY SHOW IF DATA EXISTS) */
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
@@ -559,13 +568,13 @@ export default function TopupsManagementPage() {
                     Transaksi
                   </th>
                   <th className="p-7 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                    Partner Identity
+                    Outlet & Pemilik
                   </th>
                   <th className="p-7 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">
                     Nominal
                   </th>
                   <th className="p-7 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                    Gateway
+                    Metode Bayar
                   </th>
                   <th className="p-7 text-[10px] font-black uppercase text-slate-400 tracking-widest">
                     Status
@@ -668,18 +677,18 @@ export default function TopupsManagementPage() {
 
       {/* DETAIL MODAL */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="rounded-[50px] p-0 border-none max-w-lg bg-white overflow-hidden shadow-2xl">
-          <DialogHeader className="sr-only">
+        <DialogContent className="rounded-xl p-0 border-none max-w-lg bg-white overflow-hidden shadow-2xl">
+          <VisuallyHidden.Root>
             <DialogTitle>Detail Transaksi Topup</DialogTitle>
-          </DialogHeader>
+          </VisuallyHidden.Root>
 
-          <div className="p-10 space-y-8">
+          <div className="p-5 space-y-8">
             <div className="flex items-center gap-4">
               <div className="p-4 bg-slate-900 rounded-[22px] shadow-xl">
                 <ShieldCheck className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-black uppercase text-slate-800 tracking-tighter leading-none mb-1 text-[13px] md:text-[16px]">
+                <h3 className="text-2xl font-black uppercase text-slate-800 tracking-tighter leading-none mb-1 text-[16px]">
                   Portal <span className="text-[#FF4500]">Validasi</span>
                 </h3>
                 <div className="flex items-center gap-2">
@@ -700,51 +709,55 @@ export default function TopupsManagementPage() {
 
             {selectedTopup && (
               <div className="space-y-6">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between px-2">
-                    <label className="font-black uppercase text-slate-400 tracking-widest text-[10px]">
-                      Bukti Pembayaran
-                    </label>
-                    {selectedTopup.tk_bukti && (
-                      <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 font-black italic tracking-widest text-[10px]">
-                        Bukti Tersedia
-                      </Badge>
+                {/* 🚀 BUKTI PEMBAYARAN: Hanya muncul jika BUKAN Midtrans */}
+                {selectedTopup.tk_metode_bayar !== "midtrans" && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between px-2">
+                      <label className="font-black uppercase text-slate-400 tracking-widest text-[10px]">
+                        Bukti Pembayaran
+                      </label>
+                      {selectedTopup.tk_bukti && (
+                        <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 font-black italic tracking-widest text-[10px]">
+                          Bukti Tersedia
+                        </Badge>
+                      )}
+                    </div>
+
+                    {selectedTopup.tk_bukti ? (
+                      <div className="group relative aspect-[4/3] rounded-[35px] overflow-hidden border-[6px] border-slate-50 shadow-xl transition-all duration-500 hover:scale-[1.02]">
+                        <img
+                          src={`${API_URL}${selectedTopup.tk_bukti}`}
+                          className="w-full h-full object-cover"
+                          alt="payment-proof"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <a
+                            href={`${API_URL}${selectedTopup.tk_bukti}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="bg-white text-black px-6 py-3 rounded-2xl font-black uppercase flex items-center gap-2 shadow-2xl transition-transform active:scale-90 text-[11px]"
+                          >
+                            <ExternalLink className="h-4 w-4" /> Lihat Ukuran
+                            Penuh
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="aspect-[4/3] rounded-[35px] bg-slate-50 border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-slate-300">
+                        <Clock className="h-10 w-10 mb-2 opacity-20" />
+                        <span className="font-black uppercase tracking-widest italic text-[11px]">
+                          Menunggu Bukti Pembayaran
+                        </span>
+                      </div>
                     )}
                   </div>
+                )}
 
-                  {selectedTopup.tk_bukti ? (
-                    <div className="group relative aspect-[4/3] rounded-[35px] overflow-hidden border-[6px] border-slate-50 shadow-xl transition-all duration-500 hover:scale-[1.02]">
-                      <img
-                        src={`${API_URL}${selectedTopup.tk_bukti}`}
-                        className="w-full h-full object-cover"
-                        alt="payment-proof"
-                      />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <a
-                          href={`${API_URL}${selectedTopup.tk_bukti}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="bg-white text-black px-6 py-3 rounded-2xl font-black uppercase flex items-center gap-2 shadow-2xl transition-transform active:scale-90 text-[11px]"
-                        >
-                          <ExternalLink className="h-4 w-4" /> Lihat Ukuran
-                          Penuh
-                        </a>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="aspect-[4/3] rounded-[35px] bg-slate-50 border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-slate-300">
-                      <Clock className="h-10 w-10 mb-2 opacity-20" />
-                      <span className="font-black uppercase tracking-widest italic text-[11px]">
-                        Menunggu Bukti Pembayaran
-                      </span>
-                    </div>
-                  )}
-                </div>
-
+                {/* INFO RINGKASAN */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-6 bg-slate-50 rounded-[30px] border border-slate-100 flex flex-col justify-center items-center">
                     <span className="font-black text-slate-400 uppercase mb-1 text-[10px]">
-                      Metode Pembayaran
+                      Metode
                     </span>
                     <span className="font-black uppercase text-slate-700 italic tracking-tighter text-[13px]">
                       {selectedTopup.tk_metode_bayar}
@@ -763,31 +776,59 @@ export default function TopupsManagementPage() {
             )}
           </div>
 
-          <div className="p-10 bg-slate-50 flex flex-col gap-4 border-t border-slate-100">
-            {selectedTopup?.tk_status === "pending" &&
-            selectedTopup?.tk_metode_bayar === "transfer" ? (
-              <div className="flex gap-4">
-                <Button
-                  disabled={confirming || !selectedTopup.tk_bukti}
-                  variant="ghost"
-                  onClick={() => handleAction(selectedTopup.tk_id, "failed")}
-                  className="h-16 flex-1 rounded-[25px] font-black uppercase tracking-widest text-rose-500 border border-rose-100 transition-all hover:bg-rose-50 text-[11px]"
-                >
-                  Tolak
-                </Button>
-                <Button
-                  disabled={confirming || !selectedTopup.tk_bukti}
-                  onClick={() => handleAction(selectedTopup.tk_id, "success")}
-                  className="h-16 flex-[1.5] rounded-[25px] bg-slate-900 hover:bg-black text-white font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 text-[11px]"
-                >
-                  {confirming ? (
-                    <LoaderIcon className="animate-spin h-4 w-4 mr-2" />
-                  ) : (
-                    <CheckCircle2 className="h-5 w-5 mr-2 text-orange-400" />
-                  )}
-                  Konfirmasi & Cairkan
-                </Button>
-              </div>
+          <div className="p-5 bg-slate-50 flex flex-col gap-4 border-t border-slate-100">
+            {selectedTopup?.tk_status === "pending" ? (
+              <>
+                {selectedTopup.tk_metode_bayar === "transfer" ? (
+                  <div className="flex gap-4">
+                    <Button
+                      disabled={confirming || !selectedTopup.tk_bukti}
+                      variant="ghost"
+                      onClick={() =>
+                        handleAction(selectedTopup.tk_id, "failed")
+                      }
+                      className="h-16 flex-1 rounded-[25px] font-black uppercase tracking-widest text-rose-500 border border-rose-100 transition-all hover:bg-rose-50 text-[11px]"
+                    >
+                      Tolak
+                    </Button>
+                    <Button
+                      disabled={confirming || !selectedTopup.tk_bukti}
+                      onClick={() =>
+                        handleAction(selectedTopup.tk_id, "success")
+                      }
+                      className="h-16 flex-[1.5] rounded-[25px] bg-slate-900 hover:bg-black text-white font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 text-[11px]"
+                    >
+                      {confirming ? (
+                        <LoaderIcon className="animate-spin h-4 w-4 mr-2" />
+                      ) : (
+                        <CheckCircle2 className="h-5 w-5 mr-2 text-orange-400" />
+                      )}
+                      Konfirmasi & Cairkan
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="px-4 py-3 bg-amber-50 rounded-2xl border border-amber-100">
+                      <p className="text-[10px] font-bold text-amber-700 uppercase leading-tight italic text-center">
+                        Transaksi ini diproses otomatis oleh Midtrans. <br />
+                        Gunakan tombol di bawah hanya jika transaksi nyangkut.
+                      </p>
+                    </div>
+                    <Button
+                      disabled={confirming}
+                      onClick={() => handleCancelMidtrans(selectedTopup.tk_id)}
+                      className="w-full h-16 rounded-[25px] bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 text-[11px]"
+                    >
+                      {confirming ? (
+                        <LoaderIcon className="animate-spin h-4 w-4 mr-2" />
+                      ) : (
+                        <Ban className="h-5 w-5 mr-2 text-white/50" />
+                      )}
+                      Batalkan Midtrans (Force Failed)
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <Button
                 onClick={() => setIsPreviewOpen(false)}
