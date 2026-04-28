@@ -6,12 +6,10 @@ import {
   Plus,
   Power,
   RefreshCcw,
-  Trash2,
   Calendar,
   Layers,
   Tag,
   Loader2 as LoaderIcon,
-  Info,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,9 +34,11 @@ import api from "@/lib/api-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { ApiResponse } from "@/types/api";
+import { Voucher } from "@/types/voucher";
 
 export default function VoucherManagementPage() {
-  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -57,9 +57,9 @@ export default function VoucherManagementPage() {
   const fetchVouchers = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/admin/vouchers");
+      const res = await api.get<ApiResponse<Voucher[]>>("/admin/vouchers");
       if (res.data.status) setVouchers(res.data.data || []);
-    } catch (err) {
+    } catch {
       toast.error("Gagal mengambil data voucher");
     } finally {
       setLoading(false);
@@ -106,7 +106,7 @@ export default function VoucherManagementPage() {
         });
         fetchVouchers();
       }
-    } catch (err) {
+    } catch {
       toast.error("Gagal membuat voucher");
     } finally {
       setIsSubmitting(false);
@@ -122,7 +122,7 @@ export default function VoucherManagementPage() {
         toast.success("Status updated");
         fetchVouchers();
       }
-    } catch (err) {
+    } catch {
       toast.error("Gagal mengubah status");
     }
   };

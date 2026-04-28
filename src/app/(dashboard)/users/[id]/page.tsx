@@ -16,17 +16,21 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import api from "@/lib/api-client";
 import Link from "next/link";
+import { ApiResponse } from "@/types/api";
+import { OwnerDetail, OwnerOutlet } from "@/types/domain";
 
 export default function OwnerDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<OwnerDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDetail = async () => {
       try {
-        const res = await api.get(`/admin/users/${params.id}`);
+        const res = await api.get<ApiResponse<OwnerDetail>>(
+          `/admin/users/${params.id}`,
+        );
         if (res.data.status) setData(res.data.data);
       } catch (err) {
         console.error(err);
@@ -86,7 +90,11 @@ export default function OwnerDetailPage() {
               </div>
               <div className="flex items-center justify-center md:justify-start gap-2 text-sm font-bold text-slate-500">
                 <Calendar className="h-4 w-4 text-[#FF4500]" /> Gabung:{" "}
-                {new Date(data.profile.created_at).toLocaleDateString("id-ID")}
+                {data.profile.created_at
+                  ? new Date(data.profile.created_at).toLocaleDateString(
+                      "id-ID",
+                    )
+                  : "-"}
               </div>
             </div>
           </div>
@@ -100,7 +108,7 @@ export default function OwnerDetailPage() {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {data.outlets.map((ot: any) => (
+          {data.outlets.map((ot: OwnerOutlet) => (
             <Card
               key={ot.ot_id}
               className="border-none shadow-sm rounded-[32px] p-6 bg-white hover:shadow-orange-100 transition-all group"

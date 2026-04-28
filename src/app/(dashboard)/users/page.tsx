@@ -15,16 +15,18 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api-client";
+import { ApiResponse } from "@/types/api";
+import { Owner } from "@/types/domain";
 
 export default function OwnersPage() {
-  const [owners, setOwners] = useState<any[]>([]);
+  const [owners, setOwners] = useState<Owner[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     const fetchOwners = async () => {
       try {
-        const res = await api.get("/admin/users");
+        const res = await api.get<ApiResponse<Owner[]>>("/admin/users");
         if (res.data.status) {
           setOwners(res.data.data);
         }

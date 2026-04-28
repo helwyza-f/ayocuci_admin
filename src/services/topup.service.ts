@@ -1,4 +1,6 @@
 import api from "@/lib/api-client";
+import { ApiResponse } from "@/types/api";
+import { Topup, TopupStatus } from "@/types/topup";
 
 export const topupService = {
   /**
@@ -7,15 +9,15 @@ export const topupService = {
    */
   getAll: async (query?: string) => {
     const url = query ? `/admin/topup-koin?${query}` : "/admin/topup-koin";
-    const res = await api.get(url);
+    const res = await api.get<ApiResponse<Topup[]>>(url);
     return res.data;
   },
 
   /**
    * Validasi Transfer Manual (Approve/Reject)
    */
-  confirm: async (topupId: string, status: "success" | "failed") => {
-    const res = await api.patch("/admin/topup-koin/confirm", {
+  confirm: async (topupId: string, status: Extract<TopupStatus, "success" | "failed">) => {
+    const res = await api.patch<ApiResponse<null>>("/admin/topup-koin/confirm", {
       topup_id: topupId,
       status: status,
     });
@@ -26,7 +28,7 @@ export const topupService = {
    * Ambil detail spesifik topup (Jika diperlukan untuk halaman terpisah)
    */
   getById: async (id: string) => {
-    const res = await api.get(`/admin/topup-koin/${id}`);
+    const res = await api.get<ApiResponse<Topup>>(`/admin/topup-koin/${id}`);
     return res.data;
   },
 
@@ -34,7 +36,7 @@ export const topupService = {
    * Fitur Sakti: Force Cancel Transaksi Midtrans yang nyangkut
    */
   cancelMidtrans: async (topupId: string) => {
-    const res = await api.patch("/admin/topup-koin/cancel-midtrans", {
+    const res = await api.patch<ApiResponse<null>>("/admin/topup-koin/cancel-midtrans", {
       topup_id: topupId,
     });
     return res.data;

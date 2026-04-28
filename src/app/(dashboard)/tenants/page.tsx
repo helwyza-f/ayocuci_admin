@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Search,
-  Filter,
   ChevronRight,
   Activity,
   Store,
@@ -34,10 +33,12 @@ import { tenantService } from "@/services/tenant.service";
 import api from "@/lib/api-client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { Owner } from "@/types/domain";
+import { ApiResponse } from "@/types/api";
 
 export default function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [owners, setOwners] = useState<any[]>([]);
+  const [owners, setOwners] = useState<Owner[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
@@ -52,7 +53,7 @@ export default function TenantsPage() {
         // Ambil data tenant & owner secara paralel
         const [resTenants, resOwners] = await Promise.all([
           tenantService.getAllTenants(),
-          api.get("/admin/users"),
+          api.get<ApiResponse<Owner[]>>("/admin/users"),
         ]);
 
         if (resTenants.status) setTenants(resTenants.data || []);

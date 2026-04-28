@@ -6,8 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
-  XCircle,
-  Eye,
   Wallet2,
   Loader2 as LoaderIcon,
   ExternalLink,
@@ -29,7 +27,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
@@ -53,11 +50,14 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { AxiosError } from "axios";
+import { ApiErrorResponse } from "@/types/api";
+import { Topup, TopupStatus } from "@/types/topup";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.ayocuci.id";
 
 export default function TopupsManagementPage() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<Topup[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
 
@@ -75,7 +75,7 @@ export default function TopupsManagementPage() {
   const [openOutlet, setOpenOutlet] = useState(false);
   const [openOwner, setOpenOwner] = useState(false);
 
-  const [selectedTopup, setSelectedTopup] = useState<any>(null);
+  const [selectedTopup, setSelectedTopup] = useState<Topup | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const formatDateTime = (dateStr: string) => {
@@ -91,7 +91,7 @@ export default function TopupsManagementPage() {
           : `${fullDateStr} • ${timeStr} WIB`,
         isToday,
       };
-    } catch (e) {
+    } catch {
       return { display: "-", isToday: false };
     }
   };
@@ -108,7 +108,7 @@ export default function TopupsManagementPage() {
 
       const res = await topupService.getAll(params.toString());
       setData(res.data || []);
-    } catch (err) {
+    } catch {
       toast.error("Gagal mengambil data transaksi");
       setData([]);
     } finally {
@@ -123,7 +123,11 @@ export default function TopupsManagementPage() {
   const uniqueOutlets = useMemo(
     () =>
       Array.from(
-        new Set((data || []).map((item) => item?.outlet_name).filter(Boolean)),
+        new Set(
+          (data || [])
+            .map((item) => item?.outlet_name)
+            .filter((name): name is string => Boolean(name)),
+        ),
       ),
     [data],
   );
@@ -131,7 +135,11 @@ export default function TopupsManagementPage() {
   const uniqueOwners = useMemo(
     () =>
       Array.from(
-        new Set((data || []).map((item) => item?.owner_name).filter(Boolean)),
+        new Set(
+          (data || [])
+            .map((item) => item?.owner_name)
+            .filter((name): name is string => Boolean(name)),
+        ),
       ),
     [data],
   );
@@ -166,7 +174,10 @@ export default function TopupsManagementPage() {
     setEndDate(undefined);
   };
 
-  const handleAction = async (id: string, status: "success" | "failed") => {
+  const handleAction = async (
+    id: string,
+    status: Extract<TopupStatus, "success" | "failed">,
+  ) => {
     setConfirming(true);
     try {
       const res = await topupService.confirm(id, status);
@@ -177,8 +188,9 @@ export default function TopupsManagementPage() {
         setIsPreviewOpen(false);
         fetchTopups();
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal memproses aksi");
+    } catch (err) {
+      const error = err as AxiosError<ApiErrorResponse>;
+      toast.error(error.response?.data?.message || "Gagal memproses aksi");
     } finally {
       setConfirming(false);
     }
@@ -193,8 +205,9 @@ export default function TopupsManagementPage() {
         setIsPreviewOpen(false);
         fetchTopups();
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Gagal membatalkan Midtrans");
+    } catch (err) {
+      const error = err as AxiosError<ApiErrorResponse>;
+      toast.error(error.response?.data?.message || "Gagal membatalkan Midtrans");
     } finally {
       setConfirming(false);
     }
@@ -725,6 +738,7 @@ export default function TopupsManagementPage() {
 
                     {selectedTopup.tk_bukti ? (
                       <div className="group relative aspect-[4/3] rounded-[35px] overflow-hidden border-[6px] border-slate-50 shadow-xl transition-all duration-500 hover:scale-[1.02]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={`${API_URL}${selectedTopup.tk_bukti}`}
                           className="w-full h-full object-cover"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
   Coins,
   Settings2,
@@ -8,7 +8,6 @@ import {
   Info,
   UserPlus,
   ShieldCheck,
-  TrendingUp,
   Wallet2,
   Loader2 as LoaderIcon,
   Landmark,
@@ -32,13 +31,17 @@ import api from "@/lib/api-client";
 import { bankService, BankAccount } from "@/services/bank.service";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ApiResponse } from "@/types/api";
+import { EconomyConfig } from "@/types/domain";
 
 export default function AdminEconomyPage() {
   // --- STATE ECONOMY ---
-  const [configs, setConfigs] = useState<any[]>([]);
+  const [configs, setConfigs] = useState<EconomyConfig[]>([]);
   const [loadingConfigs, setLoadingConfigs] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [editingConfig, setEditingConfig] = useState<any>(null);
+  const [editingConfig, setEditingConfig] = useState<EconomyConfig | null>(
+    null,
+  );
   const [rawValue, setRawValue] = useState("");
 
   // --- STATE BANKS ---
@@ -54,9 +57,11 @@ export default function AdminEconomyPage() {
   const fetchConfigs = async () => {
     setLoadingConfigs(true);
     try {
-      const res = await api.get("/admin/economy/configs");
+      const res = await api.get<ApiResponse<EconomyConfig[]>>(
+        "/admin/economy/configs",
+      );
       if (res.data.status) setConfigs(res.data.data || []);
-    } catch (err) {
+    } catch {
       toast.error("Gagal mengambil data konfigurasi");
     } finally {
       setLoadingConfigs(false);
@@ -68,7 +73,7 @@ export default function AdminEconomyPage() {
     try {
       const res = await bankService.getBanks();
       if (res.status) setBanks(res.data);
-    } catch (err) {
+    } catch {
       toast.error("Gagal memuat data bank");
     } finally {
       setLoadingBanks(false);
@@ -101,6 +106,7 @@ export default function AdminEconomyPage() {
     if (!rawValue) return toast.error("Nilai tidak boleh kosong");
     setIsUpdating(true);
     try {
+      if (!editingConfig) return;
       const res = await api.patch("/admin/economy/configs", {
         key: editingConfig.cfg_key,
         value: rawValue,
@@ -110,7 +116,7 @@ export default function AdminEconomyPage() {
         setEditingConfig(null);
         fetchConfigs();
       }
-    } catch (err) {
+    } catch {
       toast.error("Gagal memperbarui konfigurasi");
     } finally {
       setIsUpdating(false);
@@ -126,7 +132,7 @@ export default function AdminEconomyPage() {
       toast.success("Rekening berhasil ditambah");
       setNewBank({ bank_name: "", account_name: "", account_number: "" });
       fetchBanks();
-    } catch (err) {
+    } catch {
       toast.error("Gagal menambah rekening");
     }
   };
@@ -135,7 +141,7 @@ export default function AdminEconomyPage() {
     try {
       await bankService.toggleStatus(id);
       fetchBanks();
-    } catch (err) {
+    } catch {
       toast.error("Gagal mengubah status");
     }
   };
@@ -145,7 +151,7 @@ export default function AdminEconomyPage() {
     try {
       await bankService.deleteBank(id);
       fetchBanks();
-    } catch (err) {
+    } catch {
       toast.error("Gagal menghapus");
     }
   };

@@ -29,17 +29,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api-client";
+import { Customer } from "@/types/domain";
+import { Tenant } from "@/types/tenant";
+import { ApiResponse } from "@/types/api";
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [tenants, setTenants] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedOutlet, setSelectedOutlet] = useState("all");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    api.get("/admin/tenants").then((res) => {
+    api.get<ApiResponse<Tenant[]>>("/admin/tenants").then((res) => {
       setTenants(res.data.data || []);
     });
   }, []);
@@ -52,7 +55,7 @@ export default function CustomersPage() {
           selectedOutlet === "all"
             ? "/admin/customers"
             : `/admin/customers?outlet_id=${selectedOutlet}`;
-        const res = await api.get(url);
+        const res = await api.get<ApiResponse<Customer[]>>(url);
         if (res.data.status) {
           setCustomers(res.data.data || []);
         } else {

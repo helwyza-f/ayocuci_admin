@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   MapPin,
   Phone,
-  Zap,
 } from "lucide-react";
 import { tenantService } from "@/services/tenant.service";
 import { Tenant } from "@/types/tenant";
@@ -24,7 +23,7 @@ import { id as localeId } from "date-fns/locale";
 export default function TenantDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [tenant, setTenant] = useState<any>(null);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

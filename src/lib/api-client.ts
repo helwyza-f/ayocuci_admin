@@ -1,33 +1,39 @@
 import axios from "axios";
+import { logoutAdmin } from "@/app/(auth)/login/actions";
 import { useAuthStore } from "@/store/use-auth-store";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "https://api.ayocuci.id/api/v1",
-  // baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1",
+  baseURL: "/api/admin",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-api.interceptors.request.use(
-  (config) => {
-    // 1. Coba ambil dari Zustand dulu (paling cepat)
-    let token = useAuthStore.getState().token;
+let isRedirectingToLogin = false;
 
-    // 2. Kalau Zustand kosong (misal pas refresh), coba intip dari Cookie
-    // Karena kita set httpOnly: true, Javascript Client TIDAK BISA baca cookie.
-    // TAPI, jika lo hit API via Proxy Next.js atau Server Component, ini aman.
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status = error.response?.status;
 
-    // Karena lo hit langsung ke port 8080, kita harus pastikan
-    // token lo tersimpan di Zustand dan PERSISTED.
+    if (
+      (status === 401 || status === 403) &&
+      typeof window !== "undefined" &&
+      !isRedirectingToLogin &&
+      window.location.pathname !== "/login"
+    ) {
+      isRedirectingToLogin = true;
+      useAuthStore.getState().clearAuth();
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      try {
+        await logoutAdmin();
+      } finally {
+        window.location.assign("/login");
+      }
     }
 
-    return config;
+    return Promise.reject(error);
   },
-  (error) => Promise.reject(error),
 );
 
 export default api;

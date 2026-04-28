@@ -16,7 +16,7 @@ export default function DashboardLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-[#FFF5F0] overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* OVERLAY MOBILE: Muncul pas sidebar mobile dibuka */}
       {isMobileOpen && (
         <div
@@ -28,7 +28,7 @@ export default function DashboardLayout({
       {/* SIDEBAR CONTAINER */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-100 transition-all duration-300 ease-in-out md:relative",
+          "fixed inset-y-0 left-0 z-50 border-r border-slate-200 bg-white transition-all duration-300 ease-in-out md:relative",
           // Logic Desktop Collapsible
           isCollapsed ? "md:w-20" : "md:w-72",
           // Logic Mobile Trigger
@@ -61,7 +61,7 @@ export default function DashboardLayout({
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* HEADER: Gue selipin Mobile Trigger di sini */}
-        <header className="flex items-center gap-4 bg-white/50 backdrop-blur-md border-b border-slate-100 px-4 md:px-0">
+        <header className="flex items-center gap-4 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md md:px-0">
           <Button
             variant="ghost"
             size="icon"
@@ -77,7 +77,7 @@ export default function DashboardLayout({
         </header>
 
         {/* SCROLLABLE CONTENT */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+        <main className="custom-scrollbar flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-[1600px] mx-auto">{children}</div>
         </main>
       </div>

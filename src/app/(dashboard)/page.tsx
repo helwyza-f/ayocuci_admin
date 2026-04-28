@@ -1,56 +1,96 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Store, Coins, Zap, Activity, ArrowRight } from "lucide-react";
+import { Store, Coins, Zap, Activity, ArrowRight, RefreshCw } from "lucide-react";
 import StatCard from "@/components/modules/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
+import api from "@/lib/api-client";
+import { ApiResponse } from "@/types/api";
+
+interface DashboardSummary {
+  total_outlets: number;
+  total_koin: number;
+  active_tenant: number;
+}
+
+const emptyStats: DashboardSummary = {
+  total_outlets: 0,
+  total_koin: 0,
+  active_tenant: 0,
+};
 
 export default function DashboardPage() {
-  // Data dummy sementara sebelum kita connect ke api-client
-  const [stats, setStats] = useState({
-    total_outlets: 9,
-    total_koin: 90,
-    active_tenant: 9,
-  });
+  const [stats, setStats] = useState<DashboardSummary>(emptyStats);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchSummary = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await api.get<ApiResponse<DashboardSummary>>(
+        "/admin/summary",
+      );
+      setStats(response.data.data || emptyStats);
+    } catch {
+      setStats(emptyStats);
+      setError("Gagal memuat ringkasan dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-800 tracking-tighter uppercase">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
             Ringkasan <span className="text-[#FF4500]">Platform</span>
           </h2>
-          <p className="text-sm text-slate-500 font-medium italic">
+          <p className="text-sm font-medium text-slate-500">
             Pantau denyut nadi ekosistem AyoCuci secara real-time.
           </p>
         </div>
-        <Button className="bg-[#FF4500] hover:bg-[#E63E00] rounded-2xl px-6 font-black text-xs gap-2 shadow-lg shadow-orange-200">
-          <Zap className="h-4 w-4 fill-white" />
-          PERIKSA SISTEM
+        <Button
+          onClick={fetchSummary}
+          disabled={loading}
+          className="bg-[#FF4500] hover:bg-[#E63E00] rounded-xl px-5 font-semibold text-xs gap-2 shadow-sm shadow-orange-100"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          Muat Ulang
         </Button>
       </div>
+
+      {error && (
+        <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+          {error}
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           label="Total Outlet Terdaftar"
-          value={stats.total_outlets}
+          value={loading ? "..." : stats.total_outlets}
           icon={Store}
-          trend="+2 baru minggu ini"
         />
         <StatCard
           label="Koin dalam Sirkulasi"
-          value={stats.total_koin}
+          value={loading ? "..." : stats.total_koin.toLocaleString("id-ID")}
           icon={Coins}
           color="#FF8C00"
         />
         <StatCard
           label="Langganan Aktif (Berbayar)"
-          value={stats.active_tenant}
+          value={loading ? "..." : stats.active_tenant}
           icon={Zap}
           color="#00C853"
-          trend="100% Tingkat Retensi"
         />
       </div>
 
@@ -58,7 +98,7 @@ export default function DashboardPage() {
         {/* Global Activity Feed (2/3 width) */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between px-2">
-            <h3 className="font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+            <h3 className="flex items-center gap-2 font-semibold tracking-tight text-slate-900">
               <Activity className="h-5 w-5 text-[#FF4500]" />
               Aliran Transaksi Langsung
             </h3>
@@ -70,11 +110,11 @@ export default function DashboardPage() {
             </Button>
           </div>
 
-          <div className="bg-white rounded-[32px] p-4 shadow-sm border border-orange-50 min-h-[400px]">
+          <div className="min-h-[400px] rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
             {/* List Transaksi Akan di Map di sini */}
             <div className="flex flex-col items-center justify-center h-[350px] text-slate-300">
               <Activity className="h-12 w-12 mb-2 opacity-20" />
-              <p className="text-xs font-black uppercase italic tracking-widest">
+              <p className="text-xs font-semibold uppercase tracking-widest">
                 Menunggu Data Masuk...
               </p>
             </div>
@@ -83,17 +123,18 @@ export default function DashboardPage() {
 
         {/* Quick Actions (1/3 width) */}
         <div className="space-y-4">
-          <h3 className="font-black text-slate-800 uppercase tracking-tight px-2">
+          <h3 className="px-2 font-semibold tracking-tight text-slate-900">
             Perintah Cepat
           </h3>
-          <div className="bg-slate-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
+          <div className="relative overflow-hidden rounded-2xl bg-slate-900 p-8 text-white shadow-sm">
             <div className="relative z-10">
               <p className="text-[10px] font-black text-orange-400 uppercase mb-4">
                 Peringatan Sistem
               </p>
               <p className="text-sm font-bold leading-relaxed mb-6">
-                Ada <span className="text-orange-400 underline">4 tenant</span>{" "}
-                yang masa langganannya akan habis dalam kurang dari 3 hari.
+                Data ringkasan sudah diambil dari endpoint admin. Gunakan modul
+                notifikasi untuk mengirim pengingat ke tenant yang perlu follow
+                up.
               </p>
               <Button className="w-full bg-white text-slate-900 hover:bg-orange-50 font-black rounded-2xl text-xs">
                 KIRIM PENGINGAT SIARAN

@@ -19,9 +19,10 @@ import {
 import { economyService } from "@/services/economy.service";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { EconomyConfig, KoinPackage } from "@/types/domain";
 
 export default function KoinPackagesPage() {
-  const [packages, setPackages] = useState<any[]>([]);
+  const [packages, setPackages] = useState<KoinPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [pricePerCoin, setPricePerCoin] = useState<number>(100);
@@ -38,11 +39,11 @@ export default function KoinPackagesPage() {
       const configRes = await economyService.getConfigs();
 
       // 🛡️ Guard: Sinkronkan dengan struktur API { status: true, data: [...] }
-      const configs = (configRes.data as any)?.data || configRes.data || [];
+      const configs: EconomyConfig[] = configRes.data.data || [];
 
       if (Array.isArray(configs)) {
         const priceConfig = configs.find(
-          (c: any) => c.cfg_key === "price_per_coin",
+          (c) => c.cfg_key === "price_per_coin",
         );
         if (priceConfig) {
           setPricePerCoin(Number(priceConfig.cfg_value));
@@ -51,7 +52,7 @@ export default function KoinPackagesPage() {
 
       // 2. Get Packages
       const res = await economyService.getPackages();
-      const incomingData = (res.data as any)?.data || res.data || [];
+      const incomingData: KoinPackage[] = res.data.data || [];
       setPackages(Array.isArray(incomingData) ? incomingData : []);
     } catch (err) {
       console.error("Economy Sync Error:", err);
@@ -74,17 +75,13 @@ export default function KoinPackagesPage() {
         discount_pct: Number(formData.discount_pct || 0),
       });
 
-      if (
-        res.status === 200 ||
-        res.status === 201 ||
-        (res.data as any)?.status
-      ) {
+      if (res.status === 200 || res.status === 201 || res.data?.status) {
         toast.success("Paket koin berhasil dipublish!");
         setIsAdding(false);
         setFormData({ jumlah_koin: "", discount_pct: "" });
         initData();
       }
-    } catch (err) {
+    } catch {
       toast.error("Gagal menambah paket koin");
     }
   };

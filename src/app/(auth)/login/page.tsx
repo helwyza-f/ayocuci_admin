@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/card";
 import { Loader2, ShieldCheck, LockKeyhole, Mail } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AxiosError } from "axios";
+import { ApiErrorResponse } from "@/types/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -37,15 +39,17 @@ export default function LoginPage() {
 
       if (res.status) {
         await setAdminSession(res.data.access_token);
-        setAuth(res.data.user, res.data.access_token);
+        setAuth(res.data.user);
         router.push("/");
         router.refresh();
       } else {
         setError(res.message || "Kredensial tidak valid");
       }
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as AxiosError<ApiErrorResponse>;
       setError(
-        err.response?.data?.message || "Gagal terhubung ke server autentikasi.",
+        error.response?.data?.message ||
+          "Gagal terhubung ke server autentikasi.",
       );
     } finally {
       setLoading(false);
