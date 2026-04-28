@@ -15,31 +15,31 @@ export interface ContentBanner {
 
 export const contentService = {
   getAll: async () => {
-    const res = await api.get("/admin/content");
+    const res = await api.get("/content");
     return res.data;
   },
   getOne: async (id: number) => {
-    const res = await api.get(`/admin/content/${id}`);
+    const res = await api.get(`/content/${id}`);
     return res.data;
   },
   create: async (data: FormData) => {
-    const res = await api.post("/admin/content", data, {
+    const res = await api.post("/content", data, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data;
   },
   update: async (id: number, data: FormData) => {
-    const res = await api.put(`/admin/content/${id}`, data, {
+    const res = await api.put(`/content/${id}`, data, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data;
   },
   toggleStatus: async (id: number) => {
-    const res = await api.patch(`/admin/content/${id}/status`);
+    const res = await api.patch(`/content/${id}/status`);
     return res.data;
   },
   delete: async (id: number) => {
-    const res = await api.delete(`/admin/content/${id}`);
+    const res = await api.delete(`/content/${id}`);
     return res.data;
   },
 };

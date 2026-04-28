@@ -57,7 +57,7 @@ export default function VoucherManagementPage() {
   const fetchVouchers = async () => {
     setLoading(true);
     try {
-      const res = await api.get<ApiResponse<Voucher[]>>("/admin/vouchers");
+      const res = await api.get<ApiResponse<Voucher[]>>("/vouchers");
       if (res.data.status) setVouchers(res.data.data || []);
     } catch {
       toast.error("Gagal mengambil data voucher");
@@ -91,7 +91,7 @@ export default function VoucherManagementPage() {
         vc_tanggalberakhir: new Date(formData.vc_tanggalberakhir).toISOString(),
       };
 
-      const res = await api.post("/admin/vouchers/", payload);
+      const res = await api.post("/vouchers/", payload);
       if (res.data.status) {
         toast.success("Voucher berhasil diterbitkan!");
         setIsDialogOpen(false);
@@ -115,7 +115,7 @@ export default function VoucherManagementPage() {
 
   const toggleStatus = async (id: string, currentStatus: number) => {
     try {
-      const res = await api.patch(`/admin/vouchers/${id}/status`, {
+      const res = await api.patch(`/vouchers/${id}/status`, {
         status: currentStatus === 1 ? 0 : 1,
       });
       if (res.data.status) {

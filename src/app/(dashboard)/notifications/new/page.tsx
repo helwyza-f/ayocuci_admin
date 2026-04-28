@@ -41,7 +41,7 @@ export default function NewNotificationPage() {
 
   useEffect(() => {
     api
-      .get("/admin/tenants")
+      .get("/tenants")
       .then((res) => {
         if (res.data.status) setTenants(res.data.data || []);
       })
@@ -108,7 +108,7 @@ export default function NewNotificationPage() {
 
     setLoading(true);
     try {
-      const res = await api.post("/admin/notifications/broadcast", payload, {
+      const res = await api.post("/notifications/broadcast", payload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       if (res.data.status) {

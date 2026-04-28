@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -14,30 +14,23 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import api from "@/lib/api-client";
 import { ApiResponse } from "@/types/api";
 import { Owner } from "@/types/domain";
+import useSWR from "swr";
+import { apiFetcher } from "@/lib/fetcher";
 
 export default function OwnersPage() {
-  const [owners, setOwners] = useState<Owner[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    const fetchOwners = async () => {
-      try {
-        const res = await api.get<ApiResponse<Owner[]>>("/admin/users");
-        if (res.data.status) {
-          setOwners(res.data.data);
-        }
-      } catch (error) {
-        console.error("Gagal ambil data owner:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOwners();
-  }, []);
+  const { data, isLoading } = useSWR<ApiResponse<Owner[]>>(
+    "/users",
+    apiFetcher,
+    {
+      dedupingInterval: 60_000,
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
+  const owners = data?.data || [];
 
   const filteredOwners = owners.filter(
     (o) =>
@@ -90,7 +83,7 @@ export default function OwnersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {loading ? (
+              {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td colSpan={4} className="p-6">

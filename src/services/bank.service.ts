@@ -10,23 +10,23 @@ export interface BankAccount {
 
 export const bankService = {
   getBanks: async () => {
-    const res = await api.get("/admin/banks");
+    const res = await api.get("/banks");
     return res.data;
   },
   createBank: async (data: Omit<BankAccount, "id" | "is_active">) => {
-    const res = await api.post("/admin/banks", data);
+    const res = await api.post("/banks", data);
     return res.data;
   },
   updateBank: async (id: number, data: Partial<BankAccount>) => {
-    const res = await api.put(`/admin/banks/${id}`, data);
+    const res = await api.put(`/banks/${id}`, data);
     return res.data;
   },
   toggleStatus: async (id: number) => {
-    const res = await api.patch(`/admin/banks/${id}/status`);
+    const res = await api.patch(`/banks/${id}/status`);
     return res.data;
   },
   deleteBank: async (id: number) => {
-    const res = await api.delete(`/admin/banks/${id}`);
+    const res = await api.delete(`/banks/${id}`);
     return res.data;
   },
 };

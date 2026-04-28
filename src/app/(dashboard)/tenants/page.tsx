@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -29,43 +29,39 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Tenant } from "@/types/tenant";
-import { tenantService } from "@/services/tenant.service";
-import api from "@/lib/api-client";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Owner } from "@/types/domain";
 import { ApiResponse } from "@/types/api";
+import useSWR from "swr";
+import { apiFetcher } from "@/lib/fetcher";
 
 export default function TenantsPage() {
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [owners, setOwners] = useState<Owner[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const { data: tenantsResponse, isLoading } = useSWR<ApiResponse<Tenant[]>>(
+    "/tenants",
+    apiFetcher,
+    {
+      dedupingInterval: 60_000,
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
+  const { data: ownersResponse } = useSWR<ApiResponse<Owner[]>>(
+    "/users",
+    apiFetcher,
+    {
+      dedupingInterval: 60_000,
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
+  const tenants = useMemo(() => tenantsResponse?.data || [], [tenantsResponse]);
+  const owners = useMemo(() => ownersResponse?.data || [], [ownersResponse]);
 
   // State untuk Filter Owner
   const [open, setOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState("all");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Ambil data tenant & owner secara paralel
-        const [resTenants, resOwners] = await Promise.all([
-          tenantService.getAllTenants(),
-          api.get<ApiResponse<Owner[]>>("/admin/users"),
-        ]);
-
-        if (resTenants.status) setTenants(resTenants.data || []);
-        if (resOwners.data.status) setOwners(resOwners.data.data || []);
-      } catch (error) {
-        console.error("Gagal ambil data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
 
   // Filter Logic: Search Nama/ID + Filter Owner
   const filteredTenants = useMemo(() => {
@@ -209,7 +205,7 @@ export default function TenantsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {loading ? (
+              {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td colSpan={5} className="p-6">

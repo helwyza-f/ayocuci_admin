@@ -80,8 +80,8 @@ export default function NotificationsPage() {
     setLoading(true);
     try {
       const [resLogs, resTenants] = await Promise.all([
-        api.get("/admin/notifications/logs"),
-        api.get("/admin/tenants"),
+        api.get("/notifications/logs"),
+        api.get("/tenants"),
       ]);
       if (resLogs.data.status) setLogs(resLogs.data.data || []);
       if (resTenants.data.status) setTenants(resTenants.data.data || []);
@@ -126,7 +126,7 @@ export default function NotificationsPage() {
     setReceivers([]);
     setLoadingDetail(true);
     try {
-      const res = await api.get(`/admin/notifications/logs/${log.id}`);
+      const res = await api.get(`/notifications/logs/${log.id}`);
       if (res.data.status) setReceivers(res.data.data || []);
     } catch {
       toast.error("Gagal memuat detail log");

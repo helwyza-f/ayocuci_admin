@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Store, Coins, Zap, Activity, ArrowRight, RefreshCw } from "lucide-react";
 import StatCard from "@/components/modules/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/api-client";
 import { ApiResponse } from "@/types/api";
+import useSWR from "swr";
+import { apiFetcher } from "@/lib/fetcher";
 
 interface DashboardSummary {
   total_outlets: number;
@@ -20,30 +20,14 @@ const emptyStats: DashboardSummary = {
 };
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardSummary>(emptyStats);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const fetchSummary = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const response = await api.get<ApiResponse<DashboardSummary>>(
-        "/admin/summary",
-      );
-      setStats(response.data.data || emptyStats);
-    } catch {
-      setStats(emptyStats);
-      setError("Gagal memuat ringkasan dashboard.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSummary();
-  }, []);
+  const { data, error, isLoading, mutate } = useSWR<
+    ApiResponse<DashboardSummary>
+  >("/summary", apiFetcher, {
+    dedupingInterval: 60_000,
+    keepPreviousData: true,
+    revalidateOnFocus: false,
+  });
+  const stats = data?.data || emptyStats;
 
   return (
     <div className="space-y-8">
@@ -58,11 +42,11 @@ export default function DashboardPage() {
           </p>
         </div>
         <Button
-          onClick={fetchSummary}
-          disabled={loading}
+          onClick={() => mutate()}
+          disabled={isLoading}
           className="bg-[#FF4500] hover:bg-[#E63E00] rounded-xl px-5 font-semibold text-xs gap-2 shadow-sm shadow-orange-100"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           Muat Ulang
         </Button>
       </div>
@@ -77,18 +61,18 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           label="Total Outlet Terdaftar"
-          value={loading ? "..." : stats.total_outlets}
+          value={isLoading ? "..." : stats.total_outlets}
           icon={Store}
         />
         <StatCard
           label="Koin dalam Sirkulasi"
-          value={loading ? "..." : stats.total_koin.toLocaleString("id-ID")}
+          value={isLoading ? "..." : stats.total_koin.toLocaleString("id-ID")}
           icon={Coins}
           color="#FF8C00"
         />
         <StatCard
           label="Langganan Aktif (Berbayar)"
-          value={loading ? "..." : stats.active_tenant}
+          value={isLoading ? "..." : stats.active_tenant}
           icon={Zap}
           color="#00C853"
         />

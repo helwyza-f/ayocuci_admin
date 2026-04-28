@@ -29,7 +29,7 @@ export default function OwnerDetailPage() {
     const fetchDetail = async () => {
       try {
         const res = await api.get<ApiResponse<OwnerDetail>>(
-          `/admin/users/${params.id}`,
+          `/users/${params.id}`,
         );
         if (res.data.status) setData(res.data.data);
       } catch (err) {

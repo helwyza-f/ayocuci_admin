@@ -12,7 +12,8 @@ async function proxyAdminRequest(request: NextRequest, context: RouteContext) {
   const { path } = await context.params;
   const cookieStore = await cookies();
   const token = cookieStore.get("admin_token")?.value;
-  const targetUrl = new URL(`${API_BASE_URL}/${path.join("/")}`);
+  const targetPath = path[0] === "auth" ? path : ["admin", ...path];
+  const targetUrl = new URL(`${API_BASE_URL}/${targetPath.join("/")}`);
   targetUrl.search = request.nextUrl.search;
 
   const headers = new Headers();

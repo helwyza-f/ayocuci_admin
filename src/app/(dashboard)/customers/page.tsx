@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Search,
   Phone,
@@ -28,48 +28,43 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import api from "@/lib/api-client";
 import { Customer } from "@/types/domain";
 import { Tenant } from "@/types/tenant";
 import { ApiResponse } from "@/types/api";
+import useSWR from "swr";
+import { apiFetcher } from "@/lib/fetcher";
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedOutlet, setSelectedOutlet] = useState("all");
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    api.get<ApiResponse<Tenant[]>>("/admin/tenants").then((res) => {
-      setTenants(res.data.data || []);
-    });
-  }, []);
-
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      setLoading(true);
-      try {
-        const url =
-          selectedOutlet === "all"
-            ? "/admin/customers"
-            : `/admin/customers?outlet_id=${selectedOutlet}`;
-        const res = await api.get<ApiResponse<Customer[]>>(url);
-        if (res.data.status) {
-          setCustomers(res.data.data || []);
-        } else {
-          setCustomers([]);
-        }
-      } catch (err) {
-        console.error(err);
-        setCustomers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCustomers();
-  }, [selectedOutlet]);
+  const customerUrl =
+    selectedOutlet === "all"
+      ? "/customers"
+      : `/customers?outlet_id=${selectedOutlet}`;
+  const { data: tenantsResponse } = useSWR<ApiResponse<Tenant[]>>(
+    "/tenants",
+    apiFetcher,
+    {
+      dedupingInterval: 60_000,
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
+  const { data: customersResponse, isLoading } = useSWR<ApiResponse<Customer[]>>(
+    customerUrl,
+    apiFetcher,
+    {
+      dedupingInterval: 60_000,
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
+  const tenants = useMemo(() => tenantsResponse?.data || [], [tenantsResponse]);
+  const customers = useMemo(
+    () => customersResponse?.data || [],
+    [customersResponse],
+  );
 
   const filtered = (customers || []).filter(
     (c) =>
@@ -208,7 +203,7 @@ export default function CustomersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {loading ? (
+              {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td colSpan={4} className="p-6">

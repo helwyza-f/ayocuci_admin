@@ -58,7 +58,7 @@ export default function AdminEconomyPage() {
     setLoadingConfigs(true);
     try {
       const res = await api.get<ApiResponse<EconomyConfig[]>>(
-        "/admin/economy/configs",
+        "/economy/configs",
       );
       if (res.data.status) setConfigs(res.data.data || []);
     } catch {
@@ -107,7 +107,7 @@ export default function AdminEconomyPage() {
     setIsUpdating(true);
     try {
       if (!editingConfig) return;
-      const res = await api.patch("/admin/economy/configs", {
+      const res = await api.patch("/economy/configs", {
         key: editingConfig.cfg_key,
         value: rawValue,
       });
