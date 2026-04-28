@@ -20,6 +20,8 @@ import {
   Info,
   Layers,
   LayoutGrid,
+  ImagePlus,
+  Trash2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,6 +87,8 @@ export default function NotificationsPage() {
     kategori: "INFO",
     outlets: ["all"],
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
 
   const fetchData = async () => {
     setIsFetching(true);
@@ -143,6 +147,31 @@ export default function NotificationsPage() {
       setForm({ ...form, outlets: values });
     }
   };
+
+  const handleImageChange = (file?: File) => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    if (!file) {
+      setImageFile(null);
+      setImagePreview("");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran gambar maksimal 5MB");
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
@@ -274,15 +303,66 @@ export default function NotificationsPage() {
                   />
                 </div>
 
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">
+                    Gambar Promo Opsional
+                  </label>
+                  {imagePreview ? (
+                    <div className="relative overflow-hidden rounded-[28px] border border-slate-100 bg-slate-50">
+                      <img
+                        src={imagePreview}
+                        alt="Preview gambar notifikasi"
+                        className="h-56 w-full object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleImageChange()}
+                        className="absolute right-4 top-4 h-10 rounded-xl bg-white/90 px-4 font-black text-[10px] uppercase shadow-sm hover:bg-white"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Hapus
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="flex h-40 cursor-pointer flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-slate-200 bg-slate-50/60 text-center transition hover:border-[#FF4500]/40 hover:bg-orange-50/40">
+                      <ImagePlus className="h-8 w-8 text-slate-300" />
+                      <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+                        Upload banner notifikasi
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-300">
+                        JPG, PNG, WEBP maks. 5MB
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageChange(e.target.files?.[0])}
+                      />
+                    </label>
+                  )}
+                </div>
+
                 <Button
                   onClick={async () => {
                     if (!form.judul || !form.pesan)
                       return toast.error("Data tidak lengkap!");
                     setLoading(true);
                     try {
+                      const payload = new FormData();
+                      payload.append("judul", form.judul);
+                      payload.append("pesan", form.pesan);
+                      payload.append("kategori", form.kategori);
+                      form.outlets.forEach((outlet) =>
+                        payload.append("outlets", outlet),
+                      );
+                      if (imageFile) payload.append("image", imageFile);
+
                       const res = await api.post(
                         "/admin/notifications/broadcast",
-                        form,
+                        payload,
+                        { headers: { "Content-Type": "multipart/form-data" } },
                       );
                       if (res.data.status) {
                         toast.success("Broadcast Berhasil Dikirim!");
@@ -292,6 +372,7 @@ export default function NotificationsPage() {
                           kategori: "INFO",
                           outlets: ["all"],
                         });
+                        handleImageChange();
                         fetchData();
                       }
                     } catch (e) {
@@ -335,6 +416,13 @@ export default function NotificationsPage() {
                 <p className="text-[11px] text-slate-400 font-medium leading-relaxed italic line-clamp-6">
                   {form.pesan || "Isi pesan akan muncul di sini..."}
                 </p>
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt="Preview gambar notifikasi"
+                    className="mt-4 aspect-[16/9] w-full rounded-2xl object-cover"
+                  />
+                )}
               </div>
             </Card>
           </div>
