@@ -18,6 +18,10 @@ export const contentService = {
     const res = await api.get("/admin/content");
     return res.data;
   },
+  getOne: async (id: number) => {
+    const res = await api.get(`/admin/content/${id}`);
+    return res.data;
+  },
   create: async (data: FormData) => {
     const res = await api.post("/admin/content", data, {
       headers: { "Content-Type": "multipart/form-data" },
