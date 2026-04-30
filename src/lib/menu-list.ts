@@ -31,6 +31,7 @@ export const adminMenus = [
     items: [
       { label: "Siaran Notifikasi", href: "/notifications", icon: Bell },
       { label: "Ekonomi (Koin & Reff)", href: "/economy", icon: Coins },
+      { label: "Referral Owner", href: "/referrals", icon: Wallet2 },
       { label: "Voucher & Promo", href: "/vouchers", icon: Ticket }, // Tambahkan ini
       { label: "Konten & Banner", href: "/content", icon: Repeat },
       { label: "Terms & Privacy", href: "/legal", icon: FileText },

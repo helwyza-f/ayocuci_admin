@@ -21,6 +21,7 @@ export default function Header() {
       users: "Daftar Owner",
       customers: "Database Pelanggan",
       economy: "Konfigurasi Ekonomi",
+      referrals: "Referral Owner",
       vouchers: "Voucher & Promo",
       notifications: "Siaran Notifikasi",
       packages: "Paket Layanan",
