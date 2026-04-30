@@ -33,6 +33,7 @@ export const adminMenus = [
       { label: "Ekonomi (Koin & Reff)", href: "/economy", icon: Coins },
       { label: "Voucher & Promo", href: "/vouchers", icon: Ticket }, // Tambahkan ini
       { label: "Konten & Banner", href: "/content", icon: Repeat },
+      { label: "Terms & Privacy", href: "/legal", icon: FileText },
     ],
   },
   // Tambahkan di adminMenus lo
