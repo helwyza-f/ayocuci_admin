@@ -152,28 +152,33 @@ export default function ReferralAdminPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-        {(loading ? Array.from({ length: 4 }) : cards).map((card, index) => (
-          <Card
-            key={index}
-            className="rounded-[30px] border-slate-100 p-6 shadow-sm"
-          >
-            {loading ? (
-              <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                    {card.label}
-                  </span>
-                  <card.icon className="h-4 w-4 text-[#FF4500]" />
+        {loading
+          ? Array.from({ length: 4 }).map((_, index) => (
+              <Card
+                key={index}
+                className="rounded-[30px] border-slate-100 p-6 shadow-sm"
+              >
+                <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+              </Card>
+            ))
+          : cards.map((card, index) => (
+              <Card
+                key={index}
+                className="rounded-[30px] border-slate-100 p-6 shadow-sm"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                      {card.label}
+                    </span>
+                    <card.icon className="h-4 w-4 text-[#FF4500]" />
+                  </div>
+                  <p className="text-2xl font-black tracking-tight text-slate-800">
+                    {card.value}
+                  </p>
                 </div>
-                <p className="text-2xl font-black tracking-tight text-slate-800">
-                  {card.value}
-                </p>
-              </div>
-            )}
-          </Card>
-        ))}
+              </Card>
+            ))}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-6">
