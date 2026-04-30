@@ -24,7 +24,16 @@ import {
 } from "@/types/domain";
 import { referralAdminService } from "@/services/referral-admin.service";
 
-const statusOptions = ["all", "pending", "approved", "process", "done"];
+const statusOptions = ["all", "pending", "approved", "process", "done"] as const;
+type ReferralStatusFilter = (typeof statusOptions)[number];
+type ReferralPayoutStatus = Exclude<ReferralStatusFilter, "all">;
+
+const payoutStatusOrder: Record<ReferralPayoutStatus, number> = {
+  pending: 1,
+  approved: 2,
+  process: 3,
+  done: 4,
+};
 
 const currency = (value: number | string) =>
   new Intl.NumberFormat("id-ID", {
@@ -37,13 +46,13 @@ export default function ReferralAdminPage() {
   const [summary, setSummary] = useState<ReferralAdminSummary | null>(null);
   const [payouts, setPayouts] = useState<ReferralAdminPayout[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState<ReferralStatusFilter>("all");
   const [rawReward, setRawReward] = useState("");
   const [savingConfig, setSavingConfig] = useState(false);
   const [savingPayoutId, setSavingPayoutId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
 
-  const loadData = useCallback(async (status = "all") => {
+  const loadData = useCallback(async (status: ReferralStatusFilter) => {
     setLoading(true);
     try {
       const [summaryRes, configRes, payoutsRes] = await Promise.all([
@@ -75,14 +84,8 @@ export default function ReferralAdminPage() {
   }, []);
 
   useEffect(() => {
-    loadData("all");
-  }, [loadData]);
-
-  useEffect(() => {
-    if (!loading) {
-      loadData(filter);
-    }
-  }, [filter, loadData, loading]);
+    loadData(filter);
+  }, [filter, loadData]);
 
   const cards = useMemo(
     () => [
@@ -124,7 +127,7 @@ export default function ReferralAdminPage() {
     }
   };
 
-  const handleUpdatePayout = async (id: string, status: string) => {
+  const handleUpdatePayout = async (id: string, status: ReferralPayoutStatus) => {
     setSavingPayoutId(id);
     try {
       await referralAdminService.updatePayoutStatus(id, {
@@ -138,6 +141,12 @@ export default function ReferralAdminPage() {
     } finally {
       setSavingPayoutId(null);
     }
+  };
+
+  const getNextStatuses = (status: ReferralPayoutStatus) => {
+    return (["approved", "process", "done"] as ReferralPayoutStatus[]).filter(
+      (item) => payoutStatusOrder[item] > payoutStatusOrder[status],
+    );
   };
 
   return (
@@ -287,7 +296,7 @@ export default function ReferralAdminPage() {
                         <h4 className="text-lg font-black text-slate-800">
                           {item.usr_nama}
                         </h4>
-                        <Badge className="rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-white">
+                        <Badge className="rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-white uppercase">
                           {item.rp_status}
                         </Badge>
                       </div>
@@ -319,8 +328,8 @@ export default function ReferralAdminPage() {
                         placeholder="Catatan admin payout"
                         className="rounded-2xl"
                       />
-                      <div className="grid grid-cols-2 gap-2">
-                        {["approved", "process", "done"].map((status) => (
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {getNextStatuses(item.rp_status).map((status) => (
                           <Button
                             key={status}
                             type="button"
@@ -345,6 +354,11 @@ export default function ReferralAdminPage() {
                             {status}
                           </Button>
                         ))}
+                        {getNextStatuses(item.rp_status).length === 0 ? (
+                          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-center text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                            Payout selesai diproses
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
