@@ -20,6 +20,7 @@ export interface Owner {
 export interface EconomyConfig {
   cfg_key: string;
   cfg_value: string;
+  cfg_type?: string;
   cfg_desc?: string;
 }
 

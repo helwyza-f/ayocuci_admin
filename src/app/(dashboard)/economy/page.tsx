@@ -86,20 +86,17 @@ export default function AdminEconomyPage() {
   }, []);
 
   // --- HANDLERS ECONOMY ---
-  const formatDisplay = (val: string) => {
-    if (!val || !editingConfig) return val || "";
-    if (
-      editingConfig.cfg_key.includes("price") ||
-      editingConfig.cfg_key.includes("fee") ||
-      editingConfig.cfg_key.includes("topup")
-    ) {
+  const formatDisplay = (val: string, type?: string) => {
+    if (!val) return "—";
+    if (type === "percentage") return `${val}%`;
+    if (type === "amount" || type === "price") {
       return new Intl.NumberFormat("id-ID", {
         style: "currency",
         currency: "IDR",
         minimumFractionDigits: 0,
       }).format(Number(val));
     }
-    return `${Number(val).toLocaleString("id-ID")} Koin`;
+    return `${val} Koin`;
   };
 
   const handleUpdateConfig = async () => {
@@ -161,6 +158,8 @@ export default function AdminEconomyPage() {
       return <Wallet2 className="h-5 w-5 text-green-500" />;
     if (key.includes("referral"))
       return <UserPlus className="h-5 w-5 text-blue-500" />;
+    if (key.includes("percent"))
+      return <Settings2 className="h-5 w-5 text-indigo-500" />;
     if (key.includes("activation"))
       return <ShieldCheck className="h-5 w-5 text-purple-500" />;
     return <Coins className="h-5 w-5 text-orange-500" />;
@@ -233,10 +232,7 @@ export default function AdminEconomyPage() {
                         {cfg.cfg_key.replaceAll("_", " ")}
                       </p>
                       <h3 className="text-2xl font-black text-slate-800 tracking-tighter">
-                        {cfg.cfg_key.includes("price") ||
-                        cfg.cfg_key.includes("fee")
-                          ? `Rp ${Number(cfg.cfg_value).toLocaleString("id-ID")}`
-                          : `${cfg.cfg_value} Koin`}
+                        {formatDisplay(cfg.cfg_value, cfg.cfg_type)}
                       </h3>
                     </div>
                     <div className="mt-6 pt-6 border-t border-slate-50">
@@ -408,7 +404,7 @@ export default function AdminEconomyPage() {
                   Preview Format:
                 </p>
                 <p className="text-lg font-black text-[#FF4500]">
-                  {rawValue ? formatDisplay(rawValue) : "—"}
+                  {rawValue ? formatDisplay(rawValue, editingConfig?.cfg_type) : "—"}
                 </p>
               </div>
             </div>
