@@ -35,6 +35,7 @@ import { Owner } from "@/types/domain";
 import { ApiResponse } from "@/types/api";
 import useSWR from "swr";
 import { apiFetcher } from "@/lib/fetcher";
+import TableSkeleton from "@/components/shared/table-skeleton";
 
 export default function TenantsPage() {
   const [search, setSearch] = useState("");
@@ -206,13 +207,7 @@ export default function TenantsPage() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td colSpan={5} className="p-6">
-                      <div className="h-12 bg-slate-50 rounded-2xl w-full" />
-                    </td>
-                  </tr>
-                ))
+                <TableSkeleton columns={5} rows={6} />
               ) : filteredTenants.length > 0 ? (
                 filteredTenants.map((tenant) => (
                   <tr

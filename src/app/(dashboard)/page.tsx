@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { ApiResponse } from "@/types/api";
 import useSWR from "swr";
 import { apiFetcher } from "@/lib/fetcher";
+import Link from "next/link";
+
+import ActivityFeed from "@/components/modules/dashboard/activity-feed";
+import { Topup } from "@/types/topup";
 
 interface DashboardSummary {
   total_outlets: number;
@@ -27,7 +31,15 @@ export default function DashboardPage() {
     keepPreviousData: true,
     revalidateOnFocus: false,
   });
+
+  const { data: activityData, isLoading: isActivityLoading } = useSWR<
+    ApiResponse<Topup[]>
+  >("/topup-koin", apiFetcher, {
+    dedupingInterval: 30_000, // Refresh activity more often
+  });
+
   const stats = data?.data || emptyStats;
+  const activities = activityData?.data || [];
 
   return (
     <div className="space-y-8">
@@ -86,24 +98,24 @@ export default function DashboardPage() {
               <Activity className="h-5 w-5 text-[#FF4500]" />
               Aliran Transaksi Langsung
             </h3>
-            <Button
-              variant="link"
-              className="text-[#FF4500] font-bold text-xs gap-1"
-            >
-              LIHAT SEMUA <ArrowRight className="h-3 w-3" />
-            </Button>
+            <Link href="/topups">
+              <Button
+                variant="link"
+                className="text-[#FF4500] font-bold text-xs gap-1"
+              >
+                LIHAT SEMUA <ArrowRight className="h-3 w-3" />
+              </Button>
+            </Link>
           </div>
 
           <div className="min-h-[400px] rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            {/* List Transaksi Akan di Map di sini */}
-            <div className="flex flex-col items-center justify-center h-[350px] text-slate-300">
-              <Activity className="h-12 w-12 mb-2 opacity-20" />
-              <p className="text-xs font-semibold uppercase tracking-widest">
-                Menunggu Data Masuk...
-              </p>
-            </div>
+            <ActivityFeed
+              activities={activities}
+              isLoading={isActivityLoading}
+            />
           </div>
         </div>
+
 
         {/* Quick Actions (1/3 width) */}
         <div className="space-y-4">
