@@ -16,11 +16,11 @@ export default function DashboardLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
-      {/* OVERLAY MOBILE: Muncul pas sidebar mobile dibuka */}
+    <div className="flex h-screen overflow-hidden bg-[#F1F5F9]">
+      {/* OVERLAY MOBILE */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-40 md:hidden transition-opacity"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
@@ -28,57 +28,36 @@ export default function DashboardLayout({
       {/* SIDEBAR CONTAINER */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 border-r border-slate-200 bg-white transition-all duration-300 ease-in-out md:relative",
-          // Logic Desktop Collapsible
-          isCollapsed ? "md:w-20" : "md:w-72",
-          // Logic Mobile Trigger
-          isMobileOpen
-            ? "translate-x-0 w-72"
-            : "-translate-x-full md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 bg-white transition-all duration-200 ease-in-out md:relative",
+          isCollapsed ? "md:w-16" : "md:w-60",
+          isMobileOpen ? "translate-x-0 w-60" : "-translate-x-full md:translate-x-0",
         )}
       >
-        {/* BUTTON COLLAPSE (Desktop Only) */}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-10 hidden md:flex h-6 w-6 items-center justify-center rounded-full border border-slate-100 bg-white text-slate-400 hover:text-[#FF4500] shadow-sm z-50 transition-transform duration-300"
-          style={{ transform: isCollapsed ? "rotate(180)deg" : "rotate(0deg)" }}
-        >
-          <ChevronLeft className={cn("h-4 w-4", isCollapsed && "rotate-180")} />
-        </button>
-
-        {/* BUTTON CLOSE (Mobile Only) */}
-        <button
-          onClick={() => setIsMobileOpen(false)}
-          className="absolute right-4 top-4 md:hidden text-slate-400"
-        >
-          <X className="h-6 w-6" />
-        </button>
-
-        {/* SIAPIN SIDEBAR COMPONENT (Kirim props isCollapsed kalau perlu) */}
         <Sidebar isCollapsed={isCollapsed} />
       </aside>
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* HEADER: Gue selipin Mobile Trigger di sini */}
-        <header className="flex items-center gap-4 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md md:px-0">
+        <header className="flex items-center bg-white border-b border-slate-200 px-4 md:px-0">
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden text-slate-500"
+            className="md:hidden text-slate-500 h-9 w-9"
             onClick={() => setIsMobileOpen(true)}
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-4 w-4" />
           </Button>
 
           <div className="flex-1">
-            <Header />
+            <Header onToggleSidebar={() => setIsCollapsed(!isCollapsed)} />
           </div>
         </header>
 
         {/* SCROLLABLE CONTENT */}
-        <main className="custom-scrollbar flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-[1600px] mx-auto">{children}</div>
+        <main className="flex-1 overflow-y-auto bg-slate-50/50 custom-scrollbar relative">
+          <div className="p-4 md:p-6 max-w-[1600px] mx-auto min-h-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>

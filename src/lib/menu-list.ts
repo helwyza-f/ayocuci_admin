@@ -11,15 +11,21 @@ import {
   FileText,
   Wrench,
   Wallet2,
+  Package,
+  History,
+  ShieldCheck,
+  Megaphone,
 } from "lucide-react";
 
 export const adminMenus = [
   {
-    group: "Ringkasan",
-    items: [{ label: "Pusat Kontrol", href: "/", icon: LayoutGrid }],
+    group: "Monitoring",
+    items: [
+      { label: "Pusat Kontrol", href: "/", icon: LayoutGrid },
+    ],
   },
   {
-    group: "Manajemen Utama",
+    group: "Business Ecosystem",
     items: [
       { label: "Outlet / Tenant", href: "/tenants", icon: Store },
       { label: "Owner (Pemilik)", href: "/users", icon: UserCircle },
@@ -27,30 +33,29 @@ export const adminMenus = [
     ],
   },
   {
-    group: "Konfigurasi Platform",
+    group: "Finance & Revenue",
     items: [
-      { label: "Siaran Notifikasi", href: "/notifications", icon: Bell },
-      { label: "Ekonomi (Koin & Reff)", href: "/economy", icon: Coins },
-      { label: "Referral Owner", href: "/referrals", icon: Wallet2 },
-      { label: "Voucher & Promo", href: "/vouchers", icon: Ticket }, // Tambahkan ini
+      { label: "Riwayat Langganan", href: "/subscriptions", icon: ShieldCheck },
+      { label: "Topup & Penagihan", href: "/topups", icon: Wallet2 },
+      { label: "Paket Koin (SKU)", href: "/packages", icon: Package },
+    ],
+  },
+  {
+    group: "Growth & Marketing",
+    items: [
+      { label: "Voucher & Promo", href: "/vouchers", icon: Ticket },
+      { label: "Siaran Notifikasi", href: "/notifications", icon: Megaphone },
       { label: "Konten & Banner", href: "/content", icon: Repeat },
+      { label: "Referral Owner", href: "/referrals", icon: Wallet2 },
+    ],
+  },
+  {
+    group: "Configuration",
+    items: [
+      { label: "Ekonomi (Global)", href: "/economy", icon: Coins },
       { label: "Terms & Privacy", href: "/legal", icon: FileText },
-    ],
-  },
-  // Tambahkan di adminMenus lo
-  {
-    group: "SaaS & Penagihan",
-    items: [
-      { label: "Paket Koin", href: "/packages", icon: Ticket },
-      { label: "Topup & Tagihan", href: "/topups", icon: Wallet2 }, // Tambahkan ini
-      { label: "Riwayat Langganan", href: "/subscriptions", icon: FileText },
-    ],
-  },
-  {
-    group: "Sistem",
-    items: [
-      { label: "Perbaikan Transaksi", href: "/fixer", icon: Wrench },
       { label: "Pengaturan Global", href: "/settings", icon: Settings },
+      { label: "Sistem Fixer", href: "/fixer", icon: Wrench },
     ],
   },
 ];

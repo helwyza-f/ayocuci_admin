@@ -1,12 +1,16 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { LogOut, Bell, Sparkles } from "lucide-react";
+import { LogOut, Bell, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/use-auth-store";
 import { cn } from "@/lib/utils";
 
-export default function Header() {
+interface HeaderProps {
+  onToggleSidebar?: () => void;
+}
+
+export default function Header({ onToggleSidebar }: HeaderProps) {
   const pathname = usePathname();
   const { logout, admin } = useAuthStore();
 
@@ -15,7 +19,6 @@ export default function Header() {
     if (!segment || segment === "" || segment === "dashboard")
       return "Pusat Kontrol";
 
-    // Mapping nama yang lebih manusiawi daripada sekadar capitalize slug
     const titles: Record<string, string> = {
       tenants: "Manajemen Outlet",
       users: "Daftar Owner",
@@ -42,42 +45,48 @@ export default function Header() {
   };
 
   return (
-    <header className="h-20 border-b border-slate-100 bg-white/40 backdrop-blur-xl flex items-center px-6 md:px-10 justify-between sticky top-0 z-40 transition-all">
-      {/* Title Section */}
-      <div className="flex flex-col">
-        <div className="flex items-center gap-2 mb-0.5">
-          <Sparkles className="h-3 w-3 text-[#FF4500]/40" />
-          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
-            AyoCuci <span className="text-slate-300">Platform</span>
-          </p>
-        </div>
-        <h1 className="text-lg font-black text-slate-800 tracking-tight leading-none">
-          {getTitle()}
-        </h1>
-      </div>
-
-      <div className="flex items-center gap-2 md:gap-4">
-        {/* Notifikasi - Soft Style */}
+    <header className="h-14 border-b border-slate-200 bg-white flex items-center px-4 md:px-8 justify-between sticky top-0 z-40">
+      <div className="flex items-center gap-4">
         <Button
           variant="ghost"
           size="icon"
-          className="rounded-xl text-slate-400 hover:text-[#FF4500] hover:bg-orange-50/50 transition-all duration-300 relative"
+          onClick={onToggleSidebar}
+          className="hidden md:flex h-8 w-8 text-slate-400 hover:text-primary"
         >
-          <Bell className="h-5 w-5" />
-          {/* Dot Indikator Unread */}
-          <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-[#FF4500] rounded-full border-2 border-white" />
+          <LayoutGrid className="h-4 w-4" />
         </Button>
 
-        <div className="h-6 w-[1px] bg-slate-100 mx-1 md:mx-2" />
+        {/* Title Section */}
+        <div className="flex flex-col">
+          <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+            AyoCuci <span className="opacity-50">Control Hub</span>
+          </p>
+          <h1 className="text-sm font-bold text-slate-900 tracking-tight leading-none font-heading">
+            {getTitle()}
+          </h1>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-slate-400 hover:text-primary relative"
+        >
+          <Bell className="h-4 w-4" />
+          <span className="absolute top-2 right-2 h-1 w-1 bg-primary rounded-full" />
+        </Button>
+
+        <div className="h-4 w-px bg-slate-100 mx-1" />
 
         {/* Admin Info & Logout */}
-        <div className="flex items-center gap-3 md:gap-5">
-          <div className="text-right hidden lg:block">
-            <p className="text-[11px] font-black text-slate-800 uppercase tracking-tight">
-              {admin?.adm_nama || "Fahry Admin"}
+        <div className="flex items-center gap-4">
+          <div className="text-right hidden sm:block leading-none">
+            <p className="text-xs font-bold text-slate-900 tracking-tight">
+              {admin?.adm_nama || "Administrator"}
             </p>
-            <p className="text-[9px] font-bold text-[#FF4500] uppercase tracking-wider opacity-70">
-              Master Admin
+            <p className="text-[9px] font-medium text-primary uppercase tracking-tight">
+              Superadmin
             </p>
           </div>
 
@@ -85,13 +94,12 @@ export default function Header() {
             onClick={handleLogout}
             variant="ghost"
             className={cn(
-              "rounded-xl border border-slate-100 bg-white text-slate-600 shadow-sm transition-all duration-300",
-              "hover:border-red-100 hover:bg-red-50 hover:text-red-500",
-              "font-bold text-[10px] uppercase px-4 h-10 gap-2",
+              "text-slate-400 hover:text-rose-600 hover:bg-rose-50",
+              "font-bold text-[10px] uppercase h-8 px-2 gap-2",
             )}
           >
             <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Logout</span>
+            <span className="hidden lg:inline">Sign Out</span>
           </Button>
         </div>
       </div>

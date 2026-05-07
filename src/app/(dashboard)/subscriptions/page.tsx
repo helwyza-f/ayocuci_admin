@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  FileText,
+  ShieldCheck,
   Clock,
   RefreshCw,
   Search,
@@ -15,12 +15,14 @@ import {
   FilterX,
   ChevronRight,
   ExternalLink,
-  ShieldCheck,
   CreditCard,
   ArrowRightLeft,
   Loader2 as LoaderIcon,
   Check,
   ChevronsUpDown,
+  History,
+  Activity,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -42,7 +44,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { addonService, AddonTransaction, AddonStatus } from "@/services/addon.service";
+import { addonService, AddonTransaction } from "@/services/addon.service";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -79,11 +81,11 @@ export default function SubscriptionsPage() {
       const now = new Date();
       const isToday = date.toDateString() === now.toDateString();
       const timeStr = format(date, "HH:mm", { locale: id });
-      const fullDateStr = format(date, "dd MMM yyyy", { locale: id });
+      const fullDateStr = format(date, "dd/MM/yy", { locale: id });
       return {
         display: isToday
-          ? `Hari Ini, ${timeStr} WIB`
-          : `${fullDateStr} • ${timeStr} WIB`,
+          ? `Today, ${timeStr}`
+          : `${fullDateStr} ${timeStr}`,
         isToday,
       };
     } catch {
@@ -104,7 +106,7 @@ export default function SubscriptionsPage() {
       const res = await addonService.getAll(params.toString());
       setData(res.data || []);
     } catch {
-      toast.error("Gagal mengambil data transaksi");
+      toast.error("Failed to sync transactions");
       setData([]);
     } finally {
       setLoading(false);
@@ -114,6 +116,13 @@ export default function SubscriptionsPage() {
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
+
+  const stats = useMemo(() => {
+    const total = data.length;
+    const pending = data.filter(d => d.ha_status === 'PENDING_VALIDATION').length;
+    const success = data.filter(d => d.ha_status === 'SUCCESS').length;
+    return { total, pending, success };
+  }, [data]);
 
   const uniqueOutlets = useMemo(
     () =>
@@ -130,15 +139,10 @@ export default function SubscriptionsPage() {
   const filteredData = useMemo(() => {
     return (data || []).filter((item) => {
       if (!item) return false;
-      const cleanSearch = searchQuery
-        .replace(/[^a-zA-Z0-9]/g, "")
-        .toLowerCase();
-      const cleanID = (item.ha_id || "")
-        .replace(/[^a-zA-Z0-9]/g, "")
-        .toLowerCase();
-      const cleanItemNames = (item.item_names || "").toLowerCase();
-
-      const matchesSearch = cleanID.includes(cleanSearch) || cleanItemNames.includes(cleanSearch);
+      const cleanSearch = searchQuery.toLowerCase();
+      const matchesSearch = 
+        item.ha_id.toLowerCase().includes(cleanSearch) || 
+        item.item_names.toLowerCase().includes(cleanSearch);
       const matchesOutlet =
         outletFilter === "all" || item.outlet_name === outletFilter;
 
@@ -160,13 +164,13 @@ export default function SubscriptionsPage() {
     try {
       const res = await addonService.approve(id);
       if (res.status) {
-        toast.success("Transaksi berhasil divalidasi!");
+        toast.success("Transaction verified successfully");
         setIsPreviewOpen(false);
         fetchTransactions();
       }
     } catch (err) {
       const error = err as AxiosError<ApiErrorResponse>;
-      toast.error(error.response?.data?.message || "Gagal memproses approval");
+      toast.error(error.response?.data?.message || "Verification failed");
     } finally {
       setConfirming(false);
     }
@@ -177,574 +181,327 @@ export default function SubscriptionsPage() {
     try {
       const res = await addonService.reject(id);
       if (res.status) {
-        toast.success("Bukti transfer ditolak");
+        toast.success("Transaction rejected");
         setIsPreviewOpen(false);
         fetchTransactions();
       }
     } catch (err) {
       const error = err as AxiosError<ApiErrorResponse>;
-      toast.error(error.response?.data?.message || "Gagal menolak transaksi");
+      toast.error(error.response?.data?.message || "Rejection failed");
     } finally {
       setConfirming(false);
     }
   };
 
-  const getStatusStyle = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "bg-orange-50 text-orange-600 border-orange-100";
+        return { label: "Waiting Payment", class: "bg-amber-50 text-amber-600 border-amber-100" };
       case "PENDING_VALIDATION":
-        return "bg-blue-50 text-blue-600 border-blue-100";
+        return { label: "Need Review", class: "bg-indigo-50 text-indigo-600 border-indigo-100 animate-pulse" };
       case "SUCCESS":
-        return "bg-emerald-50 text-emerald-600 border-emerald-100";
+        return { label: "Active", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
       case "FAILED":
-        return "bg-rose-50 text-rose-600 border-rose-100";
+        return { label: "Rejected", class: "bg-rose-50 text-rose-600 border-rose-100" };
       case "CANCELED":
-        return "bg-slate-50 text-slate-400 border-slate-100";
+        return { label: "Canceled", class: "bg-slate-100 text-slate-500 border-slate-200" };
       default:
-        return "bg-slate-50 text-slate-500 border-slate-100";
+        return { label: status, class: "bg-slate-50 text-slate-400 border-slate-100" };
     }
   };
 
   return (
-    <div className="space-y-6 pb-20 max-w-[1600px] mx-auto px-4 lg:px-0">
-      {/* HEADER */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="p-4 bg-blue-50 rounded-[24px]">
-            <FileText className="h-8 w-8 text-blue-600" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight leading-none mb-2">
-              Management <span className="text-blue-600">Addons & Pro</span>
-            </h2>
-            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">
-              Validasi Aktivasi Akun & Pembelian Fitur Addon
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* COMMAND BAR HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            Subscriptions Management
+          </h1>
+          <p className="text-xs font-medium text-slate-500">
+            Operational center for license activations and feature addons.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-3xl border border-slate-100">
-          <div className="px-6 border-r border-slate-200">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter italic">
-              Total Terfilter
-            </p>
-            <p className="text-xl font-black text-slate-800 leading-none">
-              {filteredData.length}
-            </p>
-          </div>
-          <Button
+        <div className="flex items-center gap-2">
+           <Button
+            variant="ghost"
+            size="sm"
             onClick={fetchTransactions}
-            className="rounded-2xl h-12 bg-slate-900 hover:bg-black text-white px-6 font-black text-[11px] uppercase gap-2 transition-all active:scale-95"
+            disabled={loading}
+            className="h-8 px-2 font-bold text-[10px] uppercase tracking-wider gap-2 text-slate-500"
           >
-            <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />{" "}
-            Muat Ulang
+            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+            Sync Data
           </Button>
         </div>
       </div>
 
-      {/* FILTER TOOLBAR */}
-      <Card className="p-5 rounded-[35px] border-none shadow-sm bg-white">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 items-end">
-          <div className="xl:col-span-2 space-y-1.5">
-            <label className="font-black uppercase text-slate-400 ml-2 tracking-widest text-[10px]">
-              Cari Transaksi / Fitur
-            </label>
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300" />
-              <Input
-                placeholder="Cari ID atau nama fitur..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 rounded-xl border-slate-100 bg-slate-50/50 text-[12px] font-bold focus-visible:ring-blue-600/10"
-              />
+      {/* OPERATIONAL METRICS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: "Total Request", value: stats.total, icon: Activity, color: "text-slate-600", bg: "bg-white" },
+          { label: "Pending Review", value: stats.pending, icon: Clock, color: "text-indigo-600", bg: "bg-indigo-50/30 border-indigo-100/50" },
+          { label: "Active Licenses", value: stats.success, icon: Check, color: "text-emerald-600", bg: "bg-white" },
+        ].map((stat, i) => (
+          <Card key={i} className={cn("p-3 border border-slate-200 shadow-none rounded-lg flex items-center justify-between", stat.bg)}>
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{stat.label}</p>
+              <h3 className={cn("text-xl font-bold leading-none", stat.color)}>{stat.value}</h3>
             </div>
-          </div>
+            <div className={cn("p-2 rounded bg-white border border-slate-100", stat.color)}>
+              <stat.icon className="h-4 w-4" />
+            </div>
+          </Card>
+        ))}
+      </div>
 
-          <div className="space-y-1.5">
-            <label className="font-black uppercase text-slate-400 ml-2 tracking-widest text-[10px]">
-              Outlet
-            </label>
+      {/* FILTER & SEARCH COMMAND BAR */}
+      <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-1">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <Input
+              placeholder="Filter by ID or Service..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
+            />
+          </div>
+          
+          <div className="h-5 w-px bg-slate-100 hidden lg:block" />
+
+          <div className="flex items-center gap-1 p-1 lg:p-0">
             <Popover open={openOutlet} onOpenChange={setOpenOutlet}>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full h-11 justify-between rounded-xl border-slate-100 bg-slate-50/50 text-[12px] font-bold px-4"
-                >
-                  <span className="truncate">
-                    {outletFilter === "all" ? "Semua Outlet" : outletFilter}
-                  </span>
-                  <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-2 text-slate-600">
+                  <Store className="h-3 w-3" />
+                  {outletFilter === "all" ? "Outlets" : outletFilter}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[250px] p-0 rounded-2xl border-slate-100 shadow-2xl overflow-hidden">
+              <PopoverContent className="w-56 p-0 rounded-md">
                 <Command>
-                  <CommandInput
-                    placeholder="Cari outlet..."
-                    className="h-10 text-[12px] font-bold"
-                  />
+                  <CommandInput placeholder="Search outlet..." className="text-xs" />
                   <CommandList>
-                    <CommandEmpty className="p-4 text-[11px] text-center font-bold text-slate-400 uppercase">
-                      Tidak ditemukan.
-                    </CommandEmpty>
+                    <CommandEmpty className="text-[10px] p-2">No results.</CommandEmpty>
                     <CommandGroup>
-                      <CommandItem
-                        onSelect={() => {
-                          setOutletFilter("all");
-                          setOpenOutlet(false);
-                        }}
-                        className="text-[12px] font-bold"
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-3 w-3",
-                            outletFilter === "all"
-                              ? "opacity-100"
-                              : "opacity-0",
-                          )}
-                        />{" "}
-                        Semua Outlet
-                      </CommandItem>
-                      {uniqueOutlets.map((name) => (
-                        <CommandItem
-                          key={name}
-                          onSelect={() => {
-                            setOutletFilter(name);
-                            setOpenOutlet(false);
-                          }}
-                          className="text-[12px] font-bold"
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-3 w-3",
-                              outletFilter === name
-                                ? "opacity-100"
-                                : "opacity-0",
-                            )}
-                          />{" "}
-                          {name}
-                        </CommandItem>
+                      <CommandItem onSelect={() => { setOutletFilter("all"); setOpenOutlet(false); }} className="text-xs">All Outlets</CommandItem>
+                      {uniqueOutlets.map(o => (
+                        <CommandItem key={o} onSelect={() => { setOutletFilter(o); setOpenOutlet(false); }} className="text-xs">{o}</CommandItem>
                       ))}
                     </CommandGroup>
                   </CommandList>
                 </Command>
               </PopoverContent>
             </Popover>
-          </div>
 
-          <div className="space-y-1.5">
-            <label className="font-black uppercase text-slate-400 ml-2 tracking-widest text-[10px]">
-              Tgl Mulai
-            </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full h-11 justify-start text-left font-bold rounded-xl border-slate-100 bg-slate-50/50 text-[12px]",
-                    !startDate && "text-muted-foreground",
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? (
-                    format(startDate, "dd/MM/yyyy")
-                  ) : (
-                    <span>Pilih Tanggal</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 rounded-2xl">
-                <Calendar
-                  mode="single"
-                  selected={startDate}
-                  onSelect={setStartDate}
-                  initialFocus
-                  locale={id}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+            <div className="h-4 w-px bg-slate-100" />
 
-          <div className="space-y-1.5">
-            <label className="font-black uppercase text-slate-400 ml-2 tracking-widest text-[10px]">
-              Tgl Selesai
-            </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full h-11 justify-start text-left font-bold rounded-xl border-slate-100 bg-slate-50/50 text-[12px]",
-                    !endDate && "text-muted-foreground",
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? (
-                    format(endDate, "dd/MM/yyyy")
-                  ) : (
-                    <span>Pilih Tanggal</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 rounded-2xl">
-                <Calendar
-                  mode="single"
-                  selected={endDate}
-                  onSelect={setEndDate}
-                  initialFocus
-                  locale={id}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+            <div className="flex items-center gap-1">
+               {["all", "PENDING_VALIDATION", "SUCCESS", "FAILED"].map(s => (
+                 <Button
+                    key={s}
+                    variant={statusFilter === s ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setStatusFilter(s)}
+                    className={cn(
+                      "h-7 px-2 text-[9px] font-bold uppercase tracking-tight rounded",
+                      statusFilter === s ? "bg-primary/10 text-primary" : "text-slate-500"
+                    )}
+                 >
+                   {s === "all" ? "All" : s === "PENDING_VALIDATION" ? "Review" : s}
+                 </Button>
+               ))}
+            </div>
 
-          <Button
-            variant="outline"
-            onClick={resetFilters}
-            className="h-11 rounded-xl border-slate-100 text-[11px] font-black uppercase text-slate-400 hover:text-rose-500 hover:bg-rose-50/50"
-          >
-            <FilterX className="h-3 w-3 mr-2" /> Reset
-          </Button>
-        </div>
-
-        <div className="mt-5 pt-5 border-t border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4 text-[11px]">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <span className="font-black text-slate-300 uppercase whitespace-nowrap mr-2 tracking-widest text-[10px]">
-              Status:
-            </span>
-            {["all", "PENDING", "PENDING_VALIDATION", "SUCCESS", "FAILED", "CANCELED"].map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={cn(
-                  "px-5 py-2 rounded-full font-black uppercase transition-all border",
-                  statusFilter === s
-                    ? "bg-blue-600 text-white border-blue-600 shadow-md"
-                    : "bg-white text-slate-400 border-slate-100 hover:border-slate-300",
-                )}
-              >
-                {s.replace("_", " ")}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <span className="font-black text-slate-300 uppercase whitespace-nowrap mr-2 tracking-widest text-[10px]">
-              Metode:
-            </span>
-            {["all", "KOIN", "TRANSFER", "MIDTRANS"].map((m) => (
-              <button
-                key={m}
-                onClick={() => setMethodFilter(m)}
-                className={cn(
-                  "px-5 py-2 rounded-full font-black uppercase transition-all border",
-                  methodFilter === m
-                    ? "bg-blue-600 text-white border-blue-600 shadow-md"
-                    : "bg-white text-slate-400 border-slate-100 hover:border-blue-600/30",
-                )}
-              >
-                {m}
-              </button>
-            ))}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={resetFilters}
+              className="h-8 w-8 text-slate-400 hover:text-rose-600"
+            >
+              <FilterX className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
       </Card>
 
-      {/* DATA TABLE */}
-      <Card className="border-none shadow-xl shadow-slate-100/50 rounded-[45px] overflow-hidden bg-white border border-slate-50 relative min-h-[400px]">
-        {loading ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-10">
-            <LoaderIcon className="h-12 w-12 animate-spin text-blue-600" />
-            <p className="mt-4 font-black text-[11px] text-slate-400 uppercase tracking-[0.2em]">
-              Menyinkronkan Data...
-            </p>
+      {/* OPERATIONAL DATA TABLE */}
+      <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white min-h-[400px] relative shadow-none">
+        {loading && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-50 flex flex-col items-center justify-center">
+            <LoaderIcon className="h-6 w-6 animate-spin text-primary" />
+            <p className="mt-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">Syncing Ecosystem...</p>
           </div>
-        ) : filteredData.length === 0 ? (
-          <div className="py-32 flex flex-col items-center justify-center space-y-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-slate-100 rounded-full scale-150 blur-2xl opacity-50" />
-              <div className="relative p-8 bg-slate-50 rounded-[40px] border-4 border-white shadow-inner">
-                <FilterX className="h-16 w-16 text-slate-200" />
-              </div>
-            </div>
-            <div className="text-center space-y-2 relative">
-              <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg">
-                Data Tidak Ditemukan
-              </h3>
-              <p className="font-bold text-slate-400 text-[11px] uppercase tracking-widest max-w-[280px] mx-auto leading-relaxed">
-                Coba sesuaikan filter atau kata kunci pencarian Anda
-              </p>
-              <Button
-                variant="ghost"
-                onClick={resetFilters}
-                className="mt-4 rounded-xl text-[10px] font-black uppercase text-blue-600 hover:bg-blue-50"
-              >
-                Reset Filter
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="p-7 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                    Transaksi
-                  </th>
-                  <th className="p-7 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                    Outlet & Pemilik
-                  </th>
-                  <th className="p-7 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                    Fitur / Item
-                  </th>
-                  <th className="p-7 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">
-                    Nominal
-                  </th>
-                  <th className="p-7 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                    Metode & Status
-                  </th>
-                  <th className="p-7 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">
-                    Detail
-                  </th>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-200">
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Transaction</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Business</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Service Item</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Amount</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Status</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredData.length === 0 && !loading ? (
+                <tr>
+                  <td colSpan={6} className="py-24 text-center">
+                    <History className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No matching records found</p>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 text-[13px]">
-                {filteredData.map((item) => {
+              ) : (
+                filteredData.map((item) => {
+                  const status = getStatusConfig(item.ha_status);
                   const dt = formatDateTime(item.ha_created);
                   return (
-                    <tr
-                      key={item.ha_id}
-                      className="hover:bg-slate-50/30 transition-all group"
-                    >
-                      <td className="p-7">
-                        <p className="font-black text-slate-700 mb-0.5 text-[13px]">
-                          {item.ha_id}
-                        </p>
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-2.5 w-2.5 text-slate-300" />
-                          <p
-                            className={cn(
-                              "font-bold italic leading-none uppercase text-[11px]",
-                              dt.isToday ? "text-blue-500" : "text-slate-400",
-                            )}
-                          >
-                            {dt.display}
-                          </p>
+                    <tr key={item.ha_id} className="hover:bg-slate-50/30 transition-colors">
+                      <td className="px-5 py-3">
+                        <div className="font-bold text-slate-900 text-xs">#{item.ha_id}</div>
+                        <div className="flex items-center gap-1 text-[9px] font-medium text-slate-400 uppercase">
+                          {dt.display}
                         </div>
                       </td>
-                      <td className="p-7">
-                        <div className="flex items-center gap-2 mb-1 font-black text-slate-800 uppercase italic leading-none text-[13px]">
-                          <Store className="h-3 w-3 text-blue-600" />{" "}
-                          {item.outlet_name}
-                        </div>
-                        <div className="flex items-center gap-1.5 ml-5 font-bold text-slate-400 italic text-[12px]">
-                          <User2 className="h-2.5 w-2.5 text-slate-300" />{" "}
-                          {item.owner_name}
-                        </div>
+                      <td className="px-5 py-3">
+                        <div className="font-bold text-slate-800 text-xs">{item.outlet_name}</div>
+                        <div className="text-[10px] font-medium text-slate-500">{item.owner_name}</div>
                       </td>
-                      <td className="p-7">
-                        <div className="max-w-[200px]">
-                           <p className="font-black text-slate-700 uppercase tracking-tighter truncate">
-                             {item.item_names}
-                           </p>
-                        </div>
+                      <td className="px-5 py-3">
+                        <Badge variant="outline" className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-slate-200 bg-slate-50">
+                          {item.item_names}
+                        </Badge>
                       </td>
-                      <td className="p-7 text-center">
-                        <div className="bg-blue-50/50 py-2 px-4 rounded-2xl border border-blue-100/50 inline-flex flex-col items-center shadow-sm">
-                           <span className="font-black text-blue-600 italic text-[13px]">
-                             Rp {item.ha_total?.toLocaleString("id-ID") || 0}
-                           </span>
-                        </div>
+                      <td className="px-5 py-3 text-right font-bold text-slate-900 text-xs">
+                        Rp {item.ha_total.toLocaleString("id-ID")}
                       </td>
-                      <td className="p-7">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 w-fit">
-                            {item.ha_metode_bayar === "TRANSFER" ? (
-                              <ArrowRightLeft className="h-3 w-3 text-blue-500" />
-                            ) : item.ha_metode_bayar === "MIDTRANS" ? (
-                              <CreditCard className="h-3 w-3 text-amber-500" />
-                            ) : (
-                              <Badge className="h-3 w-3 p-0 rounded-full bg-orange-500" />
-                            )}
-                            <span className="font-black uppercase text-slate-600 tracking-tighter text-[11px]">
-                              {item.ha_metode_bayar}
-                            </span>
-                          </div>
-                          <Badge
-                            className={cn(
-                              "rounded-full px-5 py-1 font-black uppercase border text-[10px]",
-                              getStatusStyle(item.ha_status),
-                            )}
-                          >
-                            {item.ha_status.replace("_", " ")}
-                          </Badge>
-                        </div>
+                      <td className="px-5 py-3 text-center">
+                        <Badge className={cn("rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none", status.class)}>
+                          {status.label}
+                        </Badge>
                       </td>
-                      <td className="p-7 text-right">
+                      <td className="px-5 py-3 text-right">
                         <Button
-                          size="icon"
                           variant="ghost"
-                          className="h-11 w-11 rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
-                          onClick={() => {
-                            setSelectedTrx(item);
-                            setIsPreviewOpen(true);
-                          }}
+                          size="sm"
+                          onClick={() => { setSelectedTrx(item); setIsPreviewOpen(true); }}
+                          className="h-7 px-2 font-bold text-[9px] uppercase text-primary hover:bg-primary/5 gap-1"
                         >
-                          <ChevronRight className="h-6 w-6" />
+                          Details <ChevronRight className="h-3 w-3" />
                         </Button>
                       </td>
                     </tr>
                   );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
-      {/* DETAIL MODAL */}
+      {/* OPERATIONAL DETAIL MODAL */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="rounded-xl p-0 border-none max-w-lg bg-white overflow-hidden shadow-2xl">
-          <VisuallyHidden.Root>
-            <DialogTitle>Detail Transaksi Addon</DialogTitle>
-          </VisuallyHidden.Root>
+        <DialogContent className="max-w-md p-0 overflow-hidden border border-slate-200 rounded-lg shadow-xl bg-white">
+          <VisuallyHidden.Root><DialogTitle>Transaction Detail</DialogTitle></VisuallyHidden.Root>
+          
+          <div className="p-4 border-b border-slate-100 bg-white">
+            <div className="flex items-center justify-between mb-3">
+              <Badge variant="outline" className="font-bold text-[9px] uppercase tracking-wider text-slate-400 border-slate-200">
+                {selectedTrx?.ha_id}
+              </Badge>
+              <span className="text-[9px] font-medium text-slate-400 uppercase">{selectedTrx && formatDateTime(selectedTrx.ha_created).display}</span>
+            </div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading">
+              {selectedTrx?.item_names}
+            </h3>
+            <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+              <Store className="h-3 w-3" /> {selectedTrx?.outlet_name}
+            </p>
+          </div>
 
-          <div className="p-5 space-y-8">
-            <div className="flex items-center gap-4">
-              <div className="p-4 bg-slate-900 rounded-[22px] shadow-xl">
-                <ShieldCheck className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-black uppercase text-slate-800 tracking-tighter leading-none mb-1 text-[16px]">
-                  Portal <span className="text-blue-600">Validasi</span>
-                </h3>
-                <div className="flex items-center gap-2">
-                  <span className="font-black text-slate-400 uppercase tracking-widest italic text-[11px]">
-                    {selectedTrx?.ha_id}
-                  </span>
-                  {selectedTrx && (
-                    <Badge
-                      variant="outline"
-                      className="font-black uppercase border-slate-100 text-slate-400 text-[10px]"
-                    >
-                      {formatDateTime(selectedTrx.ha_created).display}
-                    </Badge>
+          <div className="p-4 space-y-4 bg-slate-50/30">
+            {/* PROOF OF PAYMENT SECTION */}
+            {selectedTrx?.ha_metode_bayar === "TRANSFER" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Payment Evidence</label>
+                  {selectedTrx.ha_bukti && (
+                    <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-600">
+                      <Check className="h-3 w-3" /> Proof Uploaded
+                    </div>
                   )}
+                </div>
+
+                {selectedTrx.ha_bukti ? (
+                   <div className="group relative aspect-video rounded border border-slate-200 overflow-hidden bg-slate-200">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`${API_URL}${selectedTrx.ha_bukti}`} className="w-full h-full object-cover" alt="Proof" />
+                      <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                        <a href={`${API_URL}${selectedTrx.ha_bukti}`} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded font-bold text-[10px] flex items-center gap-2">
+                          <ExternalLink className="h-3 w-3" /> Fullscreen
+                        </a>
+                      </div>
+                   </div>
+                ) : (
+                  <div className="aspect-video rounded bg-slate-100 border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
+                    <Clock className="h-6 w-6 mb-1 opacity-30" />
+                    <p className="text-[9px] font-bold uppercase tracking-widest">Awaiting Upload</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TRANSACTION SUMMARY */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-3 bg-white border border-slate-200 rounded">
+                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Method</p>
+                <div className="font-bold text-xs text-slate-700 flex items-center gap-1.5 uppercase">
+                  {selectedTrx?.ha_metode_bayar === 'TRANSFER' ? <ArrowRightLeft className="h-3 w-3" /> : <CreditCard className="h-3 w-3" />}
+                  {selectedTrx?.ha_metode_bayar}
+                </div>
+              </div>
+              <div className="p-3 bg-white border border-slate-200 rounded">
+                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Amount</p>
+                <div className="font-bold text-xs text-primary">
+                  Rp {selectedTrx?.ha_total.toLocaleString("id-ID")}
                 </div>
               </div>
             </div>
-
-            {selectedTrx && (
-              <div className="space-y-6">
-                {/* 🚀 BUKTI PEMBAYARAN: Hanya muncul jika BUKAN Midtrans & Koin */}
-                {selectedTrx.ha_metode_bayar === "TRANSFER" && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between px-2">
-                      <label className="font-black uppercase text-slate-400 tracking-widest text-[10px]">
-                        Bukti Pembayaran
-                      </label>
-                      {selectedTrx.ha_bukti && (
-                        <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 font-black italic tracking-widest text-[10px]">
-                          Bukti Tersedia
-                        </Badge>
-                      )}
-                    </div>
-
-                    {selectedTrx.ha_bukti ? (
-                      <div className="group relative aspect-[4/3] rounded-[35px] overflow-hidden border-[6px] border-slate-50 shadow-xl transition-all duration-500 hover:scale-[1.02]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={`${API_URL}${selectedTrx.ha_bukti}`}
-                          className="w-full h-full object-cover"
-                          alt="payment-proof"
-                        />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <a
-                            href={`${API_URL}${selectedTrx.ha_bukti}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="bg-white text-black px-6 py-3 rounded-2xl font-black uppercase flex items-center gap-2 shadow-2xl transition-transform active:scale-90 text-[11px]"
-                          >
-                            <ExternalLink className="h-4 w-4" /> Lihat Ukuran
-                            Penuh
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="aspect-[4/3] rounded-[35px] bg-slate-50 border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-slate-300">
-                        <Clock className="h-10 w-10 mb-2 opacity-20" />
-                        <span className="font-black uppercase tracking-widest italic text-[11px]">
-                          Menunggu Bukti Pembayaran
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* INFO RINGKASAN */}
-                <div className="space-y-4">
-                  <div className="p-6 bg-slate-50 rounded-[30px] border border-slate-100">
-                     <span className="font-black text-slate-400 uppercase mb-2 text-[10px] block">
-                        Item / Layanan
-                     </span>
-                     <p className="font-black text-slate-800 uppercase tracking-tight leading-relaxed">
-                        {selectedTrx.item_names}
-                     </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-6 bg-slate-50 rounded-[30px] border border-slate-100 flex flex-col justify-center items-center text-center">
-                      <span className="font-black text-slate-400 uppercase mb-1 text-[10px]">
-                        Metode
-                      </span>
-                      <span className="font-black uppercase text-slate-700 italic tracking-tighter text-[13px]">
-                        {selectedTrx.ha_metode_bayar}
-                      </span>
-                    </div>
-                    <div className="p-6 bg-blue-50/50 rounded-[30px] border border-blue-100 flex flex-col justify-center items-center text-center">
-                      <span className="font-black text-blue-600 uppercase mb-1 text-[10px]">
-                        Total Bayar
-                      </span>
-                      <span className="font-black text-blue-600 italic text-[13px]">
-                        Rp {selectedTrx.ha_total?.toLocaleString("id-ID") || 0}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
-          <div className="p-5 bg-slate-50 flex flex-col gap-4 border-t border-slate-100">
-            {selectedTrx?.ha_status === "PENDING" || selectedTrx?.ha_status === "PENDING_VALIDATION" ? (
-              <div className="flex gap-4">
-                 <Button
-                    disabled={confirming || !selectedTrx.ha_bukti}
-                    onClick={() => handleApprove(selectedTrx.ha_id)}
-                    className="flex-1 h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase text-[12px] shadow-lg shadow-emerald-200 transition-all active:scale-95 gap-2"
-                  >
-                    <Check className="h-5 w-5" /> Konfirmasi Lunas
-                  </Button>
-                  <Button
-                    disabled={confirming}
-                    variant="outline"
-                    onClick={() => handleReject(selectedTrx.ha_id)}
-                    className="flex-1 h-14 rounded-2xl bg-white border-rose-100 text-rose-500 hover:bg-rose-50 font-black uppercase text-[12px] transition-all active:scale-95"
-                  >
-                    Tolak Bukti
-                  </Button>
+          <div className="p-4 bg-white border-t border-slate-100 flex flex-col gap-2">
+            {selectedTrx?.ha_status === "PENDING_VALIDATION" || selectedTrx?.ha_status === "PENDING" ? (
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  disabled={confirming || !selectedTrx.ha_bukti}
+                  onClick={() => handleApprove(selectedTrx.ha_id)}
+                  className="h-10 rounded font-bold text-[10px] uppercase tracking-wider"
+                >
+                  {confirming ? <LoaderIcon className="h-4 w-4 animate-spin" /> : "Approve"}
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={confirming}
+                  onClick={() => handleReject(selectedTrx.ha_id)}
+                  className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-rose-600 border-slate-200"
+                >
+                  Reject
+                </Button>
               </div>
             ) : (
-              <div className="flex items-center justify-center p-4 bg-white rounded-2xl border border-slate-100">
-                 <p className="font-black text-slate-300 uppercase tracking-widest text-[11px] italic">
-                   Transaksi Berstatus {selectedTrx?.ha_status}
+              <div className="p-2.5 bg-slate-50 rounded border border-slate-100 text-center">
+                 <p className="text-[9px] font-bold uppercase text-slate-400 tracking-widest italic">
+                   Transaction Final: {selectedTrx?.ha_status}
                  </p>
               </div>
             )}
-            
-            <p className="text-[10px] text-center font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              Tindakan ini akan mempengaruhi akses fitur <br />
-              langsung ke akun tenant terkait secara realtime.
+            <p className="text-[8px] text-center font-medium text-slate-400 italic">
+               Affects tenant access immediately.
             </p>
           </div>
         </DialogContent>

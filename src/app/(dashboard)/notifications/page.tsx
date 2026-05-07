@@ -17,6 +17,11 @@ import {
   Store,
   Users,
   X,
+  Send,
+  ExternalLink,
+  ChevronRight,
+  FilterX,
+  Sparkles,
 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { id } from "date-fns/locale";
@@ -38,6 +43,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import api from "@/lib/api-client";
+import StatCard from "@/components/modules/dashboard/stat-card";
+import { cn } from "@/lib/utils";
+import { VisuallyHidden } from "radix-ui";
 
 type NotificationLog = {
   id: string;
@@ -86,7 +94,7 @@ export default function NotificationsPage() {
       if (resLogs.data.status) setLogs(resLogs.data.data || []);
       if (resTenants.data.status) setTenants(resTenants.data.data || []);
     } catch {
-      toast.error("Gagal memuat riwayat notifikasi");
+      toast.error("Failed to load notification history");
     } finally {
       setLoading(false);
     }
@@ -99,14 +107,10 @@ export default function NotificationsPage() {
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
       const q = search.toLowerCase();
-      const matchesSearch =
-        log.judul?.toLowerCase().includes(q) ||
-        log.pesan?.toLowerCase().includes(q);
+      const matchesSearch = log.judul?.toLowerCase().includes(q) || log.pesan?.toLowerCase().includes(q);
       const matchesCategory = category === "ALL" || log.kategori === category;
-      const matchesOutlet =
-        outlet === "ALL" || log.receiver_names?.includes(outlet);
-      const matchesDate =
-        !date || isSameDay(new Date(log.created_at), new Date(date));
+      const matchesOutlet = outlet === "ALL" || log.receiver_names?.includes(outlet);
+      const matchesDate = !date || isSameDay(new Date(log.created_at), new Date(date));
       return matchesSearch && matchesCategory && matchesOutlet && matchesDate;
     });
   }, [logs, search, category, outlet, date]);
@@ -118,7 +122,7 @@ export default function NotificationsPage() {
       info: logs.filter((log) => log.kategori === "INFO").length,
       read: logs.reduce((sum, log) => sum + (Number(log.total_read) || 0), 0),
     }),
-    [logs],
+    [logs]
   );
 
   const fetchDetail = async (log: NotificationLog) => {
@@ -129,7 +133,7 @@ export default function NotificationsPage() {
       const res = await api.get(`/notifications/logs/${log.id}`);
       if (res.data.status) setReceivers(res.data.data || []);
     } catch {
-      toast.error("Gagal memuat detail log");
+      toast.error("Failed to fetch delivery details");
     } finally {
       setLoadingDetail(false);
     }
@@ -143,106 +147,99 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-10">
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="rounded-2xl bg-orange-50 p-4">
-            <Megaphone className="h-7 w-7 text-[#FF4500]" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black tracking-tight text-slate-900">
-              Siaran Notifikasi
-            </h2>
-            <p className="text-sm font-medium text-slate-400">
-              Riwayat broadcast dan status baca setiap outlet.
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* COMMAND BAR HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
+            <Megaphone className="h-5 w-5 text-primary" />
+            Communication Hub
+          </h1>
+          <p className="text-xs font-medium text-slate-500">
+            Broadcast messages and monitor read status across the ecosystem.
+          </p>
         </div>
-        <Button asChild className="h-11 rounded-xl bg-slate-900 font-black">
-          <Link href="/notifications/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Buat Broadcast
-          </Link>
-        </Button>
+
+        <div className="flex items-center gap-2">
+           <Button asChild size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
+              <Link href="/notifications/new">
+                <Send className="h-3.5 w-3.5" /> Dispatch New
+              </Link>
+           </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Total" value={stats.total} />
-        <StatCard label="Promo" value={stats.promo} />
-        <StatCard label="Informasi" value={stats.info} />
-        <StatCard label="Dibaca" value={stats.read} />
+      {/* METRICS GRID */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Campaigns Sent" value={loading ? "..." : stats.total} icon={Megaphone} />
+        <StatCard label="Promo" value={loading ? "..." : stats.promo} icon={Sparkles} />
+        <StatCard label="Info" value={loading ? "..." : stats.info} icon={Bell} />
+        <StatCard label="Impressions" value={loading ? "..." : stats.read} icon={MailOpen} />
       </div>
 
-      <Card className="p-4">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300" />
+      {/* FILTER COMMAND BAR */}
+      <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
+        <div className="flex flex-col xl:flex-row xl:items-center gap-1">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
+              placeholder="Filter by title or content..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari judul atau pesan..."
-              className="h-11 rounded-xl bg-slate-50 pl-11"
+              className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
             />
           </div>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="h-11 rounded-xl bg-slate-50 xl:w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Semua kategori</SelectItem>
-              <SelectItem value="INFO">Informasi</SelectItem>
-              <SelectItem value="PROMO">Promo</SelectItem>
-              <SelectItem value="SISTEM">Sistem</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={outlet} onValueChange={setOutlet}>
-            <SelectTrigger className="h-11 rounded-xl bg-slate-50 xl:w-56">
-              <Store className="mr-2 h-4 w-4 text-slate-400" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Semua outlet</SelectItem>
-              {tenants.map((tenant) => (
-                <SelectItem key={tenant.ot_id} value={tenant.ot_nama}>
-                  {tenant.ot_nama}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="relative">
-            <CalendarIcon className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="date"
-              className="h-11 rounded-xl border border-slate-100 bg-slate-50 pl-11 pr-4 text-sm font-bold outline-none xl:w-44"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
-          {(search || category !== "ALL" || outlet !== "ALL" || date) && (
+          
+          <div className="h-5 w-px bg-slate-100 hidden xl:block" />
+
+          <div className="flex flex-wrap items-center gap-1 p-1 xl:p-0">
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="h-8 font-bold text-[10px] border-none shadow-none focus:ring-0 w-36 gap-2">
+                <SelectValue placeholder="Categories" />
+              </SelectTrigger>
+              <SelectContent className="rounded-md">
+                <SelectItem value="ALL" className="text-xs font-bold">All Categories</SelectItem>
+                <SelectItem value="INFO" className="text-xs font-bold">Information</SelectItem>
+                <SelectItem value="PROMO" className="text-xs font-bold">Promotions</SelectItem>
+                <SelectItem value="SISTEM" className="text-xs font-bold">System Alerts</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="h-4 w-px bg-slate-100" />
+
+            <Select value={outlet} onValueChange={setOutlet}>
+              <SelectTrigger className="h-8 font-bold text-[10px] border-none shadow-none focus:ring-0 w-44 gap-2">
+                <Store className="h-3 w-3 opacity-40" />
+                <SelectValue placeholder="Outlets" />
+              </SelectTrigger>
+              <SelectContent className="rounded-md">
+                <SelectItem value="ALL" className="text-xs font-bold">All Outlets</SelectItem>
+                {tenants.map(t => (
+                  <SelectItem key={t.ot_id} value={t.ot_nama} className="text-xs font-bold">{t.ot_nama}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Button
-              onClick={resetFilters}
               variant="ghost"
-              className="h-11 rounded-xl text-rose-500 hover:bg-rose-50"
+              size="icon"
+              onClick={resetFilters}
+              className="h-8 w-8 text-slate-400 hover:text-rose-600"
             >
-              <X className="mr-2 h-4 w-4" />
-              Reset
+              <FilterX className="h-3.5 w-3.5" />
             </Button>
-          )}
+          </div>
         </div>
       </Card>
 
-      <Card className="overflow-hidden p-0">
+      {/* BROADCAST LOGS */}
+      <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white min-h-[400px] shadow-none">
         {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-[#FF4500]" />
-          </div>
+          <div className="p-20 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : filteredLogs.length === 0 ? (
-          <div className="flex h-64 flex-col items-center justify-center text-center">
-            <FileText className="mb-3 h-8 w-8 text-slate-300" />
-            <p className="font-black text-slate-700">Belum ada riwayat</p>
-            <p className="text-sm text-slate-400">
-              Broadcast yang terkirim akan muncul di sini.
-            </p>
+          <div className="py-24 text-center">
+            <FileText className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No history found</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -251,72 +248,55 @@ export default function NotificationsPage() {
               const totalRead = Number(log.total_read) || 0;
               const percent = totalTarget ? (totalRead / totalTarget) * 100 : 0;
               return (
-                <div
-                  key={log.id}
-                  className="grid grid-cols-1 gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-center"
-                >
-                  <div className="flex min-w-0 gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-[#FF4500]">
-                      {log.kategori === "SISTEM" ? (
-                        <ShieldAlert className="h-5 w-5" />
-                      ) : (
-                        <Bell className="h-5 w-5" />
-                      )}
+                <div key={log.id} className="p-4 hover:bg-primary/[0.01] transition-all duration-300 flex flex-col lg:flex-row lg:items-center gap-4 group/item">
+                  <div className="flex-1 flex gap-4">
+                    <div className="h-10 w-10 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 group-hover/item:bg-primary/5 group-hover/item:text-primary group-hover/item:border-primary/20 group-hover/item:scale-105 transition-all duration-300">
+                      {log.kategori === "SISTEM" ? <ShieldAlert className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
                     </div>
-                    <div className="min-w-0 space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className="bg-orange-50 text-[#FF4500]">
-                          {log.kategori}
-                        </Badge>
-                        <span className="text-xs font-bold text-slate-400">
-                          {format(new Date(log.created_at), "dd MMM yyyy, HH:mm", {
-                            locale: id,
-                          })}
-                        </span>
-                      </div>
-                      <h3 className="truncate font-black text-slate-900">
-                        {log.judul}
-                      </h3>
-                      <p className="line-clamp-2 text-sm text-slate-500">
-                        {log.pesan}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <InfoPill
-                          icon={<Users className="h-3.5 w-3.5" />}
-                          text={
-                            totalTarget >= tenants.length
-                              ? "Seluruh outlet"
-                              : log.receiver_names || "Outlet spesifik"
-                          }
-                        />
-                        <InfoPill
-                          icon={<MailOpen className="h-3.5 w-3.5" />}
-                          text={`${totalRead}/${totalTarget} dibaca`}
-                        />
-                      </div>
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                       <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={cn(
+                            "rounded-full px-2 py-0 text-[8px] font-bold uppercase border shadow-none transition-colors",
+                            log.kategori === 'SISTEM' ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-indigo-50 text-indigo-600 border-indigo-100"
+                          )}>
+                             {log.kategori}
+                          </Badge>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                             {format(new Date(log.created_at), "dd/MM/yy, HH:mm")}
+                          </span>
+                       </div>
+                       <h3 className="font-bold text-slate-900 text-xs tracking-tight leading-none group-hover/item:text-primary transition-colors">{log.judul}</h3>
+                       <p className="text-[11px] text-slate-500 line-clamp-1 font-medium">{log.pesan}</p>
+                       <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                             <Users className="h-2.5 w-2.5 opacity-60" />
+                             {totalTarget >= tenants.length ? "Global" : "Segmented"}
+                          </div>
+                          <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                             <MailOpen className="h-2.5 w-2.5 opacity-60" />
+                             {totalRead}/{totalTarget} <span className="text-[8px] font-medium opacity-50 ml-0.5">Impressions</span>
+                          </div>
+                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 lg:justify-end">
-                    <div className="hidden min-w-28 md:block">
-                      <div className="mb-2 flex justify-between text-[10px] font-black uppercase text-slate-400">
-                        <span>Read</span>
-                        <span>{Math.round(percent)}%</span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className="h-full rounded-full bg-slate-900"
-                          style={{ width: `${percent}%` }}
-                        />
-                      </div>
+                  <div className="lg:w-56 flex items-center gap-4 justify-between lg:justify-end">
+                    <div className="flex-1 lg:max-w-24 space-y-1.5">
+                       <div className="flex items-center justify-between text-[8px] font-bold uppercase text-slate-400 tracking-widest">
+                          <span>Read Rate</span>
+                          <span className={cn(percent > 50 ? "text-emerald-500" : "text-slate-500")}>{Math.round(percent)}%</span>
+                       </div>
+                       <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary group-hover/item:bg-primary/80 transition-all duration-500 ease-out" style={{ width: `${percent}%` }} />
+                       </div>
                     </div>
                     <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => fetchDetail(log)}
-                      variant="outline"
-                      className="h-11 rounded-xl font-black"
+                      className="h-8 px-2 font-bold text-[9px] uppercase text-primary hover:bg-primary/5 gap-1 active:scale-95 transition-all"
                     >
-                      <Eye className="mr-2 h-4 w-4" />
-                      Detail
+                      Audit Log <ChevronRight className="h-3 w-3 group-hover/item:translate-x-0.5 transition-transform" />
                     </Button>
                   </div>
                 </div>
@@ -326,99 +306,57 @@ export default function NotificationsPage() {
         )}
       </Card>
 
+      {/* AUDIT DIALOG */}
       <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
-        <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-w-4xl">
-          <DialogTitle className="sr-only">Detail Pengiriman Pesan</DialogTitle>
-          <div className="bg-slate-900 p-7 text-white">
-            <Badge className="mb-3 bg-white/10 text-white">
-              {selectedLog?.kategori}
-            </Badge>
-            <h3 className="text-2xl font-black tracking-tight">
-              {selectedLog?.judul}
-            </h3>
-            <p className="mt-2 text-xs font-bold uppercase tracking-widest text-white/40">
-              {selectedLog &&
-                format(new Date(selectedLog.created_at), "dd MMMM yyyy, HH:mm", {
-                  locale: id,
-                })}
-            </p>
-          </div>
-          <div className="grid max-h-[65vh] grid-cols-1 gap-6 overflow-y-auto p-7 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="space-y-3">
-              <p className="text-xs font-black uppercase tracking-widest text-slate-400">
-                Isi Pesan
+        <DialogContent className="max-w-2xl p-0 overflow-hidden border border-slate-200 rounded-lg shadow-xl bg-white">
+           <VisuallyHidden.Root><DialogTitle>Campaign Audit</DialogTitle></VisuallyHidden.Root>
+           <div className="p-4 border-b border-slate-100 bg-slate-900 text-white">
+              <Badge className="bg-primary/20 text-primary border-none font-bold text-[8px] uppercase mb-2">{selectedLog?.kategori}</Badge>
+              <h3 className="text-base font-bold tracking-tight mb-0.5 font-heading">{selectedLog?.judul}</h3>
+              <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider italic">
+                 Dispatched: {selectedLog && format(new Date(selectedLog.created_at), "dd/MM/yy, HH:mm")}
               </p>
-              <div className="rounded-2xl bg-slate-50 p-5 text-sm leading-relaxed text-slate-600">
-                {selectedLog?.pesan}
+           </div>
+           
+           <div className="grid md:grid-cols-[1fr_1.2fr] gap-0">
+              <div className="p-4 space-y-3 border-r border-slate-100 bg-slate-50/30">
+                 <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Content</p>
+                 <div className="text-xs font-medium text-slate-600 leading-relaxed bg-white p-3 rounded border border-slate-100">
+                    {selectedLog?.pesan}
+                 </div>
               </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-400">
-                  Penerima
-                </p>
-                <Badge variant="outline">{receivers.length} outlet</Badge>
+              <div className="p-4 space-y-3 max-h-[350px] overflow-y-auto">
+                 <div className="flex items-center justify-between sticky top-0 bg-white pb-1.5 z-10">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Delivery Status</p>
+                    <Badge variant="outline" className="font-bold text-[8px] px-1 py-0">{receivers.length} Outlets</Badge>
+                 </div>
+                 {loadingDetail ? (
+                   <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+                 ) : (
+                   <div className="space-y-1.5">
+                     {receivers.map(r => (
+                        <div key={r.outlet_id} className="p-2.5 rounded border border-slate-100 bg-white flex items-center justify-between text-xs transition-colors hover:border-primary/20">
+                           <div className="space-y-0.5">
+                              <p className="font-bold text-slate-800 text-[11px]">{r.outlet_name}</p>
+                              <p className="text-[9px] text-slate-400 italic">
+                                 {r.read_at ? format(new Date(r.read_at), "dd/MM, HH:mm") : "Sent"}
+                              </p>
+                           </div>
+                           <Badge variant="outline" className={cn(
+                              "rounded px-1 py-0 text-[7px] font-bold uppercase border shadow-none",
+                              r.status === 1 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-200"
+                           )}>
+                              {r.status === 1 ? "Read" : "Sent"}
+                           </Badge>
+                        </div>
+                     ))}
+                   </div>
+                 )}
               </div>
-              {loadingDetail ? (
-                <div className="flex h-40 items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#FF4500]" />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {receivers.map((receiver) => (
-                    <div
-                      key={receiver.outlet_id}
-                      className="flex items-center justify-between rounded-2xl border border-slate-100 p-4"
-                    >
-                      <div>
-                        <p className="font-black text-slate-800">
-                          {receiver.outlet_name}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {receiver.read_at
-                            ? format(new Date(receiver.read_at), "dd MMM yyyy, HH:mm", {
-                                locale: id,
-                              })
-                            : "Belum dibaca"}
-                        </p>
-                      </div>
-                      <Badge
-                        className={
-                          receiver.status === 1
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-slate-100 text-slate-500"
-                        }
-                      >
-                        {receiver.status === 1 ? "Dibaca" : "Belum"}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+           </div>
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <Card className="gap-1 p-4">
-      <p className="text-xs font-black uppercase tracking-widest text-slate-400">
-        {label}
-      </p>
-      <p className="text-2xl font-black text-slate-900">{value}</p>
-    </Card>
-  );
-}
-
-function InfoPill({ icon, text }: { icon: ReactNode; text: string }) {
-  return (
-    <div className="flex max-w-72 items-center gap-2 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-500">
-      {icon}
-      <span className="truncate">{text}</span>
-    </div>
+    
   );
 }

@@ -10,6 +10,8 @@ import {
   ChevronRight,
   UserCheck,
   Activity,
+  Users,
+  ExternalLink,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,8 @@ import { ApiResponse } from "@/types/api";
 import { Owner } from "@/types/domain";
 import useSWR from "swr";
 import { apiFetcher } from "@/lib/fetcher";
+import { Badge } from "@/components/ui/badge";
+import TableSkeleton from "@/components/shared/table-skeleton";
 
 export default function OwnersPage() {
   const [search, setSearch] = useState("");
@@ -40,102 +44,85 @@ export default function OwnersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
+      {/* COMMAND BAR HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase">
-            Database <span className="text-[#FF4500]">Owner</span>
-          </h2>
-          <p className="text-xs text-slate-500 font-bold italic">
-            Total {owners.length} pemilik akun terdaftar di platform.
+        <div className="space-y-0.5">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
+            <Users className="h-5 w-5 text-primary" />
+            Owners Directory
+          </h1>
+          <p className="text-xs font-medium text-slate-500">
+            Database of account owners managing laundry outlets.
           </p>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Cari nama atau email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 w-full md:w-[300px] rounded-2xl border-orange-100 focus:ring-[#FF4500]"
-          />
+        <div className="flex items-center gap-2">
+           <Badge variant="outline" className="h-8 px-3 rounded-md font-bold text-[10px] uppercase tracking-wider text-slate-500 border-slate-200 bg-white">
+              {owners.length} Total Accounts
+           </Badge>
         </div>
       </div>
 
-      {/* Table Section */}
-      <Card className="border-none shadow-sm rounded-[32px] overflow-hidden bg-white min-h-[500px]">
+      {/* SEARCH COMMAND BAR */}
+      <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+          <Input
+            placeholder="Search owners by name or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
+          />
+        </div>
+      </Card>
+
+      {/* OPERATIONAL DATA TABLE */}
+      <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white min-h-[400px]">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-50/50">
-              <tr>
-                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                  Profil Owner
-                </th>
-                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                  Total Outlet
-                </th>
-                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                  Status Akun
-                </th>
-                <th className="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">
-                  Aksi
-                </th>
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-200">
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Owner Profile</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Portfolio</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Verification</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td colSpan={4} className="p-6">
-                      <div className="h-10 bg-slate-50 rounded-2xl w-full" />
-                    </td>
-                  </tr>
-                ))
+                <TableSkeleton columns={4} rows={10} />
               ) : filteredOwners.length > 0 ? (
                 filteredOwners.map((owner) => (
-                  <tr
-                    key={owner.id}
-                    className="hover:bg-orange-50/20 transition-colors group"
-                  >
-                    <td className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-orange-100 group-hover:text-[#FF4500] transition-colors">
-                          <UserCircle className="h-7 w-7" />
+                  <tr key={owner.id} className="hover:bg-slate-50/30 transition-colors">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 bg-slate-50 rounded flex items-center justify-center text-slate-400 border border-slate-100">
+                          <UserCircle className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="font-black text-slate-800 uppercase leading-none mb-1 tracking-tight">
-                            {owner.name}
-                          </p>
-                          <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                            <Mail className="h-3 w-3 text-[#FF4500]" />{" "}
-                            {owner.email}
-                          </div>
+                          <p className="font-bold text-slate-900 text-xs">{owner.name}</p>
+                          <p className="text-[9px] font-medium text-slate-400">{owner.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="p-6">
-                      <div className="flex items-center gap-2 text-slate-700 font-black">
-                        <Store className="h-4 w-4 text-orange-400" />
-                        {owner.total_outlets || 0}{" "}
-                        <span className="text-[10px] text-slate-400 uppercase">
-                          Outlet
-                        </span>
+                    <td className="px-5 py-3 text-center">
+                      <div className="inline-flex items-center gap-1 font-bold text-slate-700 text-[10px]">
+                         {owner.total_outlets || 0} Outlets
                       </div>
                     </td>
-                    <td className="p-6">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase bg-green-50 text-green-600">
-                        <UserCheck className="h-3 w-3" /> Aktif
-                      </span>
+                    <td className="px-5 py-3 text-center">
+                      <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 shadow-none font-bold text-[8px] uppercase rounded px-1.5 py-0">
+                        Active
+                      </Badge>
                     </td>
-                    <td className="p-6 text-right">
+                    <td className="px-5 py-3 text-right">
                       <Link href={`/users/${owner.id}`}>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          className="rounded-xl border-orange-100 text-[#FF4500] hover:bg-[#FF4500] hover:text-white font-black text-[10px] gap-2 transition-all shadow-sm"
+                          className="h-7 px-2 font-bold text-[9px] uppercase text-primary hover:bg-primary/5"
                         >
-                          PROFIL
-                          <ChevronRight className="h-3.5 w-3.5" />
+                          View Profile <ExternalLink className="h-3 w-3 ml-1" />
                         </Button>
                       </Link>
                     </td>
@@ -143,13 +130,9 @@ export default function OwnersPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="p-32 text-center">
-                    <div className="flex flex-col items-center gap-3 text-slate-300">
-                      <Activity className="h-10 w-10 opacity-20" />
-                      <p className="text-xs font-black uppercase tracking-widest italic">
-                        Owner tidak ditemukan
-                      </p>
-                    </div>
+                  <td colSpan={4} className="py-24 text-center">
+                    <Activity className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No records found</p>
                   </td>
                 </tr>
               )}

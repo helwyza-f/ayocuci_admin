@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ContentBanner, contentService } from "@/services/content.service";
+import { cn } from "@/lib/utils";
 
 const API_ROOT =
   (process.env.NEXT_PUBLIC_API_URL || "https://api.ayocuci.id/api/v1").replace(
@@ -102,133 +103,148 @@ export default function DashboardContentPage() {
   };
 
   return (
-    <div className="space-y-6 pb-10">
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="rounded-2xl bg-orange-50 p-4">
-            <FileText className="h-7 w-7 text-[#FF4500]" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black tracking-tight text-slate-900">
-              Konten & Banner
-            </h2>
-            <p className="text-sm font-medium text-slate-400">
-              Daftar promo dan informasi yang tampil di beranda aplikasi.
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* COMMAND BAR HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
+            <FileText className="h-5 w-5 text-primary" />
+            Content & Banners
+          </h1>
+          <p className="text-xs font-medium text-slate-500">
+            Manage promotions and informational banners for the mobile app.
+          </p>
         </div>
-        <Button asChild className="h-11 rounded-xl bg-slate-900 font-black">
-          <Link href="/content/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Buat Konten
-          </Link>
-        </Button>
+
+        <div className="flex items-center gap-2">
+           <Button asChild size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
+              <Link href="/content/new">
+                <Plus className="h-3.5 w-3.5" /> Create New
+              </Link>
+           </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Total" value={stats.total} />
-        <StatCard label="Promo" value={stats.promo} />
-        <StatCard label="Informasi" value={stats.info} />
-        <StatCard label="Aktif" value={stats.active} />
+      {/* METRICS GRID */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Total Items" value={stats.total} />
+        <StatCard label="Promotions" value={stats.promo} />
+        <StatCard label="Information" value={stats.info} />
+        <StatCard label="Active Items" value={stats.active} />
       </div>
 
-      <Card className="p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300" />
+      {/* FILTER COMMAND BAR */}
+      <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
+        <div className="flex flex-col md:flex-row md:items-center gap-1">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari judul, ringkasan, atau isi..."
-              className="h-11 rounded-xl bg-slate-50 pl-11"
+              placeholder="Search by title or content..."
+              className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
             />
           </div>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="h-11 rounded-xl bg-slate-50 md:w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Semua kategori</SelectItem>
-              <SelectItem value="PROMO">Promo</SelectItem>
-              <SelectItem value="INFORMASI">Informasi</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-11 rounded-xl bg-slate-50 md:w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Semua status</SelectItem>
-              <SelectItem value="ACTIVE">Aktif</SelectItem>
-              <SelectItem value="INACTIVE">Nonaktif</SelectItem>
-            </SelectContent>
-          </Select>
+          
+          <div className="h-5 w-px bg-slate-100 hidden md:block" />
+
+          <div className="flex items-center gap-1 p-1 md:p-0">
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="h-8 font-bold text-[10px] border-none shadow-none focus:ring-0 w-36 gap-2">
+                <SelectValue placeholder="Categories" />
+              </SelectTrigger>
+              <SelectContent className="rounded-md">
+                <SelectItem value="ALL" className="text-xs font-bold">All Categories</SelectItem>
+                <SelectItem value="PROMO" className="text-xs font-bold">Promotions</SelectItem>
+                <SelectItem value="INFORMASI" className="text-xs font-bold">Information</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="h-4 w-px bg-slate-100" />
+
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="h-8 font-bold text-[10px] border-none shadow-none focus:ring-0 w-32 gap-2">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="rounded-md">
+                <SelectItem value="ALL" className="text-xs font-bold">All Status</SelectItem>
+                <SelectItem value="ACTIVE" className="text-xs font-bold">Active</SelectItem>
+                <SelectItem value="INACTIVE" className="text-xs font-bold">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </Card>
 
-      <Card className="overflow-hidden p-0">
+      {/* CONTENT LIST */}
+      <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white min-h-[400px] shadow-none">
         {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-[#FF4500]" />
+          <div className="p-20 flex justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex h-64 flex-col items-center justify-center text-center">
-            <FileText className="mb-3 h-8 w-8 text-slate-300" />
-            <p className="font-black text-slate-700">Belum ada konten</p>
-            <p className="text-sm text-slate-400">
-              Buat konten promo atau informasi dari tombol di atas.
-            </p>
+          <div className="py-24 text-center">
+            <FileText className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No content found</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
             {filtered.map((item) => (
               <div
                 key={item.id}
-                className="grid grid-cols-1 gap-4 p-4 md:grid-cols-[180px_minmax(0,1fr)_220px] md:items-center"
+                className="grid grid-cols-1 gap-4 p-4 md:grid-cols-[140px_minmax(0,1fr)_200px] md:items-center hover:bg-primary/[0.01] transition-all duration-300 group/item"
               >
-                <img
-                  src={`${API_ROOT}${item.image_url}`}
-                  alt={item.title}
-                  className="aspect-[16/9] w-full rounded-xl object-cover md:w-[180px]"
-                />
+                <div className="overflow-hidden rounded-md border border-slate-100 shadow-sm">
+                  <img
+                    src={`${API_ROOT}${item.image_url}`}
+                    alt={item.title}
+                    className="aspect-[16/9] w-full object-cover md:w-[140px] group-hover/item:scale-110 transition-transform duration-500"
+                  />
+                </div>
                 <div className="min-w-0 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className="bg-orange-50 text-[#FF4500]">
-                      {item.category === "PROMO" ? "Promo" : "Informasi"}
+                    <Badge variant="outline" className="rounded-full px-2 py-0 text-[8px] font-bold uppercase border-slate-200 bg-slate-50 text-slate-500">
+                      {item.category === "PROMO" ? "Promo" : "Info"}
                     </Badge>
-                    <Badge variant="outline">
-                      {item.is_active ? "Aktif" : "Nonaktif"}
+                    <Badge variant="outline" className={cn(
+                      "rounded-full px-2 py-0 text-[8px] font-bold uppercase border shadow-none transition-colors",
+                      item.is_active ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-200"
+                    )}>
+                      {item.is_active ? "Active" : "Inactive"}
                     </Badge>
                   </div>
-                  <h3 className="truncate text-base font-black text-slate-900">
+                  <h3 className="truncate text-sm font-bold text-slate-900 tracking-tight leading-none font-heading group-hover/item:text-primary transition-colors">
                     {item.title}
                   </h3>
-                  <p className="line-clamp-2 text-sm text-slate-500">
+                  <p className="line-clamp-1 text-[11px] text-slate-500 font-medium">
                     {item.summary || item.body}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 md:justify-end">
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => handleToggle(item.id)}
-                    className="rounded-xl"
+                    className={cn(
+                      "h-8 px-3 font-bold text-[9px] uppercase gap-1.5 active:scale-95 transition-all",
+                      item.is_active ? "text-slate-500 hover:text-amber-600 hover:bg-amber-50" : "text-emerald-600 hover:bg-emerald-50"
+                    )}
                   >
-                    <Eye className="mr-2 h-4 w-4" />
-                    {item.is_active ? "Nonaktif" : "Aktif"}
+                    <Eye className="h-3 w-3" />
+                    {item.is_active ? "Deactivate" : "Activate"}
                   </Button>
-                  <Button asChild size="sm" variant="outline" className="rounded-xl">
+                  <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-primary active:scale-95 transition-all border border-transparent hover:border-slate-100">
                     <Link href={`/content/${item.id}/edit`}>
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-3.5 w-3.5" />
                     </Link>
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => handleDelete(item.id)}
-                    className="rounded-xl text-red-500 hover:text-red-600"
+                    className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600 active:scale-95 transition-all border border-transparent hover:border-rose-100"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
@@ -242,11 +258,11 @@ export default function DashboardContentPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <Card className="gap-1 p-4">
-      <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+    <Card className="gap-1 p-4 border border-slate-200 shadow-none hover:border-primary/20 hover:shadow-sm transition-all duration-300 group">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-slate-500 transition-colors">
         {label}
       </p>
-      <p className="text-2xl font-black text-slate-900">{value}</p>
+      <p className="text-xl font-bold text-slate-900 font-heading group-hover:text-primary transition-colors">{value}</p>
     </Card>
   );
 }

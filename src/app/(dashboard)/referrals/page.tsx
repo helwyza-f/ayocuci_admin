@@ -10,6 +10,14 @@ import {
   Save,
   Users2,
   Wallet2,
+  TrendingUp,
+  History,
+  ExternalLink,
+  ChevronRight,
+  UserCheck,
+  AlertCircle,
+  Activity,
+  Coins,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -23,6 +31,7 @@ import {
   ReferralAdminSummary,
 } from "@/types/domain";
 import { referralAdminService } from "@/services/referral-admin.service";
+import StatCard from "@/components/modules/dashboard/stat-card";
 
 const statusOptions = ["all", "pending", "approved", "process", "done"] as const;
 type ReferralStatusFilter = (typeof statusOptions)[number];
@@ -77,7 +86,7 @@ export default function ReferralAdminPage() {
         );
       }
     } catch {
-      toast.error("Gagal memuat data referral");
+      toast.error("Failed to load referral ecosystem data");
     } finally {
       setLoading(false);
     }
@@ -87,41 +96,15 @@ export default function ReferralAdminPage() {
     loadData(filter);
   }, [filter, loadData]);
 
-  const cards = useMemo(
-    () => [
-      {
-        label: "Reward per Owner",
-        value: currency(summary?.reward_per_owner || 0),
-        icon: Wallet2,
-      },
-      {
-        label: "Owner Berhasil Direkrut",
-        value: `${summary?.total_referrals || 0}`,
-        icon: Users2,
-      },
-      {
-        label: "Saldo Referral Terbit",
-        value: currency(summary?.total_rewards || 0),
-        icon: ArrowRightLeft,
-      },
-      {
-        label: "Payout Menunggu",
-        value: `${summary?.pending_count || 0} request`,
-        icon: Clock3,
-      },
-    ],
-    [summary],
-  );
-
   const handleSaveConfig = async () => {
-    if (!rawReward) return toast.error("Nominal reward wajib diisi");
+    if (!rawReward) return toast.error("Reward amount is required");
     setSavingConfig(true);
     try {
       await referralAdminService.updateConfig(rawReward);
-      toast.success("Nominal referral berhasil diperbarui");
+      toast.success("Referral reward parameter updated");
       await loadData(filter);
     } catch {
-      toast.error("Gagal memperbarui nominal referral");
+      toast.error("Failed to update referral configuration");
     } finally {
       setSavingConfig(false);
     }
@@ -134,10 +117,10 @@ export default function ReferralAdminPage() {
         status,
         admin_note: notes[id] || undefined,
       });
-      toast.success("Status payout berhasil diperbarui");
+      toast.success(`Payout status transitioned to ${status}`);
       await loadData(filter);
     } catch {
-      toast.error("Gagal memperbarui payout");
+      toast.error("Failed to transition payout status");
     } finally {
       setSavingPayoutId(null);
     }
@@ -150,224 +133,207 @@ export default function ReferralAdminPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-3xl font-black text-slate-800 tracking-tighter uppercase">
-          Referral <span className="text-[#FF4500]">Owner</span>
-        </h2>
-        <p className="text-xs text-slate-500 font-bold italic ml-1">
-          Atur kompensasi referral owner dan proses payout saldo referral.
-        </p>
+    <div className="space-y-6">
+      {/* COMMAND BAR HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Referral Economics
+          </h1>
+          <p className="text-xs font-medium text-slate-500">
+            Manage owner acquisition incentives and payout requests.
+          </p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-        {loading
-          ? Array.from({ length: 4 }).map((_, index) => (
-              <Card
-                key={index}
-                className="rounded-[30px] border-slate-100 p-6 shadow-sm"
-              >
-                <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
-              </Card>
-            ))
-          : cards.map((card, index) => (
-              <Card
-                key={index}
-                className="rounded-[30px] border-slate-100 p-6 shadow-sm"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                      {card.label}
-                    </span>
-                    <card.icon className="h-4 w-4 text-[#FF4500]" />
-                  </div>
-                  <p className="text-2xl font-black tracking-tight text-slate-800">
-                    {card.value}
-                  </p>
+      {/* METRICS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Reward / Acq"
+          value={loading ? "..." : currency(summary?.reward_per_owner || 0)}
+          icon={Wallet2}
+        />
+        <StatCard
+          label="Success Referrals"
+          value={loading ? "..." : summary?.total_referrals || 0}
+          icon={Users2}
+        />
+        <StatCard
+          label="Issued Rewards"
+          value={loading ? "..." : currency(summary?.total_rewards || 0)}
+          icon={Coins}
+        />
+        <StatCard
+          label="Pending Payouts"
+          value={loading ? "..." : summary?.pending_count || 0}
+          icon={Clock3}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6">
+        {/* CONFIGURATION SIDEBAR */}
+        <div className="space-y-4">
+           <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Engine Parameters</h3>
+           <Card className="p-4 border border-slate-200 shadow-none rounded-lg bg-white space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-primary">
+                   <Settings2 className="h-3.5 w-3.5" />
+                   <span className="text-[9px] font-bold uppercase tracking-wider">Global Reward</span>
                 </div>
-              </Card>
-            ))}
-      </div>
+                <p className="text-[10px] font-medium text-slate-500 leading-normal">
+                  IDR credit received for successful referrals.
+                </p>
+              </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-6">
-        <Card className="rounded-[32px] border-slate-100 p-7 shadow-sm">
-          <div className="space-y-6">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                Konfigurasi Reward
-              </p>
-              <h3 className="mt-2 text-xl font-black tracking-tight text-slate-800">
-                Saldo per owner baru
-              </h3>
-              <p className="mt-2 text-sm text-slate-500">
-                Nominal ini akan masuk ke saldo referral owner pengajak saat
-                owner baru berhasil registrasi memakai kode referral.
-              </p>
-            </div>
+              <div className="space-y-2 pt-3 border-t border-slate-50">
+                <label className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">Reward Value</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rp</span>
+                  <Input
+                    value={rawReward}
+                    onChange={(e) => setRawReward(e.target.value.replace(/[^0-9]/g, ""))}
+                    placeholder="25000"
+                    className="pl-8 h-9 rounded border-slate-200 font-bold text-base shadow-none"
+                  />
+                </div>
+              </div>
 
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                Nominal Rupiah
-              </label>
-              <Input
-                value={rawReward}
-                onChange={(e) =>
-                  setRawReward(e.target.value.replace(/[^0-9]/g, ""))
-                }
-                placeholder="25000"
-                className="h-12 rounded-2xl"
-              />
-              <p className="text-xs font-semibold text-slate-500">
-                Preview: {currency(rawReward || 0)}
-              </p>
-            </div>
+              <Button
+                onClick={handleSaveConfig}
+                disabled={savingConfig}
+                className="w-full h-9 rounded font-bold text-[10px] uppercase tracking-wider"
+              >
+                {savingConfig ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5 mr-2" />}
+                Update Incentive
+              </Button>
 
-            <div className="rounded-3xl bg-orange-50 p-4 text-sm text-slate-600">
-              Harga beli koin owner tetap mengikuti config `price_per_coin`.
-              Referral cash ini hanya menambah wallet referral, bukan langsung
-              koin.
-            </div>
+              <div className="p-3 rounded bg-slate-50 border border-slate-100 flex items-start gap-2">
+                 <AlertCircle className="h-3 w-3 text-slate-400 mt-0.5" />
+                 <p className="text-[9px] font-medium text-slate-500 leading-tight italic">
+                   Credited to Referral Wallet.
+                 </p>
+              </div>
+           </Card>
+        </div>
 
-            <Button
-              onClick={handleSaveConfig}
-              disabled={savingConfig}
-              className="h-12 w-full rounded-2xl bg-[#FF4500] hover:bg-[#e63f00]"
-            >
-              {savingConfig ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
-              Simpan Nominal
-            </Button>
-          </div>
-        </Card>
-
-        <Card className="rounded-[32px] border-slate-100 p-7 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                Referral Payout
-              </p>
-              <h3 className="mt-2 text-xl font-black tracking-tight text-slate-800">
-                Antrian payout owner
-              </h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {statusOptions.map((item) => (
-                <button
-                  key={item}
-                  onClick={() => setFilter(item)}
-                  className={cn(
-                    "rounded-full px-4 py-2 text-[10px] font-black uppercase transition-all",
-                    filter === item
-                      ? "bg-[#FF4500] text-white"
-                      : "bg-slate-100 text-slate-500",
-                  )}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
+        {/* PAYOUT QUEUE */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+             <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <History className="h-3.5 w-3.5" />
+                Verification Queue
+             </h3>
+             <div className="flex flex-wrap gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
+                {statusOptions.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => setFilter(item)}
+                    className={cn(
+                      "rounded px-2 h-7 text-[8px] font-bold uppercase transition-all tracking-tight",
+                      filter === item ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-500 hover:text-slate-700",
+                    )}
+                  >
+                    {item}
+                  </button>
+                ))}
+             </div>
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="space-y-3">
             {loading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-36 animate-pulse rounded-[28px] bg-slate-100"
-                />
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-32 bg-white border border-slate-200 rounded-lg animate-pulse" />
               ))
-            ) : payouts.length == 0 ? (
-              <div className="rounded-[28px] border border-dashed border-slate-200 p-10 text-center text-sm font-semibold text-slate-400">
-                Belum ada request payout pada filter ini.
+            ) : payouts.length === 0 ? (
+              <div className="py-24 text-center bg-white rounded-lg border border-dashed border-slate-200">
+                <Activity className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No requests found</p>
               </div>
             ) : (
               payouts.map((item) => (
-                <div
-                  key={item.rp_id}
-                  className="rounded-[28px] border border-slate-100 bg-slate-50/40 p-5"
-                >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-lg font-black text-slate-800">
-                          {item.usr_nama}
-                        </h4>
-                        <Badge className="rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-white uppercase">
-                          {item.rp_status}
-                        </Badge>
+                <Card key={item.rp_id} className="p-4 border border-slate-200 shadow-none rounded-lg bg-white overflow-hidden group hover:border-primary/20 hover:shadow-sm transition-all duration-300">
+                  <div className="flex flex-col xl:flex-row gap-4">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center justify-between">
+                         <div className="space-y-0.5">
+                            <h4 className="text-sm font-bold text-slate-900 tracking-tight group-hover:text-primary transition-colors">{item.usr_nama}</h4>
+                            <p className="text-[10px] font-medium text-slate-500">{item.usr_email}</p>
+                         </div>
+                         <Badge variant="outline" className={cn(
+                            "rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none transition-colors",
+                            item.rp_status === 'done' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-indigo-50 text-indigo-600 border-indigo-100"
+                         )}>
+                            {item.rp_status}
+                         </Badge>
                       </div>
-                      <p className="text-sm text-slate-500">{item.usr_email}</p>
-                      <p className="text-sm font-bold text-[#FF4500]">
-                        {currency(item.rp_amount)}
-                      </p>
-                      <div className="text-sm text-slate-600">
-                        {item.rp_bank_name} • {item.rp_account_number} • a.n{" "}
-                        {item.rp_account_name}
+
+                      <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-0.5">
+                            <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Settlement</p>
+                            <p className="text-base font-bold text-primary font-heading tracking-tight">{currency(item.rp_amount)}</p>
+                         </div>
+                         <div className="space-y-0.5">
+                            <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Bank Destination</p>
+                            <p className="text-[10px] font-bold text-slate-700 uppercase tracking-tight">
+                               {item.rp_bank_name} <span className="text-slate-300 mx-0.5">|</span> {item.rp_account_number}
+                            </p>
+                            <p className="text-[9px] font-medium text-slate-400 italic">a.n {item.rp_account_name}</p>
+                         </div>
                       </div>
-                      {item.rp_note ? (
-                        <p className="text-sm italic text-slate-500">
-                          Catatan owner: {item.rp_note}
-                        </p>
-                      ) : null}
+
+                      {item.rp_note && (
+                        <div className="p-2 bg-amber-50/20 border border-amber-100/50 rounded text-[10px] font-medium text-amber-700 italic group-hover:bg-amber-50/40 transition-colors">
+                          <span className="font-bold uppercase not-italic mr-1 text-[8px] opacity-60">Note:</span>
+                          "{item.rp_note}"
+                        </div>
+                      )}
                     </div>
 
-                    <div className="w-full max-w-sm space-y-3">
+                    <div className="xl:w-64 space-y-2 pt-4 xl:pt-0 xl:pl-4 xl:border-l border-slate-100">
                       <Textarea
                         value={notes[item.rp_id] || ""}
-                        onChange={(e) =>
-                          setNotes((prev) => ({
-                            ...prev,
-                            [item.rp_id]: e.target.value,
-                          }))
-                        }
-                        rows={3}
-                        placeholder="Catatan admin payout"
-                        className="rounded-2xl"
+                        onChange={(e) => setNotes((prev) => ({ ...prev, [item.rp_id]: e.target.value }))}
+                        rows={2}
+                        placeholder="Admin notes..."
+                        className="rounded text-[10px] font-medium border-slate-200 shadow-none bg-slate-50/20 focus:bg-white transition-all resize-none"
                       />
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <div className="flex flex-col gap-1.5">
                         {getNextStatuses(item.rp_status).map((status) => (
                           <Button
                             key={status}
-                            type="button"
-                            variant={status === "done" ? "default" : "outline"}
+                            size="sm"
                             disabled={savingPayoutId === item.rp_id}
-                            onClick={() =>
-                              handleUpdatePayout(item.rp_id, status)
-                            }
+                            onClick={() => handleUpdatePayout(item.rp_id, status)}
                             className={cn(
-                              "rounded-2xl font-black uppercase text-[10px]",
-                              status === "done" &&
-                                "bg-[#FF4500] hover:bg-[#e63f00]",
+                              "rounded font-bold uppercase text-[9px] tracking-widest h-8 active:scale-[0.98] transition-all",
+                              status === "done" ? "bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-100" : "bg-slate-900 hover:bg-black shadow-sm shadow-slate-200"
                             )}
                           >
-                            {savingPayoutId === item.rp_id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : status === "done" ? (
-                              <CheckCircle2 className="mr-2 h-4 w-4" />
-                            ) : (
-                              <Banknote className="mr-2 h-4 w-4" />
-                            )}
-                            {status}
+                            {savingPayoutId === item.rp_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronRight className="h-3 w-3 mr-1 group-hover:translate-x-0.5 transition-transform" />}
+                            To {status}
                           </Button>
                         ))}
-                        {getNextStatuses(item.rp_status).length === 0 ? (
-                          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-center text-[10px] font-black uppercase tracking-wide text-emerald-700">
-                            Payout selesai diproses
+                        {getNextStatuses(item.rp_status).length === 0 && (
+                          <div className="flex items-center justify-center gap-1.5 py-2 text-emerald-600 font-bold text-[9px] uppercase italic tracking-wider">
+                            <CheckCircle2 className="h-3 w-3" /> Fully Settled
                           </div>
-                        ) : null}
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
+                </Card>
               ))
             )}
           </div>
-        </Card>
+        </div>
       </div>
     </div>
+  );
+}
+
+function Settings2({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
   );
 }

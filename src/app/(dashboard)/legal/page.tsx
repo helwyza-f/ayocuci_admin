@@ -112,38 +112,40 @@ export default function LegalDocumentsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-10">
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="rounded-2xl bg-orange-50 p-4">
-            <FileText className="h-7 w-7 text-[#FF4500]" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black tracking-tight text-slate-900">
-              Terms & Privacy
-            </h2>
-            <p className="text-sm font-medium text-slate-400">
-              Kelola dokumen legal yang ditampilkan di aplikasi secara realtime.
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* COMMAND BAR HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
+            <FileText className="h-5 w-5 text-primary" />
+            Terms & Privacy
+          </h1>
+          <p className="text-xs font-medium text-slate-500">
+            Manage legal documents displayed in the mobile application.
+          </p>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={loading || saving}
-          className="h-11 rounded-xl bg-slate-900 font-black"
-        >
-          {saving ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 h-4 w-4" />
-          )}
-          Simpan Dokumen
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleSave}
+            disabled={loading || saving}
+            size="sm"
+            className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none"
+          >
+            {saving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
+            Save Changes
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <Card className="p-4">
-          <div className="space-y-3">
+        {/* SIDEBAR NAVIGATION */}
+        <Card className="p-2 border border-slate-200 shadow-none rounded-lg bg-white h-fit">
+          <div className="space-y-1">
             {typeOptions.map((item) => {
               const isActive = item.type === activeType;
               return (
@@ -151,14 +153,14 @@ export default function LegalDocumentsPage() {
                   key={item.type}
                   type="button"
                   onClick={() => setActiveType(item.type)}
-                  className={`w-full rounded-2xl border p-4 text-left transition ${
+                  className={`w-full rounded-md p-3 text-left transition-colors ${
                     isActive
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 bg-white text-slate-900 hover:border-slate-300"
+                      ? "bg-primary/5 text-primary border border-primary/10"
+                      : "bg-white text-slate-600 hover:bg-slate-50 border border-transparent"
                   }`}
                 >
-                  <p className="font-black">{item.label}</p>
-                  <p className={`mt-1 text-sm ${isActive ? "text-slate-200" : "text-slate-500"}`}>
+                  <p className="font-bold text-xs uppercase tracking-tight leading-none mb-1.5">{item.label}</p>
+                  <p className={`text-[10px] font-medium leading-normal ${isActive ? "text-primary/70" : "text-slate-400"}`}>
                     {item.helper}
                   </p>
                 </button>
@@ -167,59 +169,60 @@ export default function LegalDocumentsPage() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        {/* EDITOR SECTION */}
+        <Card className="p-5 border border-slate-200 shadow-none rounded-lg bg-white">
           {loading ? (
             <div className="flex h-80 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-[#FF4500]" />
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
             <div className="space-y-5">
-              <div>
-                <h3 className="text-xl font-black text-slate-900">
+              <div className="pb-4 border-b border-slate-50">
+                <h3 className="text-base font-bold text-slate-900 font-heading leading-none mb-1">
                   {activeMeta.label}
                 </h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Gunakan format ringan: awali judul section dengan `## ` agar app
-                  menampilkan blok per bagian. Baris lain akan ditampilkan sebagai
-                  isi teks biasa.
+                <p className="text-[10px] font-medium text-slate-400 italic">
+                  Markdown support enabled: Use `## ` for section headers.
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-400">
-                  Judul Halaman
-                </label>
-                <Input
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="h-12 rounded-xl bg-slate-50 font-bold"
-                  placeholder="Contoh: Syarat & Ketentuan"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">
+                    Display Title
+                  </label>
+                  <Input
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    className="h-9 rounded border-slate-200 font-bold text-xs shadow-none"
+                    placeholder="e.g. Terms of Service"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">
+                    Revision Label
+                  </label>
+                  <Input
+                    value={form.effective_label}
+                    onChange={(e) =>
+                      setForm({ ...form, effective_label: e.target.value })
+                    }
+                    className="h-9 rounded border-slate-200 font-medium text-xs shadow-none"
+                    placeholder="e.g. Effective: April 2026"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-400">
-                  Label Update
-                </label>
-                <Input
-                  value={form.effective_label}
-                  onChange={(e) =>
-                    setForm({ ...form, effective_label: e.target.value })
-                  }
-                  className="h-12 rounded-xl bg-slate-50"
-                  placeholder="Contoh: Terakhir diperbarui: April 2026"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase text-slate-400">
-                  Isi Dokumen
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">
+                  Document Content
                 </label>
                 <Textarea
                   value={form.body}
                   onChange={(e) => setForm({ ...form, body: e.target.value })}
-                  className="min-h-[460px] rounded-2xl bg-slate-50 p-5 font-mono text-sm leading-7"
-                  placeholder={"## Pendahuluan\nTulis isi dokumen di sini..."}
+                  className="min-h-[400px] rounded border-slate-200 p-4 font-mono text-[11px] leading-6 shadow-none bg-slate-50/30"
+                  placeholder={"## Introduction\nWrite document content here..."}
                 />
               </div>
             </div>

@@ -15,6 +15,10 @@ import {
   Zap,
   Percent,
   ArrowDownCircle,
+  Database,
+  PlusCircle,
+  History,
+  TrendingDown,
 } from "lucide-react";
 import { economyService } from "@/services/economy.service";
 import { toast } from "sonner";
@@ -35,28 +39,21 @@ export default function KoinPackagesPage() {
   const initData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Get Price Per Coin dari Configs
       const configRes = await economyService.getConfigs();
-
-      // 🛡️ Guard: Sinkronkan dengan struktur API { status: true, data: [...] }
       const configs: EconomyConfig[] = configRes.data.data || [];
 
       if (Array.isArray(configs)) {
-        const priceConfig = configs.find(
-          (c) => c.cfg_key === "price_per_coin",
-        );
+        const priceConfig = configs.find((c) => c.cfg_key === "price_per_coin");
         if (priceConfig) {
           setPricePerCoin(Number(priceConfig.cfg_value));
         }
       }
 
-      // 2. Get Packages
       const res = await economyService.getPackages();
       const incomingData: KoinPackage[] = res.data.data || [];
       setPackages(Array.isArray(incomingData) ? incomingData : []);
     } catch (err) {
-      console.error("Economy Sync Error:", err);
-      toast.error("Gagal sinkronisasi data ekonomi");
+      toast.error("Failed to sync economy data");
       setPackages([]);
     } finally {
       setLoading(false);
@@ -68,7 +65,7 @@ export default function KoinPackagesPage() {
   }, [initData]);
 
   const handleCreate = async () => {
-    if (!formData.jumlah_koin) return toast.error("Jumlah koin wajib diisi");
+    if (!formData.jumlah_koin) return toast.error("Coin quantity is required");
     try {
       const res = await economyService.createPackage({
         jumlah_koin: Number(formData.jumlah_koin),
@@ -76,28 +73,27 @@ export default function KoinPackagesPage() {
       });
 
       if (res.status === 200 || res.status === 201 || res.data?.status) {
-        toast.success("Paket koin berhasil dipublish!");
+        toast.success("Package published to ecosystem");
         setIsAdding(false);
         setFormData({ jumlah_koin: "", discount_pct: "" });
         initData();
       }
     } catch {
-      toast.error("Gagal menambah paket koin");
+      toast.error("Failed to publish package");
     }
   };
 
   const handleDelete = async (id: number) => {
     toast.promise(economyService.deletePackage(id), {
-      loading: "Sedang menghapus paket...",
+      loading: "Removing package...",
       success: () => {
         initData();
-        return "Paket berhasil dihapus";
+        return "Package removed";
       },
-      error: "Gagal menghapus paket",
+      error: "Deletion failed",
     });
   };
 
-  // --- HELPER CALCULATOR ---
   const calculatePricing = (koin: number, discountPct: number) => {
     const gross = koin * pricePerCoin;
     const saving = gross * (discountPct / 100);
@@ -118,214 +114,145 @@ export default function KoinPackagesPage() {
   };
 
   return (
-    <div className="space-y-8 pb-20 max-w-[1600px] mx-auto px-4 lg:px-0">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-10 rounded-[50px] border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-5">
-          <div className="p-5 bg-orange-50 rounded-[25px]">
-            <Coins className="h-8 w-8 text-[#FF4500]" />
-          </div>
-          <div>
-            <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter leading-none mb-2">
-              Koin <span className="text-[#FF4500]">Supply</span>
-            </h2>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">
-              Manajemen Opsi Paket Belanja Koin
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* COMMAND BAR HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
+            <Coins className="h-5 w-5 text-primary" />
+            Supply & Inventory
+          </h1>
+          <p className="text-xs font-medium text-slate-500">
+            Define coin purchase bundles and promotional bulk pricing.
+          </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="hidden xl:flex flex-col items-end mr-2 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
-            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
-              Base Rate
-            </span>
-            <span className="text-sm font-black text-[#FF4500] italic">
-              Rp {pricePerCoin.toLocaleString()}/Koin
-            </span>
-          </div>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="h-8 px-2 rounded font-bold text-[9px] uppercase tracking-wider text-slate-500 bg-white border-slate-200 shadow-none">
+             Base: Rp {pricePerCoin.toLocaleString()}/U
+          </Badge>
           <Button
             onClick={() => setIsAdding(!isAdding)}
-            className={cn(
-              "rounded-2xl h-14 px-8 font-black text-[12px] uppercase gap-3 transition-all active:scale-95 shadow-xl",
-              isAdding
-                ? "bg-slate-100 text-slate-500 hover:bg-slate-200 shadow-none border border-slate-200"
-                : "bg-slate-900 hover:bg-black text-white shadow-slate-200",
-            )}
+            variant={isAdding ? "outline" : "default"}
+            size="sm"
+            className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none"
           >
-            {isAdding ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Plus className="h-5 w-5" />
-            )}
-            {isAdding ? "Batal" : "Tambah Item Paket"}
+            {isAdding ? <X className="h-3.5 w-3.5" /> : <PlusCircle className="h-3.5 w-3.5" />}
+            {isAdding ? "Cancel" : "Create New"}
           </Button>
         </div>
       </div>
 
-      {/* FORM ADD PACKAGE */}
+      {/* OPERATIONAL FORM */}
       {isAdding && (
-        <Card className="p-10 rounded-[45px] border-none shadow-2xl shadow-orange-100/50 bg-white animate-in fade-in zoom-in duration-300">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest text-[11px]">
-                Kuantitas Koin
-              </label>
-              <div className="relative group">
-                <Coins className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-[#FF4500] transition-colors" />
+        <Card className="p-4 border border-slate-200 shadow-none rounded-lg bg-white animate-in slide-in-from-top-1 duration-200">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Quantity Units</label>
+              <div className="relative">
+                <Coins className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                 <Input
                   type="number"
-                  placeholder="Contoh: 1000"
+                  placeholder="e.g. 1000"
                   value={formData.jumlah_koin}
-                  onChange={(e) =>
-                    setFormData({ ...formData, jumlah_koin: e.target.value })
-                  }
-                  className="pl-14 h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-black text-[13px] focus-visible:ring-[#FF4500]/20 transition-all"
+                  onChange={(e) => setFormData({ ...formData, jumlah_koin: e.target.value })}
+                  className="pl-8 h-9 rounded border-slate-200 font-bold text-xs shadow-none"
                 />
               </div>
             </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest text-[11px]">
-                Diskon Berlaku (%)
-              </label>
-              <div className="relative group">
-                <Percent className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-[#FF4500] transition-colors" />
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Discount (%)</label>
+              <div className="relative">
+                <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                 <Input
                   type="number"
                   placeholder="0 - 100"
                   value={formData.discount_pct}
-                  onChange={(e) =>
-                    setFormData({ ...formData, discount_pct: e.target.value })
-                  }
-                  className="pl-14 h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-black text-[13px] focus-visible:ring-[#FF4500]/20 transition-all"
+                  onChange={(e) => setFormData({ ...formData, discount_pct: e.target.value })}
+                  className="pl-8 h-9 rounded border-slate-200 font-bold text-xs shadow-none"
                 />
               </div>
             </div>
             <Button
               onClick={handleCreate}
-              className="h-14 rounded-2xl bg-[#FF4500] hover:bg-orange-600 text-white font-black text-[11px] uppercase tracking-widest shadow-lg shadow-orange-100 transition-all"
+              className="h-9 rounded font-bold text-[10px] uppercase tracking-wider"
             >
-              Simpan & Sinkronkan
+              Publish Package
             </Button>
           </div>
         </Card>
       )}
 
       {/* PACKAGE GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {loading ? (
-          <div className="col-span-full py-40 text-center">
-            <RefreshCw className="h-12 w-12 animate-spin mx-auto text-orange-200 mb-6" />
-            <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em]">
-              Syncing Economy...
-            </p>
-          </div>
+          Array.from({ length: 4 }).map((_, i) => (
+             <div key={i} className="h-48 bg-white border border-slate-200 rounded-lg animate-pulse" />
+          ))
         ) : packages.length === 0 ? (
-          <div className="col-span-full py-40 text-center bg-slate-50/50 rounded-[60px] border-4 border-dashed border-slate-100">
-            <div className="p-8 bg-white rounded-full w-fit mx-auto shadow-sm mb-6">
-              <Coins className="h-12 w-12 text-slate-100" />
-            </div>
-            <h3 className="font-black text-slate-400 uppercase text-sm tracking-widest">
-              Belum Ada Paket
-            </h3>
+          <div className="col-span-full py-24 text-center bg-white rounded-lg border border-dashed border-slate-200">
+            <Database className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No packages defined</p>
           </div>
         ) : (
           packages.map((pkg) => {
-            const pricing = calculatePricing(
-              pkg.jumlah_koin,
-              pkg.discount_pct || 0,
-            );
+            const pricing = calculatePricing(pkg.jumlah_koin, pkg.discount_pct || 0);
             return (
-              <Card
-                key={pkg.id}
-                className="relative p-10 rounded-[55px] border-none shadow-sm bg-white group hover:shadow-2xl hover:-translate-y-3 transition-all duration-500 overflow-hidden border border-slate-50"
-              >
-                <div className="absolute -right-8 -top-8 p-14 bg-slate-50 rounded-full group-hover:bg-orange-50 transition-colors duration-500" />
-
-                <div className="flex justify-between items-start mb-10 relative z-10">
-                  <div className="p-4 bg-white rounded-[22px] shadow-sm border border-slate-100 group-hover:border-[#FF4500]/20 transition-all">
-                    <Zap className="h-6 w-6 text-[#FF4500]" />
+              <Card key={pkg.id} className="p-4 border border-slate-200 shadow-none rounded-lg bg-white hover:border-primary transition-colors group relative overflow-hidden">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="h-8 w-8 rounded bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
+                    <Zap className="h-4 w-4" />
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 rounded-full text-slate-200 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                    className="h-7 w-7 text-slate-300 hover:text-rose-600"
                     onClick={() => handleDelete(pkg.id)}
                   >
-                    <Trash2 className="h-5 w-5" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
 
-                <div className="space-y-6 relative z-10">
-                  <div className="space-y-1">
-                    <div className="flex items-baseline gap-2">
-                      <h3 className="text-5xl font-black text-slate-800 tracking-tighter italic leading-none">
-                        {(pkg.jumlah_koin || 0).toLocaleString()}
-                      </h3>
-                      <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                        Units
-                      </span>
-                    </div>
+                <div className="space-y-4">
+                  <div className="flex items-baseline gap-1.5">
+                    <h3 className="text-3xl font-bold text-slate-900 tracking-tight font-heading leading-none">
+                      {(pkg.jumlah_koin || 0).toLocaleString()}
+                    </h3>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Koin</span>
                   </div>
 
-                  {/* PRICING BREAKDOWN */}
-                  <div className="space-y-2 p-5 bg-slate-50/80 rounded-[30px] border border-slate-100">
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="font-black text-slate-400 uppercase tracking-tighter">
-                        Harga Asli
-                      </span>
-                      <span
-                        className={cn(
-                          "font-bold text-slate-500",
-                          pricing.hasDiscount &&
-                            "line-through decoration-[#FF4500] decoration-2",
-                        )}
-                      >
+                  <div className="space-y-2 p-3 bg-slate-50/30 rounded border border-slate-100">
+                    <div className="flex justify-between items-center text-[9px]">
+                      <span className="font-bold text-slate-400 uppercase tracking-tight">Gross</span>
+                      <span className={cn("font-bold text-slate-500", pricing.hasDiscount && "line-through opacity-40")}>
                         {pricing.gross}
                       </span>
                     </div>
                     {pricing.hasDiscount && (
-                      <div className="flex justify-between items-center text-[11px]">
-                        <div className="flex items-center gap-1.5">
-                          <ArrowDownCircle className="h-3 w-3 text-emerald-500" />
-                          <span className="font-black text-emerald-600 uppercase tracking-tighter">
-                            Potongan
-                          </span>
-                        </div>
-                        <span className="font-black text-emerald-600">
-                          -{pricing.saving}
+                      <div className="flex justify-between items-center text-[9px]">
+                        <span className="font-bold text-emerald-600 uppercase tracking-tight flex items-center gap-1">
+                          Incentive
                         </span>
+                        <span className="font-bold text-emerald-600">-{pricing.saving}</span>
                       </div>
                     )}
-                    <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between items-center">
-                      <span className="text-[10px] font-black text-slate-700 uppercase tracking-tighter">
-                        Harga Jual
-                      </span>
-                      <span className="text-sm font-black text-[#FF4500]">
-                        {pricing.final}
-                      </span>
+                    <div className="pt-1.5 mt-1.5 border-t border-slate-100 flex justify-between items-center">
+                      <span className="text-[9px] font-bold text-slate-900 uppercase">Settlement</span>
+                      <span className="text-xs font-bold text-primary">{pricing.final}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between relative z-10">
-                  <Badge
-                    className={cn(
-                      "rounded-full px-5 py-2 font-black text-[9px] uppercase shadow-none border-none tracking-widest",
-                      pricing.hasDiscount
-                        ? "bg-orange-50 text-[#FF4500]"
-                        : "bg-slate-50 text-slate-400",
-                    )}
-                  >
-                    {pricing.hasDiscount
-                      ? `Hemat ${pkg.discount_pct}%`
-                      : "Reguler"}
+                <div className="mt-4 flex items-center justify-between border-t border-slate-50 pt-3">
+                  <Badge variant="outline" className={cn(
+                    "rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none",
+                    pricing.hasDiscount ? "bg-primary/5 text-primary border-primary/10" : "bg-slate-50 text-slate-400 border-slate-200"
+                  )}>
+                    {pricing.hasDiscount ? `${pkg.discount_pct}% Off` : "Standard"}
                   </Badge>
-
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
-                      Live
-                    </span>
+                  <div className="flex items-center gap-1 opacity-30">
+                     <ShieldCheck className="h-3 w-3 text-emerald-500" />
+                     <span className="text-[8px] font-bold uppercase tracking-tight">Live</span>
                   </div>
                 </div>
               </Card>
