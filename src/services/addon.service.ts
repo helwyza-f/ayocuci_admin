@@ -20,23 +20,23 @@ export interface AddonTransaction {
 
 export const addonService = {
   getAll: async (query?: string) => {
-    const url = query ? `/admin/addons?${query}` : "/admin/addons";
+    const url = query ? `/addons?${query}` : "/addons";
     const res = await api.get<ApiResponse<AddonTransaction[]>>(url);
     return res.data;
   },
 
   approve: async (id: string) => {
-    const res = await api.patch<ApiResponse<null>>(`/admin/addons/approve?id=${id}`);
+    const res = await api.patch<ApiResponse<null>>(`/addons/approve?id=${id}`);
     return res.data;
   },
 
   reject: async (id: string) => {
-    const res = await api.patch<ApiResponse<null>>(`/admin/addons/cancel?id=${id}`);
+    const res = await api.patch<ApiResponse<null>>(`/addons/cancel?id=${id}`);
     return res.data;
   },
 
   getById: async (id: string) => {
-    const res = await api.get<ApiResponse<AddonTransaction>>(`/admin/addons/${id}`);
+    const res = await api.get<ApiResponse<AddonTransaction>>(`/addons/${id}`);
     return res.data;
   },
 };
