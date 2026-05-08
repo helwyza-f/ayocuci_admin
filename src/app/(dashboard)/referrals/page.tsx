@@ -1,23 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowRightLeft,
   Banknote,
   CheckCircle2,
   Clock3,
   Loader2,
-  Save,
   Users2,
   Wallet2,
-  TrendingUp,
   History,
   ExternalLink,
   ChevronRight,
   UserCheck,
-  AlertCircle,
   Activity,
   Coins,
+  TrendingUp,
+  GitBranch,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -28,10 +27,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
   ReferralAdminPayout,
+  ReferralAdminReward,
   ReferralAdminSummary,
 } from "@/types/domain";
 import { referralAdminService } from "@/services/referral-admin.service";
-import StatCard from "@/components/modules/dashboard/stat-card";
+import Pagination from "@/components/shared/pagination";
+import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
+
+const PAGE_SIZE = 10;
 
 const statusOptions = ["all", "pending", "approved", "process", "done"] as const;
 type ReferralStatusFilter = (typeof statusOptions)[number];
@@ -51,29 +54,52 @@ const currency = (value: number | string) =>
     minimumFractionDigits: 0,
   }).format(Number(value || 0));
 
+// ─── KPI Card ──────────────────────────────────────────────
+function KpiCard({
+  label, value, sub, icon: Icon, color,
+}: {
+  label: string; value: string | number; sub?: string;
+  icon: React.ElementType; color: string;
+}) {
+  return (
+    <Card className="border border-slate-200 bg-white rounded-2xl p-5 flex flex-col gap-3 shadow-sm">
+      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${color}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{value}</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
+        {sub && <p className="text-[10px] text-slate-500 mt-1">{sub}</p>}
+      </div>
+    </Card>
+  );
+}
+
 export default function ReferralAdminPage() {
   const [summary, setSummary] = useState<ReferralAdminSummary | null>(null);
   const [payouts, setPayouts] = useState<ReferralAdminPayout[]>([]);
+  const [rewards, setRewards] = useState<ReferralAdminReward[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<ReferralStatusFilter>("all");
-  const [rawReward, setRawReward] = useState("");
-  const [savingConfig, setSavingConfig] = useState(false);
   const [savingPayoutId, setSavingPayoutId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [page, setPage] = useState(1);
+  const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
+  const [rewardTypeFilter, setRewardTypeFilter] = useState<"all" | "recruit" | "topup">("all");
+  const [rewardDateRange, setRewardDateRange] = useState<DateRange>({ start: "", end: "" });
+  const [rewardSearch, setRewardSearch] = useState("");
 
   const loadData = useCallback(async (status: ReferralStatusFilter) => {
     setLoading(true);
     try {
-      const [summaryRes, configRes, payoutsRes] = await Promise.all([
+      const [summaryRes, payoutsRes, rewardsRes] = await Promise.all([
         referralAdminService.getDashboard(),
-        referralAdminService.getConfig(),
         referralAdminService.getPayouts(status),
+        referralAdminService.getRewards(),
       ]);
 
       if (summaryRes.data.status) setSummary(summaryRes.data.data);
-      if (configRes.data.status) {
-        setRawReward(configRes.data.data.cfg_value);
-      }
+      if (rewardsRes.data.status) setRewards(rewardsRes.data.data || []);
       if (payoutsRes.data.status) {
         setPayouts(payoutsRes.data.data || []);
         setNotes(
@@ -94,21 +120,8 @@ export default function ReferralAdminPage() {
 
   useEffect(() => {
     loadData(filter);
+    setPage(1);
   }, [filter, loadData]);
-
-  const handleSaveConfig = async () => {
-    if (!rawReward) return toast.error("Reward amount is required");
-    setSavingConfig(true);
-    try {
-      await referralAdminService.updateConfig(rawReward);
-      toast.success("Referral reward parameter updated");
-      await loadData(filter);
-    } catch {
-      toast.error("Failed to update referral configuration");
-    } finally {
-      setSavingConfig(false);
-    }
-  };
 
   const handleUpdatePayout = async (id: string, status: ReferralPayoutStatus) => {
     setSavingPayoutId(id);
@@ -132,6 +145,26 @@ export default function ReferralAdminPage() {
     );
   };
 
+  const filteredPayouts = filterByDateRange(payouts, (p) => p.rp_created, dateRange);
+  const totalPages = Math.ceil(filteredPayouts.length / PAGE_SIZE);
+
+  const filteredRewards = useMemo(() => {
+    let r = filterByDateRange(rewards, (rw) => rw.rr_created, rewardDateRange);
+    if (rewardTypeFilter !== "all") r = r.filter((rw) => rw.rr_type === rewardTypeFilter);
+    if (rewardSearch.trim()) {
+      const q = rewardSearch.toLowerCase();
+      r = r.filter((rw) =>
+        rw.referrer_nama?.toLowerCase().includes(q) ||
+        rw.referrer_email?.toLowerCase().includes(q) ||
+        rw.referred_nama?.toLowerCase().includes(q) ||
+        rw.referred_email?.toLowerCase().includes(q) ||
+        rw.rr_referred_outlet?.toLowerCase().includes(q)
+      );
+    }
+    return r;
+  }, [rewards, rewardTypeFilter, rewardDateRange, rewardSearch]);
+  const paginatedPayouts = filteredPayouts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div className="space-y-6">
       {/* COMMAND BAR HEADER */}
@@ -149,76 +182,38 @@ export default function ReferralAdminPage() {
 
       {/* METRICS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
+        <KpiCard
           label="Reward / Acq"
-          value={loading ? "..." : currency(summary?.reward_per_owner || 0)}
+          sub="Nilai reward per owner referral"
+          value={loading ? "—" : currency(Number(summary?.reward_per_owner ?? 0))}
           icon={Wallet2}
+          color="bg-orange-50 text-primary"
         />
-        <StatCard
+        <KpiCard
           label="Success Referrals"
-          value={loading ? "..." : summary?.total_referrals || 0}
+          sub="Total owner berhasil diajak"
+          value={loading ? "—" : (summary?.total_referrals ?? 0).toLocaleString("id-ID")}
           icon={Users2}
+          color="bg-slate-100 text-slate-600"
         />
-        <StatCard
+        <KpiCard
           label="Issued Rewards"
-          value={loading ? "..." : currency(summary?.total_rewards || 0)}
+          sub="Total reward yang sudah dikreditkan"
+          value={loading ? "—" : currency(summary?.total_rewards ?? 0)}
           icon={Coins}
+          color="bg-violet-50 text-violet-600"
         />
-        <StatCard
+        <KpiCard
           label="Pending Payouts"
-          value={loading ? "..." : summary?.pending_count || 0}
+          sub="Payout menunggu verifikasi"
+          value={loading ? "—" : (summary?.pending_count ?? 0).toLocaleString("id-ID")}
           icon={Clock3}
+          color="bg-amber-50 text-amber-600"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6">
-        {/* CONFIGURATION SIDEBAR */}
-        <div className="space-y-4">
-           <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Engine Parameters</h3>
-           <Card className="p-4 border border-slate-200 shadow-none rounded-lg bg-white space-y-4">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-primary">
-                   <Settings2 className="h-3.5 w-3.5" />
-                   <span className="text-[9px] font-bold uppercase tracking-wider">Global Reward</span>
-                </div>
-                <p className="text-[10px] font-medium text-slate-500 leading-normal">
-                  IDR credit received for successful referrals.
-                </p>
-              </div>
-
-              <div className="space-y-2 pt-3 border-t border-slate-50">
-                <label className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">Reward Value</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rp</span>
-                  <Input
-                    value={rawReward}
-                    onChange={(e) => setRawReward(e.target.value.replace(/[^0-9]/g, ""))}
-                    placeholder="25000"
-                    className="pl-8 h-9 rounded border-slate-200 font-bold text-base shadow-none"
-                  />
-                </div>
-              </div>
-
-              <Button
-                onClick={handleSaveConfig}
-                disabled={savingConfig}
-                className="w-full h-9 rounded font-bold text-[10px] uppercase tracking-wider"
-              >
-                {savingConfig ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5 mr-2" />}
-                Update Incentive
-              </Button>
-
-              <div className="p-3 rounded bg-slate-50 border border-slate-100 flex items-start gap-2">
-                 <AlertCircle className="h-3 w-3 text-slate-400 mt-0.5" />
-                 <p className="text-[9px] font-medium text-slate-500 leading-tight italic">
-                   Credited to Referral Wallet.
-                 </p>
-              </div>
-           </Card>
-        </div>
-
-        {/* PAYOUT QUEUE */}
-        <div className="space-y-4">
+      {/* PAYOUT QUEUE — full width */}
+      <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
              <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                 <History className="h-3.5 w-3.5" />
@@ -240,6 +235,10 @@ export default function ReferralAdminPage() {
              </div>
           </div>
 
+          <div className="flex items-center gap-1">
+            <DateRangeFilter value={dateRange} onChange={(r) => { setDateRange(r); setPage(1); }} />
+          </div>
+
           <div className="space-y-3">
             {loading ? (
               Array.from({ length: 3 }).map((_, i) => (
@@ -251,7 +250,7 @@ export default function ReferralAdminPage() {
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No requests found</p>
               </div>
             ) : (
-              payouts.map((item) => (
+              paginatedPayouts.map((item) => (
                 <Card key={item.rp_id} className="p-4 border border-slate-200 shadow-none rounded-lg bg-white overflow-hidden group hover:border-primary/20 hover:shadow-sm transition-all duration-300">
                   <div className="flex flex-col xl:flex-row gap-4">
                     <div className="flex-1 space-y-3">
@@ -262,7 +261,7 @@ export default function ReferralAdminPage() {
                          </div>
                          <Badge variant="outline" className={cn(
                             "rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none transition-colors",
-                            item.rp_status === 'done' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-indigo-50 text-indigo-600 border-indigo-100"
+                            item.rp_status === 'done' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-orange-50 text-orange-600 border-orange-100"
                          )}>
                             {item.rp_status}
                          </Badge>
@@ -326,14 +325,117 @@ export default function ReferralAdminPage() {
               ))
             )}
           </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={filteredPayouts.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
         </div>
-      </div>
-    </div>
-  );
-}
 
-function Settings2({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        {/* REWARD HISTORY — Riwayat mutasi reward masuk */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+              <GitBranch className="h-3.5 w-3.5" />
+              Riwayat Komisi Masuk
+              <span className="ml-1 text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold">{filteredRewards.length}</span>
+            </h3>
+            {/* Filter bar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                placeholder="Cari nama / email / outlet..."
+                value={rewardSearch}
+                onChange={(e) => setRewardSearch(e.target.value)}
+                className="h-8 text-[10px] rounded border-slate-200 shadow-none w-48 bg-white"
+              />
+              <div className="flex gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
+                {(["all", "recruit", "topup"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setRewardTypeFilter(t)}
+                    className={cn(
+                      "rounded px-2.5 h-7 text-[8px] font-bold uppercase tracking-tight transition-all",
+                      rewardTypeFilter === t ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    {t === "all" ? "Semua" : t}
+                  </button>
+                ))}
+              </div>
+              <DateRangeFilter value={rewardDateRange} onChange={setRewardDateRange} />
+              {(rewardSearch || rewardTypeFilter !== "all" || rewardDateRange.start) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setRewardSearch(""); setRewardTypeFilter("all"); setRewardDateRange({ start: "", end: "" }); }}
+                  className="h-7 px-2 text-[9px] font-bold text-slate-400 hover:text-slate-700 uppercase"
+                >
+                  Reset
+                </Button>
+              )}
+            </div>
+          </div>
+          <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-none">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-200">
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Referrer (Pengajak)</th>
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Referred (Diajak)</th>
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Outlet</th>
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Tipe</th>
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Reward</th>
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Tanggal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loading ? (
+                    <tr><td colSpan={6} className="py-12 text-center">
+                      <Loader2 className="h-5 w-5 animate-spin text-slate-300 mx-auto" />
+                    </td></tr>
+                  ) : filteredRewards.length === 0 ? (
+                    <tr><td colSpan={6} className="py-16 text-center">
+                      <GitBranch className="h-7 w-7 text-slate-200 mx-auto mb-2" />
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Belum ada riwayat komisi</p>
+                    </td></tr>
+                  ) : (
+                    filteredRewards.map((r) => (
+                      <tr key={r.rr_id} className="hover:bg-primary/[0.01] transition-colors group">
+                        <td className="px-5 py-3">
+                          <p className="text-xs font-bold text-slate-900">{r.referrer_nama}</p>
+                          <p className="text-[10px] text-slate-400">{r.referrer_email}</p>
+                        </td>
+                        <td className="px-5 py-3">
+                          <p className="text-xs font-bold text-slate-900">{r.referred_nama}</p>
+                          <p className="text-[10px] text-slate-400">{r.referred_email}</p>
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{r.rr_referred_outlet || "—"}</span>
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className={cn(
+                            "text-[9px] font-bold uppercase px-2 py-0.5 rounded-full",
+                            r.rr_type === "recruit" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                          )}>{r.rr_type}</span>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <span className="text-sm font-extrabold text-primary tracking-tight">{currency(r.rr_reward_amount)}</span>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <span className="text-[10px] font-medium text-slate-500">
+                            {new Date(r.rr_created).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+    </div>
   );
 }

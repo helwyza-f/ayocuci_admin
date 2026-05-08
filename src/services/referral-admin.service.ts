@@ -2,6 +2,7 @@ import api from "@/lib/api-client";
 import { ApiResponse } from "@/types/api";
 import {
   ReferralAdminPayout,
+  ReferralAdminReward,
   ReferralAdminSummary,
   ReferralConfig,
 } from "@/types/domain";
@@ -15,6 +16,10 @@ export const referralAdminService = {
   getPayouts: (status = "all") =>
     api.get<ApiResponse<ReferralAdminPayout[]>>(
       `/referrals/payouts?status=${status}`,
+    ),
+  getRewards: (type = "all") =>
+    api.get<ApiResponse<ReferralAdminReward[]>>(
+      `/referrals/rewards?type=${type}`,
     ),
   updatePayoutStatus: (
     id: string,

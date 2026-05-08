@@ -56,6 +56,10 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { AxiosError } from "axios";
 import { ApiErrorResponse } from "@/types/api";
 import { Topup, TopupStatus } from "@/types/topup";
+import Pagination from "@/components/shared/pagination";
+import DateRangeFilter, { DateRange } from "@/components/shared/date-range-filter";
+
+const PAGE_SIZE = 25;
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.ayocuci.id";
 
@@ -63,6 +67,7 @@ export default function TopupsManagementPage() {
   const [data, setData] = useState<Topup[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [page, setPage] = useState(1);
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,6 +76,14 @@ export default function TopupsManagementPage() {
 
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
+
+  const handleDateRange = (r: DateRange) => {
+    setDateRange(r);
+    setStartDate(r.start ? new Date(r.start + "T00:00:00") : undefined);
+    setEndDate(r.end ? new Date(r.end + "T00:00:00") : undefined);
+    setPage(1);
+  };
 
   // Searchable Dropdown States
   const [outletFilter, setOutletFilter] = useState<string>("all");
@@ -119,6 +132,7 @@ export default function TopupsManagementPage() {
 
   useEffect(() => {
     fetchTopups();
+    setPage(1); // reset page on filter change
   }, [fetchTopups]);
 
   const uniqueOutlets = useMemo(
@@ -142,6 +156,9 @@ export default function TopupsManagementPage() {
     });
   }, [data, searchQuery, outletFilter, ownerFilter]);
 
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const paginatedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const resetFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
@@ -150,6 +167,7 @@ export default function TopupsManagementPage() {
     setOwnerFilter("all");
     setStartDate(undefined);
     setEndDate(undefined);
+    setDateRange({ start: "", end: "" });
   };
 
   const handleAction = async (id: string, status: Extract<TopupStatus, "success" | "failed">) => {
@@ -285,6 +303,10 @@ export default function TopupsManagementPage() {
                ))}
             </div>
 
+            <div className="h-4 w-px bg-slate-100" />
+            <DateRangeFilter value={dateRange} onChange={handleDateRange} />
+            <div className="h-4 w-px bg-slate-100" />
+
             <Button
               variant="ghost"
               size="icon"
@@ -320,7 +342,7 @@ export default function TopupsManagementPage() {
                   </td>
                 </tr>
               ) : (
-                filteredData.map((item) => {
+              paginatedData.map((item) => {
                   const status = getStatusConfig(item.tk_status);
                   const dt = formatDateTime(item.tk_created);
                   return (
@@ -344,7 +366,7 @@ export default function TopupsManagementPage() {
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded border border-slate-100 w-fit group-hover:bg-white transition-colors">
                           {item.tk_metode_bayar === "transfer" ? (
-                            <ArrowRightLeft className="h-3 w-3 text-indigo-500 group-hover:scale-110 transition-transform" />
+                            <ArrowRightLeft className="h-3 w-3 text-orange-500 group-hover:scale-110 transition-transform" />
                           ) : (
                             <CreditCard className="h-3 w-3 text-amber-500 group-hover:scale-110 transition-transform" />
                           )}
@@ -375,6 +397,13 @@ export default function TopupsManagementPage() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={filteredData.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </Card>
 
       {/* OPERATIONAL DETAIL MODAL */}

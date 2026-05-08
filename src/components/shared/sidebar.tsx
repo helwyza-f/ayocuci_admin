@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { adminMenus } from "@/lib/menu-list";
+import { useAuthStore } from "@/store/use-auth-store";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -16,6 +17,22 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const showFull = isMobile ? true : !isCollapsed;
+  const { isMaster, hasPermission } = useAuthStore();
+
+  // Filter menu items berdasarkan permission admin yang login
+  const visibleMenus = adminMenus
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        // Jika masterOnly: hanya tampil untuk master admin
+        if (item.masterOnly) return isMaster();
+        // Master admin selalu bisa lihat semua
+        if (isMaster()) return true;
+        // Cek permission read untuk modul ini
+        return hasPermission(item.module, "read");
+      }),
+    }))
+    .filter((group) => group.items.length > 0); // Sembunyikan group kosong
 
   return (
     <div
@@ -48,7 +65,7 @@ export default function Sidebar({
 
       {/* --- NAVIGATION --- */}
       <nav className="flex-1 space-y-6 overflow-y-auto custom-scrollbar">
-        {adminMenus.map((group, idx) => (
+        {visibleMenus.map((group, idx) => (
           <div key={idx} className="space-y-2">
             {showFull ? (
               <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 px-3 opacity-80">
@@ -113,3 +130,4 @@ export default function Sidebar({
     </div>
   );
 }
+

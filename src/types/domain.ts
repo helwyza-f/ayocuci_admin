@@ -77,3 +77,18 @@ export interface ReferralAdminPayout {
   usr_email: string;
   usr_nohp?: string | null;
 }
+export interface ReferralAdminReward {
+  rr_id: number;
+  rr_reward_amount: number;
+  rr_type: string;          // 'recruit' | 'topup'
+  rr_reference_id: string;
+  rr_status: string;        // 'credited'
+  rr_created: string;
+  rr_referred_outlet: string;
+  referrer_id: number;
+  referrer_nama: string;
+  referrer_email: string;
+  referred_id: number;
+  referred_nama: string;
+  referred_email: string;
+}

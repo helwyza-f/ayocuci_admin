@@ -35,7 +35,8 @@ import {
   UserPlus,
   Globe,
   ShieldCheck,
-  ArrowDownRight
+  ArrowDownRight,
+  GitBranch,
 } from "lucide-react";
 import { userService } from "@/services/user.service";
 import { Card } from "@/components/ui/card";
@@ -88,59 +89,61 @@ export default function UserDetailPage() {
       </div>
     );
 
-  const { profile, stats, recruits = [], outlets = [], payouts = [], koin_ledger = [] } = data;
+  const { profile, stats, recruits = [], outlets = [], payouts = [], koin_ledger = [], referral_rewards = [] } = data;
 
   return (
-    <div className="space-y-6">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-5">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-            className="h-10 w-10 text-slate-500 border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm shrink-0"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-heading">
-                {profile.name}
-              </h1>
-              <Badge className={cn(
-                "rounded-full px-2 py-0.5 text-[9px] font-bold uppercase shadow-none border",
-                profile.status === 1 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
-              )}>
-                {profile.status === 1 ? "Verified Partner" : "Suspended"}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-               <span className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> {profile.email}</span>
-               <span className="h-1 w-1 rounded-full bg-slate-300" />
-               <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3" /> Bergabung {format(new Date(profile.created_at), "MMM yyyy", { locale: localeId })}</span>
+    <div className="space-y-8 max-w-[1600px] mx-auto pb-20">
+      {/* MODERN GLASS HEADER */}
+      <div className="sticky top-0 z-50 -mx-4 px-4 py-4 bg-slate-50/80 backdrop-blur-md border-b border-slate-200/50 mb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+              className="h-12 w-12 rounded-2xl text-slate-500 border border-slate-200 bg-white hover:bg-slate-50 hover:shadow-md transition-all shrink-0"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-black tracking-tight text-slate-900 font-heading leading-none">
+                  {profile.name}
+                </h1>
+                <Badge className={cn(
+                  "rounded-full px-3 py-1 text-[10px] font-black uppercase shadow-none border",
+                  profile.status === 1 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
+                )}>
+                  {profile.status === 1 ? "Verified Partner" : "Suspended"}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                 <span className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-primary" /> {profile.email}</span>
+                 <span className="h-1 w-1 rounded-full bg-slate-300" />
+                 <span className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5 text-primary" /> Bergabung {format(new Date(profile.created_at), "MMMM yyyy", { locale: localeId })}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-           <Card className="px-4 py-2 border-slate-200 shadow-sm bg-indigo-50/50 flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg">
-                 <Trophy className="h-4 w-4" />
-              </div>
-              <div>
-                 <p className="text-[8px] font-bold text-indigo-400 uppercase leading-none mb-1">Referral Code</p>
-                 <p className="text-xs font-bold text-indigo-700 font-mono tracking-tighter">{profile.referral_code}</p>
-              </div>
-           </Card>
-           <Button className="h-10 px-5 font-bold text-[11px] uppercase tracking-wider gap-2 shadow-sm bg-slate-900 hover:bg-black">
-              <Settings2 className="h-4 w-4" /> Kelola Akses
-           </Button>
+          <div className="flex items-center gap-3">
+             <div className="px-5 py-2.5 rounded-2xl border border-orange-100 bg-orange-50/50 flex items-center gap-4 shadow-inner">
+                <div className="h-10 w-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
+                   <Trophy className="h-5 w-5" />
+                </div>
+                <div>
+                   <p className="text-[9px] font-black text-orange-400 uppercase leading-none mb-1 tracking-[0.2em]">Referral Code</p>
+                   <p className="text-sm font-black text-orange-700 font-mono tracking-tighter leading-none">{profile.referral_code}</p>
+                </div>
+             </div>
+             <Button className="h-12 px-8 font-black text-[11px] uppercase tracking-[0.2em] gap-3 shadow-xl shadow-slate-900/10 bg-slate-900 hover:bg-black transition-all hover:-translate-y-0.5 active:translate-y-0">
+                <Settings2 className="h-4 w-4" /> Kelola Akses
+             </Button>
+          </div>
         </div>
       </div>
 
       {/* OPERATIONAL STATS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-1">
         <StatCard 
           label="Total Spend" 
           value={`Rp ${(stats.total_spend_topup + stats.total_spend_addon).toLocaleString()}`} 
@@ -163,70 +166,78 @@ export default function UserDetailPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
+        <div className="space-y-8">
           <Tabs defaultValue="portfolio" className="w-full">
-            <TabsList className="bg-slate-100/50 p-1 rounded-xl border border-slate-200 mb-6 w-full md:w-fit h-11 shadow-none">
-              <TabsTrigger value="portfolio" className="rounded-lg px-6 font-bold text-[10px] uppercase gap-2 h-9 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+            <TabsList className="bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 mb-8 w-full md:w-fit h-14 shadow-inner">
+              <TabsTrigger value="portfolio" className="rounded-xl px-8 font-black text-[11px] uppercase gap-3 h-11 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:shadow-slate-200/50">
                 <Layers className="h-4 w-4" /> Portfolio
               </TabsTrigger>
-              <TabsTrigger value="referrals" className="rounded-lg px-6 font-bold text-[10px] uppercase gap-2 h-9 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              <TabsTrigger value="referrals" className="rounded-xl px-8 font-black text-[11px] uppercase gap-3 h-11 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:shadow-slate-200/50">
                 <Target className="h-4 w-4" /> Network
               </TabsTrigger>
-              <TabsTrigger value="ledger" className="rounded-lg px-6 font-bold text-[10px] uppercase gap-2 h-9 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              <TabsTrigger value="komisi" className="rounded-xl px-8 font-black text-[11px] uppercase gap-3 h-11 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:shadow-slate-200/50">
+                <GitBranch className="h-4 w-4" /> Komisi Masuk
+              </TabsTrigger>
+              <TabsTrigger value="ledger" className="rounded-xl px-8 font-black text-[11px] uppercase gap-3 h-11 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:shadow-slate-200/50">
                 <Activity className="h-4 w-4" /> Global Ledger
               </TabsTrigger>
-              <TabsTrigger value="financials" className="rounded-lg px-6 font-bold text-[10px] uppercase gap-2 h-9 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              <TabsTrigger value="financials" className="rounded-xl px-8 font-black text-[11px] uppercase gap-3 h-11 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:shadow-slate-200/50">
                 <Receipt className="h-4 w-4" /> Payouts
               </TabsTrigger>
             </TabsList>
 
             {/* TAB: PORTFOLIO */}
-            <TabsContent value="portfolio" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-               <Card className="border border-slate-200 bg-white shadow-sm overflow-hidden rounded-xl">
-                  <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                     <div className="flex items-center gap-2">
-                        <Store className="h-4 w-4 text-primary" />
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Unit laundry yang dikelola owner ini</p>
+            <TabsContent value="portfolio" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <Card className="border-none shadow-soft bg-white overflow-hidden p-0">
+                  <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
+                     <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                           <Store className="h-5 w-5" />
+                        </div>
+                        <div>
+                           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Owner Portfolio</p>
+                           <p className="text-sm font-bold text-slate-700">Daftar unit laundry yang dikelola partner ini</p>
+                        </div>
                      </div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50/30 border-b border-slate-100">
-                          <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-tight">Outlet Name</th>
-                          <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-tight text-center">Liquidity</th>
-                          <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-tight text-center">Activity</th>
-                          <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-tight text-right">Revenue</th>
+                        <tr className="bg-slate-50/20 border-b border-slate-50">
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Outlet Name</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Liquidity</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Activity</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Revenue</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {outlets.map((outlet: any) => (
-                          <tr key={outlet.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-5 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 shadow-inner">
-                                  <Store className="h-4 w-4" />
+                          <tr key={outlet.id} className="hover:bg-slate-50/50 transition-all group">
+                            <td className="px-6 py-5">
+                              <div className="flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 border border-white shadow-inner group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                  <Store className="h-5 w-5" />
                                 </div>
                                 <div>
-                                  <p className="font-bold text-slate-900 text-xs uppercase">{outlet.name}</p>
-                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">ID: {outlet.id}</p>
+                                  <p className="font-black text-slate-900 text-sm uppercase tracking-tight group-hover:text-primary transition-colors">{outlet.name}</p>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Node: {outlet.id}</p>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-5 py-4 text-center">
-                              <p className="text-xs font-bold text-slate-700">{outlet.koin.toLocaleString()}</p>
-                              <p className="text-[8px] font-bold text-slate-400 uppercase">Koin Balance</p>
+                            <td className="px-6 py-5 text-center">
+                              <p className="text-sm font-bold text-slate-700">{outlet.koin.toLocaleString()}</p>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Koin</p>
                             </td>
-                            <td className="px-5 py-4 text-center">
-                              <p className="text-xs font-bold text-slate-700">{outlet.total_trx.toLocaleString()}</p>
-                              <p className="text-[8px] font-bold text-slate-400 uppercase">Total Orders</p>
+                            <td className="px-6 py-5 text-center">
+                              <p className="text-sm font-bold text-slate-700">{outlet.total_trx.toLocaleString()}</p>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Orders</p>
                             </td>
-                            <td className="px-5 py-4 text-right">
-                               <p className="text-xs font-bold text-primary font-heading">Rp {outlet.total_revenue.toLocaleString()}</p>
+                            <td className="px-6 py-5 text-right">
+                               <p className="text-base font-black text-primary font-heading">Rp {outlet.total_revenue.toLocaleString()}</p>
                                <Link href={`/tenants/${outlet.id}`}>
-                                  <Button variant="ghost" size="sm" className="h-6 px-2 text-[8px] font-bold uppercase text-slate-400 hover:text-primary">
-                                     Control Hub <ArrowUpRight className="h-3 w-3 ml-1" />
+                                  <Button variant="ghost" size="sm" className="h-8 px-4 text-[9px] font-black uppercase text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg mt-1">
+                                     Control Hub <ArrowUpRight className="h-3.5 w-3.5 ml-1.5" />
                                   </Button>
                                </Link>
                             </td>
@@ -239,85 +250,158 @@ export default function UserDetailPage() {
             </TabsContent>
 
             {/* TAB: REFERRALS */}
-            <TabsContent value="referrals" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-               <Card className="border-none shadow-md bg-indigo-600 text-white p-6 relative overflow-hidden group rounded-2xl">
-                  <div className="relative z-10 space-y-4">
-                     <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-md">
-                        <DollarSign className="h-6 w-6" />
+            <TabsContent value="referrals" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <Card className="border-none shadow-2xl shadow-orange-500/20 bg-gradient-to-br from-orange-500 to-orange-600 text-white p-8 relative overflow-hidden group rounded-[2.5rem]">
+                  <div className="relative z-10 space-y-6">
+                     <div className="h-14 w-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md shadow-xl border border-white/20">
+                        <DollarSign className="h-8 w-8" />
                      </div>
                      <div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-indigo-100/60">Current Wallet Balance</p>
-                        <h2 className="text-3xl font-bold font-heading">Rp {stats.referral_balance.toLocaleString()}</h2>
+                        <p className="text-sm font-black uppercase tracking-[0.3em] text-orange-100/70">Available Balance</p>
+                        <h2 className="text-5xl font-black font-heading tracking-tighter">Rp {stats.referral_balance.toLocaleString()}</h2>
                      </div>
-                     <Button className="w-fit px-8 bg-white text-indigo-600 font-bold text-xs uppercase h-10 hover:bg-indigo-50 shadow-lg">
-                        Process Withdrawal
+                     <Button className="w-fit px-10 bg-white text-orange-600 font-black text-xs uppercase h-12 rounded-xl hover:bg-orange-50 shadow-2xl shadow-black/10 transition-all hover:scale-105 active:scale-95">
+                        Withdraw Commissions
                      </Button>
+                  </div>
+                  <div className="absolute -bottom-20 -right-20 h-80 w-80 bg-white/5 rounded-full blur-3xl" />
+                  <div className="absolute top-0 right-0 p-8">
+                     <Target className="h-40 w-40 text-white/5 -rotate-12" />
                   </div>
                </Card>
 
-               <Card className="border border-slate-200 bg-white shadow-sm overflow-hidden rounded-xl">
-                  <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Recruitment History & Network</p>
+               <Card className="border-none shadow-soft bg-white p-0 overflow-hidden">
+                  <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                     <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                           <UserPlus className="h-5 w-5" />
+                        </div>
+                        <div>
+                           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Recruitment Network</p>
+                           <p className="text-sm font-bold text-slate-700">Afiliasi yang bergabung menggunakan kode partner</p>
+                        </div>
+                     </div>
                   </div>
-                  <div className="divide-y divide-slate-100">
+                  <div className="divide-y divide-slate-50">
                      {recruits.map((recruit: any) => (
-                       <div key={recruit.id} className="p-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
-                          <div className="flex items-center gap-3">
-                             <div className="h-9 w-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
-                                <User className="h-4 w-4" />
+                       <div key={recruit.id} className="p-6 flex items-center justify-between group hover:bg-slate-50/50 transition-all">
+                          <div className="flex items-center gap-4">
+                             <div className="h-12 w-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-transform">
+                                <User className="h-5 w-5" />
                              </div>
                              <div>
-                                <p className="text-xs font-bold text-slate-900 uppercase">{recruit.name}</p>
-                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Joined {format(new Date(recruit.created_at), "dd MMM yyyy", { locale: localeId })}</p>
+                                <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{recruit.name}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Joined {format(new Date(recruit.created_at), "dd MMMM yyyy", { locale: localeId })}</p>
                              </div>
                           </div>
                           <Badge variant="outline" className={cn(
-                            "text-[8px] font-bold uppercase px-2 py-0 border shadow-none",
+                            "text-[9px] font-black uppercase px-4 py-1 border shadow-none rounded-full",
                             recruit.status === 1 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
                           )}>
                              {recruit.status === 1 ? 'Active Partner' : 'Inactive'}
                           </Badge>
                        </div>
                      ))}
-                     {recruits.length === 0 && (
-                        <div className="p-12 text-center text-slate-400">
-                           <UserPlus className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                           <p className="text-[10px] font-bold uppercase tracking-widest">No recruits in this network</p>
+                  </div>
+               </Card>
+            </TabsContent>
+
+            {/* TAB: KOMISI MASUK */}
+            <TabsContent value="komisi" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <Card className="border-none shadow-soft bg-white p-0 overflow-hidden">
+                  <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                     <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                           <GitBranch className="h-5 w-5" />
                         </div>
-                     )}
+                        <div>
+                           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Riwayat Komisi Masuk</p>
+                           <p className="text-sm font-bold text-slate-700">Komisi yang diterima dari setiap rekrutmen berhasil</p>
+                        </div>
+                     </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/20 border-b border-slate-50">
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Referred (Diajak)</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Outlet</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Tipe</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Komisi</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Tanggal</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {referral_rewards.length === 0 ? (
+                          <tr><td colSpan={5} className="py-16 text-center">
+                            <GitBranch className="h-7 w-7 text-slate-200 mx-auto mb-2" />
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Belum ada komisi masuk</p>
+                          </td></tr>
+                        ) : referral_rewards.map((r: any, i: number) => (
+                          <tr key={`rr-${r.rr_id || i}`} className="hover:bg-slate-50/50 transition-all group">
+                            <td className="px-6 py-5">
+                              <p className="text-xs font-black text-slate-900 uppercase tracking-tight group-hover:text-primary transition-colors">{r.referred_nama}</p>
+                              <p className="text-[10px] font-bold text-slate-400">{r.referred_email}</p>
+                            </td>
+                            <td className="px-6 py-5">
+                              <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{r.rr_referred_outlet || "—"}</span>
+                            </td>
+                            <td className="px-6 py-5 text-center">
+                              <span className={cn(
+                                "text-[9px] font-black uppercase px-3 py-1 rounded-full",
+                                r.rr_type === "recruit" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                              )}>{r.rr_type}</span>
+                            </td>
+                            <td className="px-6 py-5 text-right">
+                              <p className="text-base font-black text-primary font-heading">Rp {r.rr_reward_amount?.toLocaleString()}</p>
+                            </td>
+                            <td className="px-6 py-5 text-right">
+                              <p className="text-[10px] font-black text-slate-400 uppercase">
+                                {r.rr_created ? format(new Date(r.rr_created), "dd MMM yyyy", { locale: localeId }) : "—"}
+                              </p>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                </Card>
             </TabsContent>
 
             {/* TAB: LEDGER */}
-            <TabsContent value="ledger" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-               <Card className="border border-slate-200 bg-white shadow-sm rounded-xl overflow-hidden">
-                  <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                     <div className="flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-primary" />
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Cross-Outlet Operational Ledger</p>
+            <TabsContent value="ledger" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <Card className="border-none shadow-soft bg-white p-0 overflow-hidden">
+                  <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                     <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                           <Activity className="h-5 w-5" />
+                        </div>
+                        <div>
+                           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Global Operational Ledger</p>
+                           <p className="text-sm font-bold text-slate-700">Arus kas koin real-time dari seluruh outlet</p>
+                        </div>
                      </div>
                   </div>
-                  <div className="divide-y divide-slate-100">
+                  <div className="divide-y divide-slate-50">
                      {koin_ledger.map((hk: any, i: number) => (
-                       <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                          <div className="flex items-center gap-3">
+                       <div key={i} className="p-5 flex items-center justify-between hover:bg-slate-50/50 transition-all group">
+                          <div className="flex items-center gap-4">
                              <div className={cn(
-                               "h-9 w-9 rounded-xl flex items-center justify-center border shadow-sm",
+                               "h-12 w-12 rounded-2xl flex items-center justify-center border shadow-sm transition-all group-hover:rotate-6",
                                hk.hk_jenis_transaksi === 'masuk' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
                              )}>
-                                {hk.hk_jenis_transaksi === 'masuk' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                                {hk.hk_jenis_transaksi === 'masuk' ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
                              </div>
                              <div>
-                                <p className="text-[11px] font-bold text-slate-900 uppercase tracking-tight">{hk.outlet_nama}</p>
-                                <p className="text-[9px] text-slate-400 font-bold tracking-tight line-clamp-1 uppercase">{hk.hk_keterangan}</p>
+                                <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{hk.outlet_nama}</p>
+                                <p className="text-[10px] text-slate-400 font-bold tracking-tight line-clamp-1 uppercase opacity-60">{hk.hk_keterangan}</p>
                              </div>
                           </div>
                           <div className="text-right">
-                             <p className={cn("text-xs font-bold font-heading tracking-tight", hk.hk_jenis_transaksi === 'masuk' ? "text-emerald-600" : "text-rose-600")}>
+                             <p className={cn("text-base font-black font-heading tracking-tight", hk.hk_jenis_transaksi === 'masuk' ? "text-emerald-600" : "text-rose-600")}>
                                 {hk.hk_jenis_transaksi === 'masuk' ? '+' : '-'}{hk.hk_jumlah} Koin
                              </p>
-                             <p className="text-[8px] font-bold text-slate-300 uppercase">{format(new Date(hk.hk_created), "dd/MM/yy HH:mm", { locale: localeId })}</p>
+                             <p className="text-[9px] font-black text-slate-300 uppercase">{format(new Date(hk.hk_created), "HH:mm • dd MMM yyyy", { locale: localeId })}</p>
                           </div>
                        </div>
                      ))}
@@ -326,40 +410,48 @@ export default function UserDetailPage() {
             </TabsContent>
 
             {/* TAB: FINANCIALS (Payouts) */}
-            <TabsContent value="financials" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-               <Card className="border border-slate-200 bg-white shadow-sm rounded-xl overflow-hidden">
-                  <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Referral Commission Withdrawal History</p>
+            <TabsContent value="financials" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <Card className="border-none shadow-soft bg-white p-0 overflow-hidden">
+                  <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                     <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                           <Receipt className="h-5 w-5" />
+                        </div>
+                        <div>
+                           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Withdrawal History</p>
+                           <p className="text-sm font-bold text-slate-700">Riwayat pencairan komisi ke rekening partner</p>
+                        </div>
+                     </div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50/30 border-b border-slate-100">
-                          <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-tight">Request ID</th>
-                          <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-tight text-center">Amount</th>
-                          <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-tight text-center">Status</th>
-                          <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-tight text-right">Date</th>
+                        <tr className="bg-slate-50/20 border-b border-slate-50">
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Transaction</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Amount</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Status</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Date</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {payouts.map((rp: any) => (
-                          <tr key={rp.rp_id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-5 py-4">
-                               <p className="text-xs font-bold text-slate-900 uppercase tracking-tighter">{rp.rp_id}</p>
-                               <p className="text-[8px] font-bold text-slate-400 uppercase">{rp.rp_bank_name} • {rp.rp_account_number}</p>
+                          <tr key={rp.rp_id} className="hover:bg-slate-50/50 transition-all group">
+                            <td className="px-6 py-5">
+                               <p className="text-xs font-black text-slate-900 uppercase tracking-tighter group-hover:text-primary transition-colors">{rp.rp_id}</p>
+                               <p className="text-[10px] font-black text-slate-400 uppercase">{rp.rp_bank_name} • {rp.rp_account_number}</p>
                             </td>
-                            <td className="px-5 py-4 text-center">
-                               <p className="text-xs font-bold text-slate-700">Rp {rp.rp_amount?.toLocaleString()}</p>
+                            <td className="px-6 py-5 text-center">
+                               <p className="text-sm font-black text-slate-700">Rp {rp.rp_amount?.toLocaleString()}</p>
                             </td>
-                            <td className="px-5 py-4 text-center">
+                            <td className="px-6 py-5 text-center">
                                <Badge className={cn(
-                                 "text-[8px] font-bold uppercase px-2 py-0 border-none shadow-none",
-                                 rp.rp_status === "completed" ? "bg-emerald-500 text-white" : 
-                                 rp.rp_status === "pending" ? "bg-amber-500 text-white animate-pulse" : "bg-slate-400 text-white"
+                                 "text-[9px] font-black uppercase px-4 py-1 border-none shadow-lg rounded-full",
+                                 rp.rp_status === "completed" || rp.rp_status === "done" ? "bg-emerald-500 text-white shadow-emerald-500/20" : 
+                                 rp.rp_status === "pending" ? "bg-orange-500 text-white animate-pulse shadow-orange-500/20" : "bg-slate-400 text-white"
                                )}>{rp.rp_status}</Badge>
                             </td>
-                            <td className="px-5 py-4 text-right">
-                               <p className="text-[9px] font-bold text-slate-400 uppercase">{format(new Date(rp.rp_created), "dd MMM yyyy", { locale: localeId })}</p>
+                            <td className="px-6 py-5 text-right">
+                               <p className="text-[10px] font-black text-slate-400 uppercase">{format(new Date(rp.rp_created), "dd MMM yyyy", { locale: localeId })}</p>
                             </td>
                           </tr>
                         ))}
@@ -372,54 +464,54 @@ export default function UserDetailPage() {
         </div>
 
         {/* SIDEBAR: ACTIONABLE DATA ONLY */}
-        <div className="space-y-6">
-          <Card className="border border-slate-200 bg-white shadow-sm rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Account Ecosystem</p>
+        <div className="space-y-8">
+          <Card className="border-none shadow-soft bg-white p-0 overflow-hidden sticky top-24">
+            <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Account Ecosystem</p>
             </div>
-            <div className="p-5 space-y-6">
-               <div className="space-y-4">
-                  <div className="flex items-start gap-4">
-                     <div className="h-8 w-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-                        <UserPlus className="h-4 w-4" />
+            <div className="p-6 space-y-8">
+               <div className="space-y-6">
+                  <div className="flex items-start gap-5">
+                     <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-inner">
+                        <UserPlus className="h-5 w-5" />
                      </div>
                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mb-0.5">Invited By</p>
-                        <p className="text-xs font-bold text-slate-800 uppercase">{profile.inviter_name || "Direct Registration"}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Invited By</p>
+                        <p className="text-sm font-black text-slate-800 uppercase leading-none">{profile.inviter_name || "Direct Registration"}</p>
                      </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                     <div className="h-8 w-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-                        <Briefcase className="h-4 w-4" />
+                  <div className="flex items-start gap-5">
+                     <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-inner">
+                        <Briefcase className="h-5 w-5" />
                      </div>
                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mb-0.5">Account Status</p>
-                        <div className="flex items-center gap-2">
-                           <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                           <p className="text-xs font-bold text-slate-800 uppercase font-heading">Operational Hub Ready</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Account Status</p>
+                        <div className="flex items-center gap-2.5">
+                           <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)] animate-pulse" />
+                           <p className="text-sm font-black text-slate-800 uppercase font-heading leading-none">Verified Hub</p>
                         </div>
                      </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                     <div className="h-8 w-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-                        <Phone className="h-4 w-4" />
+                  <div className="flex items-start gap-5">
+                     <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-inner">
+                        <Phone className="h-5 w-5" />
                      </div>
                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mb-0.5">Verified Contact</p>
-                        <p className="text-xs font-bold text-slate-800">{profile.nohp || "No Phone Registered"}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Verified Contact</p>
+                        <p className="text-sm font-black text-slate-800 leading-none">{profile.nohp || "No Phone Registered"}</p>
                      </div>
                   </div>
                </div>
                
-               <Button variant="outline" className="w-full h-11 text-[10px] font-bold uppercase border-slate-200 shadow-sm hover:bg-slate-50 active:scale-95 transition-all text-slate-600 rounded-xl">
-                  <Mail className="h-4 w-4 mr-2 text-primary" /> Hubungi Partner
+               <Button className="w-full h-14 text-xs font-black uppercase border-none shadow-xl shadow-orange-500/20 bg-orange-500 hover:bg-orange-600 transition-all hover:scale-[1.02] active:scale-[0.98] text-white rounded-2xl gap-3">
+                  <Mail className="h-5 w-5" /> Hubungi Partner
+               </Button>
+
+               <Button variant="ghost" className="w-full h-12 text-[10px] font-black uppercase text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all rounded-xl mt-4">
+                  <ShieldAlert className="h-4 w-4 mr-2" /> Revoke Global Access
                </Button>
             </div>
           </Card>
-
-          <Button variant="ghost" className="w-full h-10 text-[9px] font-bold uppercase text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-colors shadow-none rounded-lg">
-             <ShieldAlert className="h-4 w-4 mr-2" /> Revoke Global Access
-          </Button>
         </div>
       </div>
     </div>

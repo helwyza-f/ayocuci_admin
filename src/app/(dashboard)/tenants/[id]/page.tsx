@@ -252,7 +252,7 @@ export default function TenantDetailPage() {
                 {profile.ot_activated_at ? "Aktivasi Permanen" : "Masa Percobaan (Trial)"}
               </Badge>
               {profile.subscription_status === "PRO" && (
-                <Badge variant="outline" className="rounded-full px-2 py-0 text-[8px] font-bold uppercase border-indigo-100 bg-indigo-50 text-indigo-600 shadow-none">PRO ACCOUNT</Badge>
+                <Badge variant="outline" className="rounded-full px-2 py-0 text-[8px] font-bold uppercase border-orange-100 bg-orange-50 text-orange-600 shadow-none">PRO ACCOUNT</Badge>
               )}
             </div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
@@ -431,7 +431,7 @@ export default function TenantDetailPage() {
                      {addonHistory.length > 0 ? addonHistory.map((ha, i) => (
                         <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50/30 transition-colors">
                            <div className="flex items-center gap-4">
-                              <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", ha.ha_status === "SUCCESS" ? "bg-indigo-50 text-indigo-600" : "bg-amber-50 text-amber-600")}>
+                              <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", ha.ha_status === "SUCCESS" ? "bg-orange-50 text-orange-600" : "bg-amber-50 text-amber-600")}>
                                  <Zap className="h-4 w-4" />
                               </div>
                               <div>
@@ -516,7 +516,7 @@ export default function TenantDetailPage() {
 
                <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
                   <div className="p-4 border-b border-slate-100 bg-slate-50/30 flex items-center gap-2">
-                     <TrendingUp className="h-4 w-4 text-indigo-500" />
+                     <TrendingUp className="h-4 w-4 text-orange-500" />
                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Log Mutasi Koin Lengkap</p>
                   </div>
                   <div className="divide-y divide-slate-100">
@@ -713,7 +713,7 @@ export default function TenantDetailPage() {
                 <Badge variant="outline" className="font-bold text-[9px] uppercase tracking-wider text-slate-400 border-slate-200">
                    {selectedAddon?.ha_id}
                 </Badge>
-                <Badge className="bg-indigo-50 text-indigo-600 border-indigo-100 text-[8px] font-bold uppercase">License Pending</Badge>
+                <Badge className="bg-orange-50 text-orange-600 border-orange-100 text-[8px] font-bold uppercase">License Pending</Badge>
              </div>
              <h3 className="text-lg font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading uppercase">
                 {selectedAddon?.ha_item_names}

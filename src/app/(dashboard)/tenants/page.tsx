@@ -37,9 +37,14 @@ import useSWR from "swr";
 import { apiFetcher } from "@/lib/fetcher";
 import TableSkeleton from "@/components/shared/table-skeleton";
 import { Badge } from "@/components/ui/badge";
+import Pagination from "@/components/shared/pagination";
+import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
+
+const PAGE_SIZE = 20;
 
 export default function TenantsPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const { data: tenantsResponse, isLoading } = useSWR<ApiResponse<Tenant[]>>(
     "/tenants",
     apiFetcher,
@@ -63,9 +68,10 @@ export default function TenantsPage() {
 
   const [open, setOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState("all");
+  const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
 
   const filteredTenants = useMemo(() => {
-    return tenants.filter((t) => {
+    const byFilter = tenants.filter((t) => {
       const cleanSearch = search.toLowerCase();
       const matchesSearch =
         t.ot_nama.toLowerCase().includes(cleanSearch) ||
@@ -74,7 +80,17 @@ export default function TenantsPage() {
         selectedOwner === "all" || t.owner_name === selectedOwner;
       return matchesSearch && matchesOwner;
     });
-  }, [search, selectedOwner, tenants]);
+    return filterByDateRange(byFilter, (t) => t.ot_created, dateRange);
+  }, [search, selectedOwner, dateRange, tenants]);
+
+  const totalPages = Math.ceil(filteredTenants.length / PAGE_SIZE);
+  const paginatedTenants = filteredTenants.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleSearch = (val: string) => { setSearch(val); setPage(1); };
+  const handleOwnerFilter = (val: string) => { setSelectedOwner(val); setPage(1); };
+  const handleDateRange = (r: DateRange) => { setDateRange(r); setPage(1); };
+  const handleReset = () => { setSearch(""); handleOwnerFilter("all"); setDateRange({ start: "", end: "" }); setPage(1); };
+  const isFiltered = search || selectedOwner !== "all" || dateRange.start || dateRange.end;
 
   const ownerLabel = useMemo(() => {
     if (selectedOwner === "all") return "All Owners";
@@ -110,7 +126,7 @@ export default function TenantsPage() {
             <Input
               placeholder="Search by Name or ID..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
             />
           </div>
@@ -132,9 +148,9 @@ export default function TenantsPage() {
                   <CommandList>
                     <CommandEmpty className="text-[10px] p-2">No results.</CommandEmpty>
                     <CommandGroup>
-                      <CommandItem onSelect={() => { setSelectedOwner("all"); setOpen(false); }} className="text-xs">All Owners</CommandItem>
+                      <CommandItem onSelect={() => { handleOwnerFilter("all"); setOpen(false); }} className="text-xs">All Owners</CommandItem>
                       {owners.map(o => (
-                        <CommandItem key={o.id} onSelect={() => { setSelectedOwner(o.name); setOpen(false); }} className="text-xs">{o.name}</CommandItem>
+                        <CommandItem key={o.id} onSelect={() => { handleOwnerFilter(o.name); setOpen(false); }} className="text-xs">{o.name}</CommandItem>
                       ))}
                     </CommandGroup>
                   </CommandList>
@@ -142,11 +158,15 @@ export default function TenantsPage() {
               </PopoverContent>
             </Popover>
 
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <DateRangeFilter value={dateRange} onChange={handleDateRange} />
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => { setSearch(""); setSelectedOwner("all"); }}
-              className="h-8 w-8 text-slate-400 hover:text-rose-500"
+              onClick={handleReset}
+              className={`h-8 w-8 transition-colors ${isFiltered ? "text-rose-500 hover:text-rose-700 hover:bg-rose-50" : "text-slate-400 hover:text-slate-600"}`}
             >
               <FilterX className="h-3.5 w-3.5" />
             </Button>
@@ -171,7 +191,7 @@ export default function TenantsPage() {
               {isLoading ? (
                 <TableSkeleton columns={5} rows={10} />
               ) : filteredTenants.length > 0 ? (
-                filteredTenants.map((tenant) => (
+                paginatedTenants.map((tenant) => (
                   <tr key={tenant.ot_id} className="hover:bg-slate-50/30 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
@@ -209,7 +229,7 @@ export default function TenantsPage() {
                           variant="outline"
                           className={cn(
                             "rounded px-1.5 py-0 text-[7px] font-bold uppercase border-none opacity-60",
-                            tenant.subscription_status === "PRO" ? "text-indigo-600" : "text-slate-400"
+                            tenant.subscription_status === "PRO" ? "text-orange-600" : "text-slate-400"
                           )}
                         >
                           {tenant.subscription_status}
@@ -240,6 +260,13 @@ export default function TenantsPage() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={filteredTenants.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </Card>
     </div>
   );

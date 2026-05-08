@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ApiResponse } from "@/types/api";
 import { Voucher } from "@/types/voucher";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 export default function VoucherManagementPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -157,6 +158,7 @@ export default function VoucherManagementPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-lg p-0 border border-slate-200 shadow-xl max-w-lg overflow-hidden bg-white">
+               <VisuallyHidden.Root><DialogTitle>Create Campaign Voucher</DialogTitle></VisuallyHidden.Root>
                <div className="p-4 border-b border-slate-100 bg-white">
                   <h3 className="text-sm font-bold uppercase tracking-tight flex items-center gap-2">
                     <Tag className="h-4 w-4 text-primary" /> Create Campaign Voucher
@@ -282,7 +284,7 @@ export default function VoucherManagementPage() {
                   variant="outline"
                   className={cn(
                     "rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none",
-                    v.vc_jenis === "persen" ? "bg-indigo-50/50 text-indigo-600 border-indigo-100" : "bg-emerald-50/50 text-emerald-600 border-emerald-100"
+                    v.vc_jenis === "persen" ? "bg-orange-50/50 text-orange-600 border-orange-100" : "bg-emerald-50/50 text-emerald-600 border-emerald-100"
                   )}
                 >
                   {v.vc_jenis === "persen" ? "Rate" : "Fixed"}

@@ -257,7 +257,7 @@ export default function NotificationsPage() {
                        <div className="flex items-center gap-2">
                           <Badge variant="outline" className={cn(
                             "rounded-full px-2 py-0 text-[8px] font-bold uppercase border shadow-none transition-colors",
-                            log.kategori === 'SISTEM' ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-indigo-50 text-indigo-600 border-indigo-100"
+                            log.kategori === 'SISTEM' ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-orange-50 text-orange-600 border-orange-100"
                           )}>
                              {log.kategori}
                           </Badge>

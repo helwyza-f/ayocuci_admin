@@ -40,11 +40,17 @@ import { apiFetcher } from "@/lib/fetcher";
 import { Badge } from "@/components/ui/badge";
 import TableSkeleton from "@/components/shared/table-skeleton";
 import { format } from "date-fns";
+import Pagination from "@/components/shared/pagination";
+import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
+
+const PAGE_SIZE = 25;
 
 export default function CustomersPage() {
   const [open, setOpen] = useState(false);
   const [selectedOutlet, setSelectedOutlet] = useState("all");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
   
   const customerUrl = selectedOutlet === "all" ? "/customers" : `/customers?outlet_id=${selectedOutlet}`;
   
@@ -63,11 +69,23 @@ export default function CustomersPage() {
   const tenants = useMemo(() => tenantsResponse?.data || [], [tenantsResponse]);
   const customers = useMemo(() => customersResponse?.data || [], [customersResponse]);
 
-  const filtered = (customers || []).filter(
-    (c) =>
-      c?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      c?.nohp?.includes(search)
-  );
+  const filtered = useMemo(() => {
+    const bySearch = (customers || []).filter(
+      (c) =>
+        c?.name?.toLowerCase().includes(search.toLowerCase()) ||
+        c?.nohp?.includes(search)
+    );
+    return filterByDateRange(bySearch, (c) => c.created_at, dateRange);
+  }, [customers, search, dateRange]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleSearch = (val: string) => { setSearch(val); setPage(1); };
+  const handleOutletChange = (val: string) => { setSelectedOutlet(val); setPage(1); };
+  const handleDateRange = (r: DateRange) => { setDateRange(r); setPage(1); };
+  const handleReset = () => { setSearch(""); handleOutletChange("all"); setDateRange({ start: "", end: "" }); setPage(1); };
+  const isFiltered = search || selectedOutlet !== "all" || dateRange.start || dateRange.end;
 
   const selectedLabel = useMemo(() => {
     if (selectedOutlet === "all") return "All Outlets";
@@ -103,7 +121,7 @@ export default function CustomersPage() {
             <Input
               placeholder="Search by name or phone..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
             />
           </div>
@@ -125,9 +143,9 @@ export default function CustomersPage() {
                   <CommandList>
                     <CommandEmpty className="text-[10px] p-2">No results.</CommandEmpty>
                     <CommandGroup>
-                      <CommandItem onSelect={() => { setSelectedOutlet("all"); setOpen(false); }} className="text-xs">All Outlets</CommandItem>
+                      <CommandItem onSelect={() => { handleOutletChange("all"); setOpen(false); }} className="text-xs">All Outlets</CommandItem>
                       {tenants.map(t => (
-                        <CommandItem key={t.ot_id} onSelect={() => { setSelectedOutlet(t.ot_id); setOpen(false); }} className="text-xs">
+                        <CommandItem key={t.ot_id} onSelect={() => { handleOutletChange(t.ot_id); setOpen(false); }} className="text-xs">
                            <div className="flex flex-col">
                               <span className="font-bold">{t.ot_nama}</span>
                               <span className="text-[9px] text-slate-400">#{t.ot_id}</span>
@@ -143,12 +161,15 @@ export default function CustomersPage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => { setSearch(""); setSelectedOutlet("all"); }}
-              className="h-8 w-8 text-slate-400 hover:text-rose-600"
+              onClick={handleReset}
+              className={`h-8 w-8 transition-colors ${isFiltered ? "text-rose-500 hover:text-rose-700 hover:bg-rose-50" : "text-slate-400 hover:text-slate-600"}`}
             >
               <FilterX className="h-3.5 w-3.5" />
             </Button>
           </div>
+
+          <div className="h-5 w-px bg-slate-100 hidden lg:block" />
+          <DateRangeFilter value={dateRange} onChange={handleDateRange} className="p-1 lg:p-0" />
         </div>
       </Card>
 
@@ -168,7 +189,7 @@ export default function CustomersPage() {
               {isLoading ? (
                 <TableSkeleton columns={4} rows={10} />
               ) : filtered.length > 0 ? (
-                filtered.map((customer) => (
+                paginated.map((customer) => (
                   <tr key={customer.id} className="hover:bg-primary/[0.02] transition-colors group">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
@@ -210,6 +231,13 @@ export default function CustomersPage() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </Card>
     </div>
   );

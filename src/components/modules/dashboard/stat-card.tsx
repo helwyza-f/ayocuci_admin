@@ -21,28 +21,28 @@ export default function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <Card className={cn("p-4 border border-slate-200 rounded-lg bg-white group hover:border-primary/20 hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300", className)}>
+    <Card className={cn("p-5 border-none shadow-soft hover-premium bg-white group", className)}>
       <div className="flex justify-between items-start">
-        <div className="space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-slate-500 transition-colors">
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 group-hover:text-primary transition-colors">
             {label}
           </p>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-xl font-bold tracking-tight text-slate-900 font-heading group-hover:text-primary transition-colors">
+            <h3 className="text-2xl font-bold tracking-tight text-slate-900 font-heading">
               {value}
             </h3>
             {trend && (
               <span className={cn(
-                "text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
+                "text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1",
                 trend.isUp ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
               )}>
-                {trend.isUp ? "↑" : "↓"} {trend.value}
+                {trend.value}
               </span>
             )}
           </div>
         </div>
-        <div className="p-2.5 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-primary/5 group-hover:text-primary group-hover:scale-110 transition-all duration-300 border border-slate-100/50">
-          <Icon className="h-4 w-4" />
+        <div className="p-3 rounded-2xl bg-slate-50 text-slate-400 group-hover:bg-primary/10 group-hover:text-primary group-hover:rotate-12 transition-all duration-500 border border-slate-100 shadow-inner">
+          <Icon className="h-5 w-5" />
         </div>
       </div>
     </Card>

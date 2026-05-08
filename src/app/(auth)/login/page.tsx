@@ -39,7 +39,10 @@ export default function LoginPage() {
 
       if (res.status) {
         await setAdminSession(res.data.access_token);
-        setAuth(res.data.user);
+        // Inject admin user + permissions (dari role jika ada) ke store
+        const adminUser = res.data.user;
+        const permissions = adminUser.role?.permissions ?? (adminUser.adm_is_master ? { all: ["*"] } : null);
+        setAuth(adminUser, permissions);
         router.push("/");
         router.refresh();
       } else {

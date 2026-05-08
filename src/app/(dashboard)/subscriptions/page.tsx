@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,13 +53,39 @@ import { id } from "date-fns/locale";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { AxiosError } from "axios";
 import { ApiErrorResponse } from "@/types/api";
+import Pagination from "@/components/shared/pagination";
+import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
+
+const PAGE_SIZE = 25;
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.ayocuci.id";
+
+// ─── KPI Card (gaya analytics) ────────────────────────────
+function KpiCard({
+  label, value, sub, icon: Icon, color,
+}: {
+  label: string; value: string | number; sub?: string;
+  icon: React.ElementType; color: string;
+}) {
+  return (
+    <Card className="border border-slate-200 bg-white rounded-2xl p-5 flex flex-col gap-3 shadow-sm">
+      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${color}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{value}</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
+        {sub && <p className="text-[10px] text-slate-500 mt-1">{sub}</p>}
+      </div>
+    </Card>
+  );
+}
 
 export default function SubscriptionsPage() {
   const [data, setData] = useState<AddonTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [page, setPage] = useState(1);
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,6 +94,14 @@ export default function SubscriptionsPage() {
 
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
+
+  const handleDateRange = (r: DateRange) => {
+    setDateRange(r);
+    setStartDate(r.start ? new Date(r.start + "T00:00:00") : undefined);
+    setEndDate(r.end ? new Date(r.end + "T00:00:00") : undefined);
+    setPage(1);
+  };
 
   // Searchable Dropdown States
   const [outletFilter, setOutletFilter] = useState<string>("all");
@@ -115,6 +150,7 @@ export default function SubscriptionsPage() {
 
   useEffect(() => {
     fetchTransactions();
+    setPage(1);
   }, [fetchTransactions]);
 
   const stats = useMemo(() => {
@@ -137,18 +173,21 @@ export default function SubscriptionsPage() {
   );
 
   const filteredData = useMemo(() => {
-    return (data || []).filter((item) => {
+    const byFilter = (data || []).filter((item) => {
       if (!item) return false;
       const cleanSearch = searchQuery.toLowerCase();
-      const matchesSearch = 
-        item.ha_id.toLowerCase().includes(cleanSearch) || 
+      const matchesSearch =
+        item.ha_id.toLowerCase().includes(cleanSearch) ||
         item.item_names.toLowerCase().includes(cleanSearch);
       const matchesOutlet =
         outletFilter === "all" || item.outlet_name === outletFilter;
-
       return matchesSearch && matchesOutlet;
     });
-  }, [data, searchQuery, outletFilter]);
+    return filterByDateRange(byFilter, (item) => item.ha_created, dateRange);
+  }, [data, searchQuery, outletFilter, dateRange]);
+
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const paginatedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const resetFilters = () => {
     setSearchQuery("");
@@ -157,6 +196,7 @@ export default function SubscriptionsPage() {
     setOutletFilter("all");
     setStartDate(undefined);
     setEndDate(undefined);
+    setDateRange({ start: "", end: "" });
   };
 
   const handleApprove = async (id: string) => {
@@ -198,7 +238,7 @@ export default function SubscriptionsPage() {
       case "PENDING":
         return { label: "Waiting Payment", class: "bg-amber-50 text-amber-600 border-amber-100" };
       case "PENDING_VALIDATION":
-        return { label: "Need Review", class: "bg-indigo-50 text-indigo-600 border-indigo-100 animate-pulse" };
+        return { label: "Need Review", class: "bg-orange-50 text-orange-600 border-orange-100 animate-pulse" };
       case "SUCCESS":
         return { label: "Active", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
       case "FAILED":
@@ -240,21 +280,27 @@ export default function SubscriptionsPage() {
 
       {/* OPERATIONAL METRICS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: "Total Request", value: stats.total, icon: Activity, color: "text-slate-600", bg: "bg-white" },
-          { label: "Pending Review", value: stats.pending, icon: Clock, color: "text-indigo-600", bg: "bg-indigo-50/30 border-indigo-100/50" },
-          { label: "Active Licenses", value: stats.success, icon: Check, color: "text-emerald-600", bg: "bg-white" },
-        ].map((stat, i) => (
-          <Card key={i} className={cn("p-3 border border-slate-200 shadow-none rounded-lg flex items-center justify-between", stat.bg)}>
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{stat.label}</p>
-              <h3 className={cn("text-xl font-bold leading-none", stat.color)}>{stat.value}</h3>
-            </div>
-            <div className={cn("p-2 rounded bg-white border border-slate-100", stat.color)}>
-              <stat.icon className="h-4 w-4" />
-            </div>
-          </Card>
-        ))}
+        <KpiCard
+          label="Total Request"
+          sub="Semua transaksi langganan masuk"
+          value={loading ? "—" : stats.total}
+          icon={Activity}
+          color="bg-slate-100 text-slate-600"
+        />
+        <KpiCard
+          label="Pending Review"
+          sub="Menunggu verifikasi pembayaran"
+          value={loading ? "—" : stats.pending}
+          icon={Clock}
+          color="bg-orange-50 text-primary"
+        />
+        <KpiCard
+          label="Active Licenses"
+          sub="Lisensi PRO yang berhasil aktif"
+          value={loading ? "—" : stats.success}
+          icon={Check}
+          color="bg-emerald-50 text-emerald-600"
+        />
       </div>
 
       {/* FILTER & SEARCH COMMAND BAR */}
@@ -315,10 +361,17 @@ export default function SubscriptionsPage() {
                ))}
             </div>
 
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <DateRangeFilter
+              value={dateRange}
+              onChange={handleDateRange}
+            />
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+
             <Button
               variant="ghost"
               size="icon"
-              onClick={resetFilters}
+              onClick={() => { resetFilters(); }}
               className="h-8 w-8 text-slate-400 hover:text-rose-600"
             >
               <FilterX className="h-3.5 w-3.5" />
@@ -357,7 +410,7 @@ export default function SubscriptionsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredData.map((item) => {
+                paginatedData.map((item) => {
                   const status = getStatusConfig(item.ha_status);
                   const dt = formatDateTime(item.ha_created);
                   return (
@@ -402,6 +455,13 @@ export default function SubscriptionsPage() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={filteredData.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </Card>
 
       {/* OPERATIONAL DETAIL MODAL */}

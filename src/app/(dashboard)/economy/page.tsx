@@ -36,6 +36,34 @@ import { cn } from "@/lib/utils";
 import { ApiResponse } from "@/types/api";
 import { EconomyConfig } from "@/types/domain";
 import { Badge } from "@/components/ui/badge";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+
+// Keys yang satuannya KOIN (bukan Rupiah), meski cfg_type = 'amount' di DB
+const KOIN_KEYS = new Set([
+  "coin_per_transaction",
+  "bonus_koin_new_user",
+  "referral_bonus_new_user",
+  "referral_bonus_inviter",
+]);
+
+// Keys yang satuannya Rupiah
+const RUPIAH_KEYS = new Set([
+  "price_per_coin",
+  "activation_fee",
+  "referral_cash_reward_owner",
+]);
+
+// Keys yang satuannya kali/multiplier (x)
+const KALI_KEYS = new Set([
+  "referral_reward_limit_monthly",
+]);
+
+// Keys yang satuannya persen (%), override jika cfg_type di DB stale
+const PCT_KEYS = new Set([
+  "activation_discount_pct",
+  "referral_percent_first",
+  "referral_percent_subsequent",
+]);
 
 export default function AdminEconomyPage() {
   // --- STATE ECONOMY ---
@@ -89,17 +117,37 @@ export default function AdminEconomyPage() {
   }, []);
 
   // --- HANDLERS ECONOMY ---
-  const formatDisplay = (val: string, type?: string) => {
+  const resolveUnit = (key: string, type?: string): "koin" | "rupiah" | "persen" | "kali" => {
+    if (KALI_KEYS.has(key)) return "kali";
+    if (PCT_KEYS.has(key)) return "persen";
+    if (KOIN_KEYS.has(key)) return "koin";
+    if (RUPIAH_KEYS.has(key)) return "rupiah";
+    if (type === "percentage") return "persen";
+    if (type === "amount" || type === "price") return "rupiah";
+    return "koin";
+  };
+
+  const formatDisplay = (val: string, key: string, type?: string) => {
     if (!val) return "—";
-    if (type === "percentage") return `${val}%`;
-    if (type === "amount" || type === "price") {
+    const unit = resolveUnit(key, type);
+    if (unit === "persen") return `${val}%`;
+    if (unit === "kali") return `${Number(val).toLocaleString("id-ID")}x`;
+    if (unit === "rupiah") {
       return new Intl.NumberFormat("id-ID", {
         style: "currency",
         currency: "IDR",
         minimumFractionDigits: 0,
       }).format(Number(val));
     }
-    return `${val} Koin`;
+    return `${Number(val).toLocaleString("id-ID")} Koin`;
+  };
+
+  const getUnitLabel = (key: string, type?: string) => {
+    const unit = resolveUnit(key, type);
+    if (unit === "persen") return "Persen (%)";
+    if (unit === "rupiah") return "Rupiah (Rp)";
+    if (unit === "kali") return "Kali (x)";
+    return "Koin";
   };
 
   const handleUpdateConfig = async () => {
@@ -238,7 +286,7 @@ export default function AdminEconomyPage() {
                         {cfg.cfg_key.replaceAll("_", " ")}
                       </p>
                       <h3 className="text-lg font-bold text-slate-900 tracking-tight font-heading leading-none group-hover:text-primary transition-colors">
-                        {formatDisplay(cfg.cfg_value, cfg.cfg_type)}
+                        {formatDisplay(cfg.cfg_value, cfg.cfg_key, cfg.cfg_type)}
                       </h3>
                     </div>
                     <div className="mt-3 pt-2.5 border-t border-slate-100">
@@ -358,6 +406,7 @@ export default function AdminEconomyPage() {
         onOpenChange={() => setEditingConfig(null)}
       >
         <DialogContent className="rounded-lg p-0 border border-slate-200 shadow-xl max-w-sm bg-white overflow-hidden">
+          <VisuallyHidden.Root><DialogTitle>Update Parameter</DialogTitle></VisuallyHidden.Root>
           <div className="p-4 border-b border-slate-100">
             <h3 className="text-[10px] font-bold uppercase tracking-tight flex items-center gap-2">
               <Settings2 className="h-3.5 w-3.5 text-primary" /> Update Parameter
@@ -373,7 +422,12 @@ export default function AdminEconomyPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[8px] font-bold uppercase text-slate-400 ml-1">New Value</label>
+              <label className="text-[8px] font-bold uppercase text-slate-400 ml-1">
+                New Value
+                <span className="ml-1.5 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[8px] font-bold normal-case">
+                  {getUnitLabel(editingConfig?.cfg_key ?? "", editingConfig?.cfg_type)}
+                </span>
+              </label>
               <Input
                 type="number"
                 value={rawValue}
@@ -383,7 +437,9 @@ export default function AdminEconomyPage() {
               <div className="mt-3 p-3 bg-white rounded border border-slate-100">
                 <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Preview:</p>
                 <p className="text-sm font-bold text-primary font-heading">
-                  {rawValue ? formatDisplay(rawValue, editingConfig?.cfg_type) : "—"}
+                  {rawValue
+                    ? formatDisplay(rawValue, editingConfig?.cfg_key ?? "", editingConfig?.cfg_type)
+                    : "—"}
                 </p>
               </div>
             </div>
