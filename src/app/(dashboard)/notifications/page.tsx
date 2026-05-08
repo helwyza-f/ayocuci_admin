@@ -377,7 +377,7 @@ export default function NotificationsPage() {
 
       {/* AUDIT DIALOG */}
       <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden border border-slate-200 rounded-2xl shadow-2xl bg-white animate-in zoom-in-95 duration-200">
+        <DialogContent className="w-[95vw] max-w-4xl p-0 overflow-hidden border border-slate-200 rounded-2xl shadow-2xl bg-white animate-in zoom-in-95 duration-200">
            <VisuallyHidden.Root><DialogTitle>Campaign Audit</DialogTitle></VisuallyHidden.Root>
            <div className="p-4 border-b border-slate-100 bg-slate-900 text-white">
               <Badge className="bg-primary/20 text-primary border-none font-bold text-[8px] uppercase mb-2">{selectedLog?.kategori}</Badge>
@@ -387,11 +387,11 @@ export default function NotificationsPage() {
               </p>
            </div>
            
-            <div className="grid md:grid-cols-[1fr_1.5fr] gap-0 h-[500px]">
+            <div className="grid md:grid-cols-[320px_1fr] gap-0 h-[500px]">
               <div className="p-6 space-y-4 border-r border-slate-100 bg-slate-50/50 overflow-y-auto">
-                 <div className="space-y-1">
+                 <div className="space-y-1.5">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Content Body</p>
-                    <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm">
+                    <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm whitespace-pre-wrap">
                         {selectedLog?.pesan}
                     </div>
                  </div>
