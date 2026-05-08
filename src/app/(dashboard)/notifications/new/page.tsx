@@ -249,31 +249,62 @@ export default function NewNotificationPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Badge className="bg-slate-900 text-white">
-                  {form.kategori}
-                </Badge>
-                <span className="text-xs font-bold text-slate-300">
-                  Preview
-                </span>
+          {/* PREVIEW SMARTPHONE */}
+          <div className="relative mx-auto w-full max-w-[300px]">
+            {/* Phone Frame */}
+            <div className="relative rounded-[2.5rem] border-[8px] border-slate-900 bg-slate-900 p-2 shadow-2xl">
+              {/* Notch */}
+              <div className="absolute left-1/2 top-0 h-6 w-32 -translate-x-1/2 rounded-b-2xl bg-slate-900 z-20" />
+              
+              <div className="relative aspect-[9/19.5] w-full overflow-hidden rounded-[1.8rem] bg-slate-100">
+                {/* Status Bar */}
+                <div className="flex h-10 items-end justify-between px-6 pb-2 text-[10px] font-bold text-slate-400">
+                  <span>9:41</span>
+                  <div className="flex items-center gap-1">
+                    <div className="h-2.5 w-4 rounded-sm border border-slate-400" />
+                  </div>
+                </div>
+
+                <div className="p-3">
+                   {/* Notification Card */}
+                   <div className="mt-2 overflow-hidden rounded-2xl bg-white/80 p-3 shadow-sm backdrop-blur-md">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-primary p-1">
+                            <img src="/logo_white.png" alt="App Icon" className="h-full w-full object-contain" />
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">AyoCuci</span>
+                        </div>
+                        <span className="text-[9px] font-medium text-slate-400">now</span>
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-[11px] font-black leading-tight text-slate-900">
+                          {form.judul || "Judul broadcast"}
+                        </h4>
+                        <p className="text-[10px] leading-snug text-slate-600 line-clamp-3">
+                          {form.pesan || "Pesan Anda akan muncul di sini saat mulai mengetik."}
+                        </p>
+                      </div>
+                      {imagePreview && (
+                        <div className="mt-2.5 overflow-hidden rounded-xl">
+                          <img
+                            src={imagePreview}
+                            alt="Preview Attachment"
+                            className="aspect-video w-full object-cover"
+                          />
+                        </div>
+                      )}
+                   </div>
+                </div>
+
+                {/* Bottom Bar */}
+                <div className="absolute bottom-2 left-1/2 h-1 w-24 -translate-x-1/2 rounded-full bg-slate-300" />
               </div>
-              <h4 className="line-clamp-1 font-black text-slate-900">
-                {form.judul || "Judul broadcast"}
-              </h4>
-              <p className="line-clamp-5 text-sm leading-relaxed text-slate-500">
-                {form.pesan || "Isi pesan akan muncul di sini."}
-              </p>
-              {imagePreview && (
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="aspect-[16/9] w-full rounded-2xl object-cover"
-                />
-              )}
             </div>
-          </Card>
+            <p className="mt-4 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              Live App Preview
+            </p>
+          </div>
 
           <Button
             onClick={handleSubmit}
