@@ -39,6 +39,7 @@ import TableSkeleton from "@/components/shared/table-skeleton";
 import { Badge } from "@/components/ui/badge";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
+import { ExportExcelButton } from "@/components/shared/export-excel-button";
 
 const PAGE_SIZE = 20;
 
@@ -112,9 +113,28 @@ export default function TenantsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-           <Button className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
-              <Plus className="h-4 w-4" /> Register New
-           </Button>
+          <Badge variant="outline" className="h-8 px-3 rounded-md font-bold text-[10px] uppercase tracking-wider text-slate-500 border-slate-200 bg-white">
+            {filteredTenants.length} / {tenants.length} Tenants
+          </Badge>
+          <ExportExcelButton
+            data={filteredTenants}
+            filename="tenants_directory"
+            sheetName="Tenants"
+            columns={[
+              { header: "ID", key: "ot_id", width: 12 },
+              { header: "Nama Outlet", key: "ot_nama", width: 25 },
+              { header: "Owner", key: "owner_name", width: 25 },
+              { header: "Email Owner", key: "owner_email", width: 30 },
+              { header: "Saldo Koin", key: "ot_koin", width: 15 },
+              { header: "Status", key: "ot_status", width: 15, format: (v) => v === 1 ? "Aktif" : "Pending" },
+              { header: "Subscription", key: "subscription_status", width: 15 },
+              { header: "Expired At", key: "expiry_date", width: 20, format: (v) => v ? format(new Date(v), "dd/MM/yyyy") : "" },
+              { header: "Tanggal Daftar", key: "ot_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+            ]}
+          />
+          <Button className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
+            <Plus className="h-4 w-4" /> Register New
+          </Button>
         </div>
       </div>
 

@@ -41,6 +41,7 @@ import { format } from "date-fns";
 import { ApiResponse } from "@/types/api";
 import { Voucher } from "@/types/voucher";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { ExportExcelButton } from "@/components/shared/export-excel-button";
 
 export default function VoucherManagementPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -151,6 +152,22 @@ export default function VoucherManagementPage() {
             Sync
           </Button>
 
+          <ExportExcelButton
+            data={vouchers}
+            filename="vouchers_campaign"
+            sheetName="Vouchers"
+            columns={[
+              { header: "Voucher Code", key: "vc_voucher", width: 20 },
+              { header: "Jenis", key: "vc_jenis", width: 12 },
+              { header: "Potongan", key: "vc_nilai_potongan", width: 15, format: (v, r) => r.vc_jenis === "persen" ? `${v}%` : (v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0") },
+              { header: "Keterangan", key: "vc_keterangan", width: 30 },
+              { header: "Tgl Mulai", key: "vc_tanggalmulai", width: 20, format: (v) => v ? format(new Date(v), "dd/MM/yyyy") : "" },
+              { header: "Tgl Berakhir", key: "vc_tanggalberakhir", width: 20, format: (v) => v ? format(new Date(v), "dd/MM/yyyy") : "" },
+              { header: "Jumlah", key: "vc_jumlah_voucher", width: 12 },
+              { header: "Sisa", key: "vc_sisa_voucher", width: 12 },
+              { header: "Status", key: "vc_status", width: 12, format: (v) => v === 1 ? "Aktif" : "Nonaktif" },
+            ]}
+          />
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2">

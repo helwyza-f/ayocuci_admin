@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { Admin, AdminPermissions } from "@/types/admin";
 import { logoutAdmin } from "@/app/(auth)/login/actions";
 
@@ -10,44 +11,55 @@ interface AuthState {
   logout: () => Promise<void>;
   isMaster: () => boolean;
   hasPermission: (module: string, action: string) => boolean;
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
 }
 
-export const useAuthStore = create<AuthState>()((set, get) => ({
-  admin: null,
-  permissions: null,
-  setAuth: (admin, permissions = null) => set({ admin, permissions }),
-  clearAuth: () => set({ admin: null, permissions: null }),
-  logout: async () => {
-    await logoutAdmin();
-    set({ admin: null, permissions: null });
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      admin: null,
+      permissions: null,
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
+      setAuth: (admin, permissions = null) => set({ admin, permissions }),
+      clearAuth: () => set({ admin: null, permissions: null }),
+      logout: async () => {
+        await logoutAdmin();
+        set({ admin: null, permissions: null });
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+      },
+      isMaster: () => {
+        const { admin, permissions } = get();
+        if (!admin) return false;
+        if (admin.adm_is_master) return true;
+        const allPerms = permissions?.["all"];
+        return Array.isArray(allPerms) && allPerms.includes("*");
+      },
+      hasPermission: (module: string, action: string) => {
+        const { isMaster, permissions } = get();
+        if (isMaster()) return true;
+        if (!permissions) return false;
+
+        const globalPerms = permissions["all"];
+        if (Array.isArray(globalPerms) && (globalPerms.includes("*") || globalPerms.includes("all"))) {
+          return true;
+        }
+
+        const modulePerms = permissions[module];
+        if (!Array.isArray(modulePerms)) return false;
+
+        return modulePerms.includes(action) || modulePerms.includes("*") || modulePerms.includes("all");
+      },
+    }),
+    {
+      name: "ayocuci-auth-storage",
+      storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
-  },
-  isMaster: () => {
-    const { admin, permissions } = get();
-    if (!admin) return false;
-    if (admin.adm_is_master) return true;
-    // Cek dari permissions: master admin punya {"all": ["*"]}
-    const allPerms = permissions?.["all"];
-    return Array.isArray(allPerms) && allPerms.includes("*");
-  },
-  hasPermission: (module: string, action: string) => {
-    const { isMaster, permissions } = get();
-    // Master admin punya akses penuh
-    if (isMaster()) return true;
-    if (!permissions) return false;
-
-    // Cek wildcard global
-    const globalPerms = permissions["all"];
-    if (Array.isArray(globalPerms) && (globalPerms.includes("*") || globalPerms.includes("all"))) {
-      return true;
-    }
-
-    // Cek permission spesifik modul
-    const modulePerms = permissions[module];
-    if (!Array.isArray(modulePerms)) return false;
-
-    return modulePerms.includes(action) || modulePerms.includes("*") || modulePerms.includes("all");
-  },
-}));
+  )
+);

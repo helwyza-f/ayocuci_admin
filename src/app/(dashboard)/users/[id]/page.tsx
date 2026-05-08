@@ -46,6 +46,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import StatCard from "@/components/modules/dashboard/stat-card";
 import { toast } from "sonner";
 
@@ -271,7 +272,7 @@ export default function UserDetailPage() {
                </Card>
 
                <Card className="border-none shadow-soft bg-white p-0 overflow-hidden">
-                  <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                  <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
                      <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
                            <UserPlus className="h-5 w-5" />
@@ -281,6 +282,16 @@ export default function UserDetailPage() {
                            <p className="text-sm font-bold text-slate-700">Afiliasi yang bergabung menggunakan kode partner</p>
                         </div>
                      </div>
+                     <ExportExcelButton
+                        data={recruits}
+                        filename={`network_${profile?.name}`}
+                        sheetName="Network"
+                        columns={[
+                          { header: "Nama", key: "name", width: 25 },
+                          { header: "Tanggal", key: "created_at", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+                          { header: "Status", key: "status", width: 12, format: (v) => v === 1 ? "Active" : "Inactive" },
+                        ]}
+                      />
                   </div>
                   <div className="divide-y divide-slate-50">
                      {recruits.map((recruit: any) => (
@@ -309,7 +320,7 @@ export default function UserDetailPage() {
             {/* TAB: KOMISI MASUK */}
             <TabsContent value="komisi" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                <Card className="border-none shadow-soft bg-white p-0 overflow-hidden">
-                  <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                  <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
                      <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
                            <GitBranch className="h-5 w-5" />
@@ -319,6 +330,19 @@ export default function UserDetailPage() {
                            <p className="text-sm font-bold text-slate-700">Komisi yang diterima dari setiap rekrutmen berhasil</p>
                         </div>
                      </div>
+                     <ExportExcelButton
+                        data={referral_rewards}
+                        filename={`komisi_${profile?.name}`}
+                        sheetName="Rewards"
+                        columns={[
+                          { header: "Referred", key: "referred_nama", width: 25 },
+                          { header: "Email", key: "referred_email", width: 30 },
+                          { header: "Outlet", key: "rr_referred_outlet", width: 15 },
+                          { header: "Tipe", key: "rr_type", width: 12 },
+                          { header: "Komisi", key: "rr_reward_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
+                          { header: "Tanggal", key: "rr_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+                        ]}
+                      />
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
@@ -371,7 +395,7 @@ export default function UserDetailPage() {
             {/* TAB: LEDGER */}
             <TabsContent value="ledger" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                <Card className="border-none shadow-soft bg-white p-0 overflow-hidden">
-                  <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                  <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
                      <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
                            <Activity className="h-5 w-5" />
@@ -381,6 +405,18 @@ export default function UserDetailPage() {
                            <p className="text-sm font-bold text-slate-700">Arus kas koin real-time dari seluruh outlet</p>
                         </div>
                      </div>
+                     <ExportExcelButton
+                        data={koin_ledger}
+                        filename={`ledger_${profile?.name}`}
+                        sheetName="Ledger"
+                        columns={[
+                          { header: "Outlet", key: "outlet_nama", width: 25 },
+                          { header: "Tipe", key: "hk_jenis_transaksi", width: 12 },
+                          { header: "Jumlah", key: "hk_jumlah", width: 12 },
+                          { header: "Keterangan", key: "hk_keterangan", width: 40 },
+                          { header: "Tanggal", key: "hk_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+                        ]}
+                      />
                   </div>
                   <div className="divide-y divide-slate-50">
                      {koin_ledger.map((hk: any, i: number) => (
@@ -412,7 +448,7 @@ export default function UserDetailPage() {
             {/* TAB: FINANCIALS (Payouts) */}
             <TabsContent value="financials" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                <Card className="border-none shadow-soft bg-white p-0 overflow-hidden">
-                  <div className="p-6 border-b border-slate-50 bg-slate-50/30">
+                  <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
                      <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
                            <Receipt className="h-5 w-5" />
@@ -422,6 +458,20 @@ export default function UserDetailPage() {
                            <p className="text-sm font-bold text-slate-700">Riwayat pencairan komisi ke rekening partner</p>
                         </div>
                      </div>
+                     <ExportExcelButton
+                        data={payouts}
+                        filename={`payouts_${profile?.name}`}
+                        sheetName="Payouts"
+                        columns={[
+                          { header: "ID", key: "rp_id", width: 22 },
+                          { header: "Bank", key: "rp_bank_name", width: 12 },
+                          { header: "Account", key: "rp_account_number", width: 18 },
+                          { header: "Nama Rek", key: "rp_account_name", width: 25 },
+                          { header: "Amount", key: "rp_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
+                          { header: "Status", key: "rp_status", width: 12 },
+                          { header: "Tanggal", key: "rp_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+                        ]}
+                      />
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">

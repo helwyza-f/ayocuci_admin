@@ -17,7 +17,19 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const showFull = isMobile ? true : !isCollapsed;
-  const { isMaster, hasPermission } = useAuthStore();
+  const { isMaster, hasPermission, _hasHydrated } = useAuthStore();
+
+  // Tunggu hidrasi selesai agar tidak ada flicker atau menu kosong saat refresh
+  if (!_hasHydrated) {
+    return (
+      <div className={cn("flex flex-col h-full bg-white animate-pulse", showFull ? "p-5" : "p-3")}>
+        <div className="h-8 w-8 bg-slate-100 rounded-lg mb-8" />
+        <div className="flex-1 space-y-4">
+           {[1, 2, 3, 4].map(i => <div key={i} className="h-8 bg-slate-50 rounded" />)}
+        </div>
+      </div>
+    );
+  }
 
   // Filter menu items berdasarkan permission admin yang login
   const visibleMenus = adminMenus

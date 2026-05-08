@@ -55,6 +55,7 @@ import { AxiosError } from "axios";
 import { ApiErrorResponse } from "@/types/api";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
+import { ExportExcelButton } from "@/components/shared/export-excel-button";
 
 const PAGE_SIZE = 25;
 
@@ -265,6 +266,20 @@ export default function SubscriptionsPage() {
         </div>
 
         <div className="flex items-center gap-2">
+           <ExportExcelButton
+            data={filteredData}
+            filename="subscriptions_report"
+            sheetName="Subscriptions"
+            columns={[
+              { header: "ID", key: "ha_id", width: 22 },
+              { header: "Nama Owner", key: "owner_name", width: 25 },
+              { header: "Nama Outlet", key: "outlet_name", width: 25 },
+              { header: "Addon", key: "item_names", width: 30 },
+              { header: "Status", key: "ha_status", width: 18 },
+              { header: "Harga", key: "ha_total", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
+              { header: "Tanggal", key: "ha_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+            ]}
+          />
            <Button
             variant="ghost"
             size="sm"

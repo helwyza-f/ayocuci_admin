@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import TableSkeleton from "@/components/shared/table-skeleton";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
+import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { format } from "date-fns";
 
 const PAGE_SIZE = 20;
@@ -66,6 +67,20 @@ export default function OwnersPage() {
           <Badge variant="outline" className="h-8 px-3 rounded-md font-bold text-[10px] uppercase tracking-wider text-slate-500 border-slate-200 bg-white">
             {filteredOwners.length} / {owners.length} Accounts
           </Badge>
+          <ExportExcelButton
+            data={filteredOwners}
+            filename="owners_directory"
+            sheetName="Owners"
+            columns={[
+              { header: "ID", key: "id", width: 10 },
+              { header: "Nama", key: "name", width: 25 },
+              { header: "Email", key: "email", width: 30 },
+              { header: "No. HP", key: "nohp", width: 18 },
+              { header: "Status", key: "status", width: 12, format: (v) => v === 1 ? "Aktif" : "Nonaktif" },
+              { header: "Total Outlet", key: "total_outlets", width: 14 },
+              { header: "Tanggal Bergabung", key: "created_at", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+            ]}
+          />
         </div>
       </div>
 

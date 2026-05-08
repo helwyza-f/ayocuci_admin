@@ -42,6 +42,7 @@ import TableSkeleton from "@/components/shared/table-skeleton";
 import { format } from "date-fns";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
+import { ExportExcelButton } from "@/components/shared/export-excel-button";
 
 const PAGE_SIZE = 25;
 
@@ -110,6 +111,18 @@ export default function CustomersPage() {
            <Badge variant="outline" className="h-8 px-3 rounded-md font-bold text-[10px] uppercase tracking-wider text-slate-500 border-slate-200 bg-white shadow-none">
               {filtered.length} Total Records
            </Badge>
+           <ExportExcelButton
+            data={filtered}
+            filename="customers_database"
+            sheetName="Customers"
+            columns={[
+              { header: "Nama", key: "name", width: 25 },
+              { header: "No. HP", key: "nohp", width: 18 },
+              { header: "Outlet Terdaftar", key: "outlet_name", width: 25 },
+              { header: "Total Transaksi", key: "total_transaksi", width: 15 },
+              { header: "Bergabung", key: "created_at", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+            ]}
+          />
         </div>
       </div>
 

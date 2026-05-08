@@ -58,6 +58,7 @@ import { ApiErrorResponse } from "@/types/api";
 import { Topup, TopupStatus } from "@/types/topup";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange } from "@/components/shared/date-range-filter";
+import { ExportExcelButton } from "@/components/shared/export-excel-button";
 
 const PAGE_SIZE = 25;
 
@@ -232,6 +233,21 @@ export default function TopupsManagementPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <ExportExcelButton
+            data={filteredData}
+            filename="topups_report"
+            sheetName="Topups"
+            columns={[
+              { header: "ID", key: "tk_id", width: 22 },
+              { header: "Nama Owner", key: "owner_name", width: 25 },
+              { header: "Nama Outlet", key: "outlet_name", width: 25 },
+              { header: "Status", key: "tk_status", width: 12 },
+              { header: "Total Koin", key: "tk_jumlah", width: 15 },
+              { header: "Total Bayar", key: "tk_total", width: 18, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
+              { header: "Metode", key: "tk_metode_bayar", width: 15 },
+              { header: "Tanggal", key: "tk_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+            ]}
+          />
            <Button
             variant="ghost"
             size="sm"

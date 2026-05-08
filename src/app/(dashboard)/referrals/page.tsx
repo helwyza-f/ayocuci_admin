@@ -33,6 +33,8 @@ import {
 import { referralAdminService } from "@/services/referral-admin.service";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
+import { ExportExcelButton } from "@/components/shared/export-excel-button";
+import { format } from "date-fns";
 
 const PAGE_SIZE = 10;
 
@@ -235,8 +237,23 @@ export default function ReferralAdminPage() {
              </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 justify-between">
             <DateRangeFilter value={dateRange} onChange={(r) => { setDateRange(r); setPage(1); }} />
+            <ExportExcelButton
+              data={filteredPayouts}
+              filename="payout_requests"
+              sheetName="Payouts"
+              columns={[
+                { header: "ID", key: "rp_id", width: 22 },
+                { header: "Owner", key: "usr_nama", width: 25 },
+                { header: "Email", key: "usr_email", width: 30 },
+                { header: "Bank", key: "rp_bank_name", width: 12 },
+                { header: "Account No", key: "rp_account_number", width: 18 },
+                { header: "Amount", key: "rp_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
+                { header: "Status", key: "rp_status", width: 12 },
+                { header: "Requested", key: "rp_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+              ]}
+            />
           </div>
 
           <div className="space-y-3">
@@ -365,6 +382,19 @@ export default function ReferralAdminPage() {
                 ))}
               </div>
               <DateRangeFilter value={rewardDateRange} onChange={setRewardDateRange} />
+              <ExportExcelButton
+                data={filteredRewards}
+                filename="referral_rewards"
+                sheetName="Rewards"
+                columns={[
+                  { header: "Referrer", key: "referrer_nama", width: 25 },
+                  { header: "Referred", key: "referred_nama", width: 25 },
+                  { header: "Outlet", key: "rr_referred_outlet", width: 15 },
+                  { header: "Type", key: "rr_type", width: 12 },
+                  { header: "Amount", key: "rr_reward_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
+                  { header: "Date", key: "rr_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+                ]}
+              />
               {(rewardSearch || rewardTypeFilter !== "all" || rewardDateRange.start) && (
                 <Button
                   variant="ghost"

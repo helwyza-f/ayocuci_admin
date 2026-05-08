@@ -12,7 +12,7 @@ interface HeaderProps {
 
 export default function Header({ onToggleSidebar }: HeaderProps) {
   const pathname = usePathname();
-  const { logout, admin } = useAuthStore();
+  const { logout, admin, _hasHydrated } = useAuthStore();
 
   const getTitle = () => {
     const segment = pathname.split("/").pop();
@@ -82,12 +82,21 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         {/* Admin Info & Logout */}
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block leading-none">
-            <p className="text-xs font-bold text-slate-900 tracking-tight">
-              {admin?.adm_nama || "Administrator"}
-            </p>
-            <p className="text-[9px] font-medium text-primary uppercase tracking-tight">
-              Superadmin
-            </p>
+            {_hasHydrated ? (
+              <>
+                <p className="text-xs font-bold text-slate-900 tracking-tight">
+                  {admin?.adm_nama || "Administrator"}
+                </p>
+                <p className="text-[9px] font-medium text-primary uppercase tracking-tight">
+                  {admin?.adm_is_master ? "Master Admin" : "Superadmin"}
+                </p>
+              </>
+            ) : (
+              <div className="space-y-1">
+                <div className="h-3 w-20 bg-slate-100 animate-pulse rounded" />
+                <div className="h-2 w-12 bg-slate-50 animate-pulse rounded ml-auto" />
+              </div>
+            )}
           </div>
 
           <Button
