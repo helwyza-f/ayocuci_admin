@@ -377,43 +377,61 @@ export default function NotificationsPage() {
 
       {/* AUDIT DIALOG */}
       <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
-        <DialogContent className="w-[95vw] max-w-4xl p-0 overflow-hidden border border-slate-200 rounded-2xl shadow-2xl bg-white animate-in zoom-in-95 duration-200">
+        <DialogContent className="!w-[96vw] !max-w-[96vw] h-[92vh] p-0 overflow-hidden border border-slate-200 rounded-2xl shadow-2xl bg-white animate-in zoom-in-95 duration-200 flex flex-col">
            <VisuallyHidden.Root><DialogTitle>Campaign Audit</DialogTitle></VisuallyHidden.Root>
-           <div className="p-4 border-b border-slate-100 bg-slate-900 text-white">
+           <div className="p-4 border-b border-slate-100 bg-slate-900 text-white flex-shrink-0">
               <Badge className="bg-primary/20 text-primary border-none font-bold text-[8px] uppercase mb-2">{selectedLog?.kategori}</Badge>
-              <h3 className="text-base font-bold tracking-tight mb-0.5 font-heading">{selectedLog?.judul}</h3>
-              <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider italic">
-                 Dispatched: {selectedLog && format(new Date(selectedLog.created_at), "dd/MM/yy, HH:mm")}
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold tracking-tight mb-0.5 font-heading">{selectedLog?.judul}</h3>
+                  <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider italic">
+                    Dispatched: {selectedLog && format(new Date(selectedLog.created_at), "dd/MM/yy, HH:mm")}
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setSelectedLog(null)}
+                  className="text-white/40 hover:text-white hover:bg-white/10"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
            </div>
            
-            <div className="grid md:grid-cols-[320px_1fr] gap-0 h-[500px]">
-              <div className="p-6 space-y-4 border-r border-slate-100 bg-slate-50/50 overflow-y-auto">
+            <div className="flex flex-1 overflow-hidden">
+              {/* LEFT COLUMN: CONTENT */}
+              <div className="w-[450px] flex-shrink-0 p-6 space-y-6 border-r border-slate-100 bg-slate-50/50 overflow-y-auto">
                  <div className="space-y-1.5">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Content Body</p>
-                    <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm whitespace-pre-wrap">
+                    <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm whitespace-pre-wrap">
                         {selectedLog?.pesan}
                     </div>
                  </div>
                  {selectedLog?.image_url && (
                     <div className="space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Attached Media</p>
-                        <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                           <img src={selectedLog.image_url} alt="Notification" className="w-full h-auto object-cover" />
+                        <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-2">
+                           <img 
+                            src={selectedLog.image_url.startsWith('http') ? selectedLog.image_url : `https://api.ayocuci.id${selectedLog.image_url}`} 
+                            alt="Notification" 
+                            className="w-full h-auto object-contain rounded-lg shadow-inner" 
+                           />
                         </div>
                     </div>
                  )}
               </div>
 
-              <div className="flex flex-col h-full overflow-hidden bg-white">
-                 <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              {/* RIGHT COLUMN: DELIVERY STATUS */}
+              <div className="flex-1 flex flex-col min-w-0 bg-white">
+                 <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white flex-shrink-0">
                     <div className="flex items-center gap-2">
                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Delivery Status</p>
                        <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-slate-100 text-slate-600 border-none">{receivers.length} Targets</Badge>
                     </div>
                  </div>
                  
-                 <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                 <div className="flex-1 overflow-y-auto p-6 space-y-2 custom-scrollbar">
                     {loadingDetail ? (
                       <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400 py-20">
                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -424,18 +442,18 @@ export default function NotificationsPage() {
                          <p className="text-[10px] font-bold text-slate-300 uppercase">No delivery data</p>
                       </div>
                     ) : (
-                      <>
+                      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
                         {receivers.slice((receiverPage - 1) * receiversPerPage, receiverPage * receiversPerPage).map(r => (
-                          <div key={r.outlet_id} className="group p-3 rounded-xl border border-slate-100 bg-white flex items-center justify-between text-xs transition-all hover:border-primary/20 hover:shadow-sm">
+                          <div key={r.outlet_id} className="group p-4 rounded-xl border border-slate-100 bg-white flex items-center justify-between text-xs transition-all hover:border-primary/20 hover:shadow-md hover:-translate-y-0.5">
                              <div className="flex items-center gap-3">
                                 <div className={cn(
-                                   "h-8 w-8 rounded-lg flex items-center justify-center transition-colors",
+                                   "h-10 w-10 rounded-lg flex items-center justify-center transition-colors",
                                    r.status === 1 ? "bg-emerald-50 text-emerald-500" : "bg-slate-50 text-slate-300"
                                 )}>
-                                   <Store className="h-4 w-4" />
+                                   <Store className="h-5 w-5" />
                                 </div>
                                 <div className="space-y-0.5">
-                                   <p className="font-bold text-slate-800 text-[12px] group-hover:text-primary transition-colors">{r.outlet_name}</p>
+                                   <p className="font-bold text-slate-800 text-[13px] group-hover:text-primary transition-colors">{r.outlet_name}</p>
                                    <div className="flex items-center gap-1.5">
                                       <p className="text-[10px] font-medium text-slate-400">
                                          {r.read_at ? format(new Date(r.read_at), "dd MMM, HH:mm") : "Pending reception"}
@@ -450,44 +468,44 @@ export default function NotificationsPage() {
                                 </div>
                              </div>
                              <Badge variant="outline" className={cn(
-                                "rounded-lg px-2 py-0.5 text-[9px] font-bold uppercase border shadow-none transition-all",
+                                "rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase border shadow-none transition-all",
                                 r.status === 1 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-200"
                              )}>
                                 {r.status === 1 ? "Opened" : "Sent"}
                              </Badge>
                           </div>
                         ))}
-                        
-                        {receivers.length > receiversPerPage && (
-                          <div className="flex items-center justify-between pt-4 sticky bottom-0 bg-white">
-                             <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                Page {receiverPage} of {Math.ceil(receivers.length / receiversPerPage)}
-                             </p>
-                             <div className="flex gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-7 text-[10px] font-bold"
-                                  disabled={receiverPage === 1}
-                                  onClick={() => setReceiverPage(p => p - 1)}
-                                >
-                                   Prev
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-7 text-[10px] font-bold"
-                                  disabled={receiverPage === Math.ceil(receivers.length / receiversPerPage)}
-                                  onClick={() => setReceiverPage(p => p + 1)}
-                                >
-                                   Next
-                                </Button>
-                             </div>
-                          </div>
-                        )}
-                      </>
+                      </div>
                     )}
                  </div>
+
+                 {receivers.length > receiversPerPage && (
+                    <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50 flex-shrink-0">
+                       <p className="text-[10px] font-bold text-slate-400 uppercase">
+                          Page {receiverPage} of {Math.ceil(receivers.length / receiversPerPage)}
+                       </p>
+                       <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-9 px-6 text-[10px] font-bold bg-white shadow-sm"
+                            disabled={receiverPage === 1}
+                            onClick={() => setReceiverPage(p => p - 1)}
+                          >
+                             Previous
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-9 px-6 text-[10px] font-bold bg-white shadow-sm"
+                            disabled={receiverPage === Math.ceil(receivers.length / receiversPerPage)}
+                            onClick={() => setReceiverPage(p => p + 1)}
+                          >
+                             Next
+                          </Button>
+                       </div>
+                    </div>
+                 )}
               </div>
             </div>
         </DialogContent>
