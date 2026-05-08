@@ -22,6 +22,7 @@ import {
   ChevronRight,
   FilterX,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { id } from "date-fns/locale";
@@ -79,6 +80,7 @@ export default function NotificationsPage() {
   const [category, setCategory] = useState("ALL");
   const [outlet, setOutlet] = useState("ALL");
   const [date, setDate] = useState("");
+  const [source, setSource] = useState<"ALL" | "ADMIN" | "SYSTEM">("ADMIN");
 
   const [selectedLog, setSelectedLog] = useState<NotificationLog | null>(null);
   const [receivers, setReceivers] = useState<Receiver[]>([]);
@@ -111,9 +113,16 @@ export default function NotificationsPage() {
       const matchesCategory = category === "ALL" || log.kategori === category;
       const matchesOutlet = outlet === "ALL" || log.receiver_names?.includes(outlet);
       const matchesDate = !date || isSameDay(new Date(log.created_at), new Date(date));
-      return matchesSearch && matchesCategory && matchesOutlet && matchesDate;
+      
+      const isSystem = log.sender === "SYSTEM";
+      const matchesSource = 
+        source === "ALL" ? true :
+        source === "SYSTEM" ? isSystem :
+        !isSystem;
+
+      return matchesSearch && matchesCategory && matchesOutlet && matchesDate && matchesSource;
     });
-  }, [logs, search, category, outlet, date]);
+  }, [logs, search, category, outlet, date, source]);
 
   const stats = useMemo(
     () => ({
@@ -144,6 +153,21 @@ export default function NotificationsPage() {
     setCategory("ALL");
     setOutlet("ALL");
     setDate("");
+    setSource("ADMIN");
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this broadcast? This will also remove it from receivers' history.")) return;
+    
+    try {
+      const res = await api.delete(`/notifications/logs/${id}`);
+      if (res.data.status) {
+        toast.success("Broadcast deleted successfully");
+        setLogs(prev => prev.filter(l => l.id !== id));
+      }
+    } catch {
+      toast.error("Failed to delete broadcast");
+    }
   };
 
   return (
@@ -175,6 +199,37 @@ export default function NotificationsPage() {
         <StatCard label="Promo" value={loading ? "..." : stats.promo} icon={Sparkles} />
         <StatCard label="Info" value={loading ? "..." : stats.info} icon={Bell} />
         <StatCard label="Impressions" value={loading ? "..." : stats.read} icon={MailOpen} />
+      </div>
+
+      {/* SOURCE TABS */}
+      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg w-fit">
+        <button
+          onClick={() => setSource("ADMIN")}
+          className={cn(
+            "px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
+            source === "ADMIN" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+          )}
+        >
+          Admin Broadcasts
+        </button>
+        <button
+          onClick={() => setSource("SYSTEM")}
+          className={cn(
+            "px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
+            source === "SYSTEM" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+          )}
+        >
+          System Logs
+        </button>
+        <button
+          onClick={() => setSource("ALL")}
+          className={cn(
+            "px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
+            source === "ALL" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+          )}
+        >
+          All Activities
+        </button>
       </div>
 
       {/* FILTER COMMAND BAR */}
@@ -290,14 +345,24 @@ export default function NotificationsPage() {
                           <div className="h-full bg-primary group-hover/item:bg-primary/80 transition-all duration-500 ease-out" style={{ width: `${percent}%` }} />
                        </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => fetchDetail(log)}
-                      className="h-8 px-2 font-bold text-[9px] uppercase text-primary hover:bg-primary/5 gap-1 active:scale-95 transition-all"
-                    >
-                      Audit Log <ChevronRight className="h-3 w-3 group-hover/item:translate-x-0.5 transition-transform" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => fetchDetail(log)}
+                        className="h-8 px-2 font-bold text-[9px] uppercase text-primary hover:bg-primary/5 gap-1 active:scale-95 transition-all"
+                      >
+                        Audit Log <ChevronRight className="h-3 w-3 group-hover/item:translate-x-0.5 transition-transform" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(log.id)}
+                        className="h-8 w-8 text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-all opacity-0 group-hover/item:opacity-100"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
