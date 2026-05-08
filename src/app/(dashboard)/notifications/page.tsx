@@ -53,6 +53,7 @@ type NotificationLog = {
   judul: string;
   pesan: string;
   kategori: "INFO" | "PROMO" | "SISTEM" | string;
+  image_url?: string;
   created_at: string;
   sender: string;
   total_target: number;
@@ -84,6 +85,7 @@ export default function NotificationsPage() {
 
   const [receivers, setReceivers] = useState<Receiver[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<NotificationLog | null>(null);
   const [receiverPage, setReceiverPage] = useState(1);
   const receiversPerPage = 10;
 
