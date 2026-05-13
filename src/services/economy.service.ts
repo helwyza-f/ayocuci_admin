@@ -1,7 +1,7 @@
 // economy.service.ts
 import api from "@/lib/api-client";
 import { Voucher } from "@/types/voucher";
-import { EconomyConfig, KoinPackage } from "@/types/domain";
+import { EconomyConfig, KoinPackage, Addon } from "@/types/domain";
 import { ApiResponse } from "@/types/api";
 
 export const economyService = {
