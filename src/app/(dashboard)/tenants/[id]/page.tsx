@@ -326,19 +326,19 @@ export default function TenantDetailPage() {
           label="Saldo Koin" 
           value={`${profile.ot_koin.toLocaleString()}`} 
           icon={Coins} 
-          trend={{ value: "Saldo Aktif", isPositive: true }}
+          trend={{ value: "Saldo Aktif", isUp: true }}
         />
         <StatCard 
           label="Performa Order" 
           value={`${metrics.today_orders} Trx`} 
           icon={TrendingUp} 
-          trend={{ value: `${metrics.total_orders.toLocaleString()} Lifetime`, isPositive: true }}
+          trend={{ value: `${metrics.total_orders.toLocaleString()} Lifetime`, isUp: true }}
         />
         <StatCard 
           label="Performa Omzet" 
           value={`Rp ${metrics.today_revenue.toLocaleString()}`} 
           icon={CreditCard} 
-          trend={{ value: `Total Rp ${metrics.total_revenue.toLocaleString()}`, isPositive: true }}
+          trend={{ value: `Total Rp ${metrics.total_revenue.toLocaleString()}`, isUp: true }}
         />
         <StatCard 
           label="Sisa Kuota SDM" 
