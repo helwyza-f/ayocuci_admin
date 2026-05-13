@@ -996,7 +996,7 @@ export default function TenantDetailPage() {
                     onClick={() => {
                        setIsConfirmModalOpen(false);
                        if (confirmTarget?.type === 'koin') {
-                          handleValidateKoin(confirmTarget.id, 'confirm');
+                          handleValidateKoin(confirmTarget.id, 'success');
                        } else if (confirmTarget?.type === 'addon') {
                           handleValidateAddon(confirmTarget.id, 'confirm');
                        }
