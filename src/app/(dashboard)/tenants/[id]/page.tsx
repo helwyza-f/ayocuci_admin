@@ -960,7 +960,7 @@ export default function TenantDetailPage() {
              <Button
                 variant="outline"
                 disabled={confirming}
-                onClick={() => handleValidateAddon(selectedAddon.ha_id, "failed")}
+                onClick={() => handleValidateAddon(selectedAddon.ha_id, "cancel")}
                 className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider text-rose-500 border-slate-200 hover:bg-rose-50"
              >
                 Batalkan
