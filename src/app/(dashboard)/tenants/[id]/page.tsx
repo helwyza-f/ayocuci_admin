@@ -251,7 +251,7 @@ export default function TenantDetailPage() {
 
   const imageUrl = useMemo(() => {
     if (!profile?.ot_gambar) return null;
-    if (profile.ot_gambar.startsWith("http")) return profile.ot_gambar;
+    if (profile.ot_gambar?.startsWith("http")) return profile.ot_gambar;
     return `${API_BASE_URL}${profile.ot_gambar}`;
   }, [profile]);
 
@@ -288,7 +288,7 @@ export default function TenantDetailPage() {
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-slate-900 font-heading uppercase">
-                {profile.ot_nama}
+                {profile?.ot_nama}
               </h1>
               <Badge variant="outline" className={cn(
                 "rounded-full px-2 py-0 text-[8px] font-bold uppercase border shadow-none",
@@ -296,15 +296,15 @@ export default function TenantDetailPage() {
               )}>
                 {profile.ot_activated_at ? "Aktivasi Permanen" : "Masa Percobaan (Trial)"}
               </Badge>
-              {profile.subscription_status === "PRO" && (
+              {profile?.subscription_status === "PRO" && (
                 <Badge variant="outline" className="rounded-full px-2 py-0 text-[8px] font-bold uppercase border-orange-100 bg-orange-50 text-orange-600 shadow-none">PRO ACCOUNT</Badge>
               )}
             </div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-               ID ENTITAS: <span className="text-slate-600 font-mono">{profile.ot_id}</span>
+               ID ENTITAS: <span className="text-slate-600 font-mono">{profile?.ot_id}</span>
                <span className="h-1 w-1 rounded-full bg-slate-200" />
-               <span className={cn(profile.ot_status === 1 ? "text-emerald-500" : "text-rose-500")}>
-                  {profile.ot_status === 1 ? "OPERASIONAL AKTIF" : "NON-AKTIF"}
+               <span className={cn(profile?.ot_status === 1 ? "text-emerald-500" : "text-rose-500")}>
+                  {profile?.ot_status === 1 ? "OPERASIONAL AKTIF" : "NON-AKTIF"}
                </span>
             </p>
           </div>
@@ -324,7 +324,7 @@ export default function TenantDetailPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard 
           label="Saldo Koin" 
-          value={`${profile.ot_koin.toLocaleString()}`} 
+           value={`${profile?.ot_koin?.toLocaleString() || "0"}`} 
           icon={Coins} 
           trend={{ value: "Saldo Aktif", isUp: true }}
         />
@@ -342,7 +342,7 @@ export default function TenantDetailPage() {
         />
         <StatCard 
           label="Sisa Kuota SDM" 
-          value={`${metrics.active_staff}/${profile.ot_max_pegawai_base}`} 
+          value={`${metrics.active_staff}/${profile?.ot_max_pegawai_base || "0"}`} 
           icon={Users} 
           className="text-slate-600"
         />
@@ -526,13 +526,13 @@ export default function TenantDetailPage() {
                        <table className="w-full text-left border-collapse">
                           <tbody className="divide-y divide-slate-100">
                              {[
-                               { label: "Nama Outlet", value: profile.ot_nama, icon: Store },
-                               { label: "Nomor Kontak", value: profile.ot_nohp || "-", icon: Phone, isPhone: true },
-                               { label: "Tipe Lokasi", value: profile.ot_tipe_lokasi_usaha, icon: MapPin },
-                               { label: "Skala Modal", value: profile.ot_modal_usaha, icon: Coins },
-                               { label: "Jumlah Pegawai", value: `${profile.ot_jumlah_karyawan} Orang`, icon: Users },
-                               { label: "Populasi Mesin", value: `${profile.ot_jumlah_mesin_cuci} Unit`, icon: Layers },
-                               { label: "Zona Waktu", value: profile.ot_timezone, icon: Clock },
+                               { label: "Nama Outlet", value: profile?.ot_nama, icon: Store },
+                               { label: "Nomor Kontak", value: profile?.ot_nohp || "-", icon: Phone, isPhone: true },
+                               { label: "Tipe Lokasi", value: profile?.ot_tipe_lokasi_usaha, icon: MapPin },
+                               { label: "Skala Modal", value: profile?.ot_modal_usaha, icon: Coins },
+                               { label: "Jumlah Pegawai", value: `${profile?.ot_jumlah_karyawan || "0"} Orang`, icon: Users },
+                               { label: "Populasi Mesin", value: `${profile?.ot_jumlah_mesin_cuci || "0"} Unit`, icon: Layers },
+                               { label: "Zona Waktu", value: (profile as any)?.ot_timezone, icon: Clock },
                              ].map((item, idx) => (
                                <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
                                   <td className="px-6 py-4 w-48">
@@ -885,7 +885,7 @@ export default function TenantDetailPage() {
               <Button 
                 variant="outline" 
                 disabled={confirming} 
-                onClick={() => handleValidateKoin(selectedKoin.tk_id, "cancel")}
+                onClick={() => handleValidateKoin(selectedKoin.tk_id, "failed")}
                 className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider text-rose-500 border-slate-200 hover:bg-rose-50"
               >
                 Batalkan
@@ -960,7 +960,7 @@ export default function TenantDetailPage() {
              <Button
                 variant="outline"
                 disabled={confirming}
-                onClick={() => handleValidateAddon(selectedAddon.ha_id, "cancel")}
+                onClick={() => handleValidateAddon(selectedAddon.ha_id, "failed")}
                 className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider text-rose-500 border-slate-200 hover:bg-rose-50"
              >
                 Batalkan

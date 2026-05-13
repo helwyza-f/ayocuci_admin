@@ -40,4 +40,6 @@ export interface Tenant {
   ot_skip_proses: number;
   ot_metode_pembayaran: number;
   ot_fitur_diskon: number;
+  ot_timezone: string;
+  ot_zona_waktu?: string;
 }
