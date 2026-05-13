@@ -9,6 +9,7 @@ export interface Voucher {
   vc_jumlah_voucher: number;
   vc_sisa_voucher: number;
   vc_status: number;
+  vc_target: "ALL" | "KOIN" | "ADDON";
   vc_created: string;
 }
 

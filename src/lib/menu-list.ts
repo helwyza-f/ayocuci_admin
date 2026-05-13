@@ -15,6 +15,7 @@ import {
   Megaphone,
   ShieldAlert,
   BarChart2,
+  Zap,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -54,6 +55,7 @@ export const adminMenus: MenuGroup[] = [
       { label: "Riwayat Langganan",  href: "/subscriptions", icon: ShieldCheck, module: "subscriptions" },
       { label: "Topup & Penagihan",  href: "/topups",        icon: Wallet2,     module: "topups" },
       { label: "Paket Koin (SKU)",   href: "/packages",      icon: Package,     module: "packages" },
+      { label: "Katalog Fitur (Addon)", href: "/addons",      icon: Zap,         module: "packages" },
     ],
   },
   {

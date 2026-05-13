@@ -21,4 +21,11 @@ export const economyService = {
   createPackage: (data: { jumlah_koin: number; discount_pct: number }) =>
     api.post("/economy/packages", data),
   deletePackage: (id: number) => api.delete(`/economy/packages/${id}`),
+
+  // 🧩 Addon Catalog
+  getAddons: () => api.get<ApiResponse<Addon[]>>("/economy/addons"),
+  createAddon: (data: Partial<Addon>) => api.post("/economy/addons", data),
+  updateAddon: (id: string, data: Partial<Addon>) =>
+    api.patch(`/economy/addons/${id}`, data),
+  deleteAddon: (id: string) => api.delete(`/economy/addons/${id}`),
 };

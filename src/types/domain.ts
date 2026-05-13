@@ -92,3 +92,13 @@ export interface ReferralAdminReward {
   referred_nama: string;
   referred_email: string;
 }
+
+export interface Addon {
+  ad_id: string;
+  ad_nama: string;
+  ad_link: string;
+  ad_harga: number;
+  ad_keterangan: string;
+  ad_status: number;
+  ad_created?: string;
+}

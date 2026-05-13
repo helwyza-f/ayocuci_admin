@@ -130,6 +130,10 @@ export default function TenantsPage() {
               { header: "Subscription", key: "subscription_status", width: 15 },
               { header: "Expired At", key: "expiry_date", width: 20, format: (v) => v ? format(new Date(v), "dd/MM/yyyy") : "" },
               { header: "Tanggal Daftar", key: "ot_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+              { header: "Daily TX", key: "daily_tx_count", width: 12 },
+              { header: "Daily Revenue", key: "daily_tx_amount", width: 15 },
+              { header: "Total TX", key: "total_tx_count", width: 12 },
+              { header: "Total Revenue", key: "total_tx_amount", width: 15 },
             ]}
           />
           <Button className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
@@ -202,6 +206,8 @@ export default function TenantsPage() {
               <tr className="bg-slate-50/50 border-b border-slate-200">
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Outlet Profile</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Ownership</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Daily Performance</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Total Performance</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Liquidity</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Status</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Action</th>
@@ -220,13 +226,27 @@ export default function TenantsPage() {
                         </div>
                         <div>
                           <p className="font-bold text-slate-900 text-xs">{tenant.ot_nama}</p>
-                          <p className="text-[9px] font-medium text-slate-400">#{tenant.ot_id}</p>
+                          <div className="flex items-center gap-2">
+                             <p className="text-[9px] font-medium text-slate-400">#{tenant.ot_id}</p>
+                             <span className="text-slate-200 text-[8px]">•</span>
+                             <p className="text-[9px] font-medium text-slate-400">{format(new Date(tenant.ot_created), "dd MMM yy")}</p>
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                      <div className="font-bold text-slate-800 text-xs">{tenant.owner_name}</div>
-                      <div className="text-[10px] font-medium text-slate-500">{tenant.owner_email}</div>
+                       <Link href={`/users/${tenant.owner_id}`} className="group inline-block">
+                          <div className="font-bold text-slate-800 text-xs group-hover:text-primary transition-colors">{tenant.owner_name}</div>
+                          <div className="text-[10px] font-medium text-slate-500">{tenant.owner_email}</div>
+                       </Link>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                       <div className="font-bold text-slate-900 text-xs">{tenant.daily_tx_count} TX</div>
+                       <div className="text-[10px] font-bold text-emerald-600">Rp {tenant.daily_tx_amount?.toLocaleString()}</div>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                       <div className="font-bold text-slate-900 text-xs">{tenant.total_tx_count} TX</div>
+                       <div className="text-[10px] font-bold text-emerald-600">Rp {tenant.total_tx_amount?.toLocaleString()}</div>
                     </td>
                     <td className="px-5 py-3 text-center">
                       <div className="inline-flex items-center gap-1 font-bold text-slate-700 text-[10px]">
@@ -271,7 +291,7 @@ export default function TenantsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-24 text-center">
+                  <td colSpan={7} className="py-24 text-center">
                     <Database className="h-8 w-8 text-slate-200 mx-auto mb-2" />
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No operational data found</p>
                   </td>

@@ -58,6 +58,7 @@ export default function VoucherManagementPage() {
     vc_tanggalmulai: "",
     vc_tanggalberakhir: "",
     vc_jumlah_voucher: "",
+    vc_target: "ALL",
   });
 
   const fetchVouchers = async () => {
@@ -103,6 +104,7 @@ export default function VoucherManagementPage() {
           vc_tanggalmulai: "",
           vc_tanggalberakhir: "",
           vc_jumlah_voucher: "",
+          vc_target: "ALL",
         });
         fetchVouchers();
       }
@@ -165,6 +167,7 @@ export default function VoucherManagementPage() {
               { header: "Tgl Berakhir", key: "vc_tanggalberakhir", width: 20, format: (v) => v ? format(new Date(v), "dd/MM/yyyy") : "" },
               { header: "Jumlah", key: "vc_jumlah_voucher", width: 12 },
               { header: "Sisa", key: "vc_sisa_voucher", width: 12 },
+              { header: "Target", key: "vc_target", width: 12 },
               { header: "Status", key: "vc_status", width: 12, format: (v) => v === 1 ? "Aktif" : "Nonaktif" },
             ]}
           />
@@ -249,6 +252,20 @@ export default function VoucherManagementPage() {
                     </div>
 
                     <div className="col-span-2 space-y-1">
+                      <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Voucher Target</label>
+                      <Select value={formData.vc_target} onValueChange={(val) => setFormData({ ...formData, vc_target: val })}>
+                        <SelectTrigger className="rounded border-slate-200 font-bold h-9 bg-white shadow-none text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-md">
+                          <SelectItem value="ALL" className="text-xs font-bold">Semua Transaksi</SelectItem>
+                          <SelectItem value="KOIN" className="text-xs font-bold">Hanya Top Up Koin</SelectItem>
+                          <SelectItem value="ADDON" className="text-xs font-bold">Hanya Pembelian Add-on</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="col-span-2 space-y-1">
                       <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Total Pool Quota</label>
                       <Input
                         type="number"
@@ -305,6 +322,15 @@ export default function VoucherManagementPage() {
                   )}
                 >
                   {v.vc_jenis === "persen" ? "Rate" : "Fixed"}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none ml-2",
+                    v.vc_target === "ALL" ? "bg-slate-50 text-slate-600" : v.vc_target === "KOIN" ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-purple-50 text-purple-600 border-purple-100"
+                  )}
+                >
+                  {v.vc_target}
                 </Badge>
                 <Button
                   size="icon"

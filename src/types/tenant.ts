@@ -19,10 +19,17 @@ export interface Tenant {
   ot_jumlah_karyawan?: string;
   ot_jumlah_mesin_cuci?: string;
 
+  owner_id: number;
   owner_name: string;
   owner_email: string;
   subscription_status: string;
   expiry_date: string;
+
+  // Performance Metrics
+  daily_tx_count: number;
+  daily_tx_amount: number;
+  total_tx_count: number;
+  total_tx_amount: number;
 
   // Subscription & Guardrails
   ot_activated_at?: string;
