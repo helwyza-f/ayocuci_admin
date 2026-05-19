@@ -14,6 +14,7 @@ import {
   PlusCircle,
   CalendarDays,
   Info,
+  Edit3,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export default function VoucherManagementPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -77,7 +79,22 @@ export default function VoucherManagementPage() {
     fetchVouchers();
   }, []);
 
-  const handleCreateVoucher = async () => {
+  const handleEditVoucher = (v: Voucher) => {
+    setEditingId(v.vc_id);
+    setFormData({
+      vc_voucher: v.vc_voucher || "",
+      vc_jenis: v.vc_jenis || "persen",
+      vc_nilai_potongan: v.vc_nilai_potongan?.toString() || "",
+      vc_keterangan: v.vc_keterangan || "",
+      vc_tanggalmulai: v.vc_tanggalmulai ? format(new Date(v.vc_tanggalmulai), "yyyy-MM-dd") : "",
+      vc_tanggalberakhir: v.vc_tanggalberakhir ? format(new Date(v.vc_tanggalberakhir), "yyyy-MM-dd") : "",
+      vc_jumlah_voucher: v.vc_jumlah_voucher?.toString() || "",
+      vc_target: v.vc_target || "ALL",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmitVoucher = async () => {
     if (!formData.vc_voucher || !formData.vc_nilai_potongan || !formData.vc_tanggalberakhir) {
       return toast.error("Please complete voucher information");
     }
@@ -88,14 +105,21 @@ export default function VoucherManagementPage() {
         ...formData,
         vc_nilai_potongan: Number(formData.vc_nilai_potongan),
         vc_jumlah_voucher: Number(formData.vc_jumlah_voucher),
-        vc_tanggalmulai: new Date(formData.vc_tanggalmulai).toISOString(),
-        vc_tanggalberakhir: new Date(formData.vc_tanggalberakhir).toISOString(),
+        vc_tanggalmulai: formData.vc_tanggalmulai ? new Date(formData.vc_tanggalmulai).toISOString() : null,
+        vc_tanggalberakhir: formData.vc_tanggalberakhir ? new Date(formData.vc_tanggalberakhir).toISOString() : null,
       };
 
-      const res = await api.post("/vouchers/", payload);
+      let res;
+      if (editingId) {
+        res = await api.put(`/vouchers/${editingId}`, payload);
+      } else {
+        res = await api.post("/vouchers/", payload);
+      }
+
       if (res.data.status) {
-        toast.success("Voucher issued successfully");
+        toast.success(editingId ? "Voucher updated successfully" : "Voucher issued successfully");
         setIsDialogOpen(false);
+        setEditingId(null);
         setFormData({
           vc_voucher: "",
           vc_jenis: "persen",
@@ -109,7 +133,7 @@ export default function VoucherManagementPage() {
         fetchVouchers();
       }
     } catch {
-      toast.error("Failed to issue voucher");
+      toast.error(editingId ? "Failed to update voucher" : "Failed to issue voucher");
     } finally {
       setIsSubmitting(false);
     }
@@ -171,17 +195,35 @@ export default function VoucherManagementPage() {
               { header: "Status", key: "vc_status", width: 12, format: (v) => v === 1 ? "Aktif" : "Nonaktif" },
             ]}
           />
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+             setIsDialogOpen(open);
+             if (!open) setEditingId(null);
+          }}>
             <DialogTrigger asChild>
-              <Button className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2">
+              <Button 
+                onClick={() => {
+                  setEditingId(null);
+                  setFormData({
+                    vc_voucher: "",
+                    vc_jenis: "persen",
+                    vc_nilai_potongan: "",
+                    vc_keterangan: "",
+                    vc_tanggalmulai: "",
+                    vc_tanggalberakhir: "",
+                    vc_jumlah_voucher: "",
+                    vc_target: "ALL",
+                  });
+                }}
+                className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2"
+              >
                 <PlusCircle className="h-4 w-4" /> Issue New
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-lg p-0 border border-slate-200 shadow-xl max-w-lg overflow-hidden bg-white">
-               <VisuallyHidden.Root><DialogTitle>Create Campaign Voucher</DialogTitle></VisuallyHidden.Root>
+               <VisuallyHidden.Root><DialogTitle>{editingId ? "Edit" : "Create"} Campaign Voucher</DialogTitle></VisuallyHidden.Root>
                <div className="p-4 border-b border-slate-100 bg-white">
                   <h3 className="text-sm font-bold uppercase tracking-tight flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-primary" /> Create Campaign Voucher
+                    <Tag className="h-4 w-4 text-primary" /> {editingId ? "Edit Campaign Voucher" : "Create Campaign Voucher"}
                   </h3>
                </div>
 
@@ -280,12 +322,12 @@ export default function VoucherManagementPage() {
 
                <div className="p-4 bg-white border-t border-slate-100">
                   <Button
-                    onClick={handleCreateVoucher}
+                    onClick={handleSubmitVoucher}
                     disabled={isSubmitting}
                     className="w-full h-10 rounded font-bold text-[10px] uppercase tracking-wider"
                   >
                     {isSubmitting ? <LoaderIcon className="animate-spin h-4 w-4" /> : <Layers className="h-4 w-4 mr-2" />}
-                    Publish Campaign
+                    {editingId ? "Save Changes" : "Publish Campaign"}
                   </Button>
                </div>
             </DialogContent>
@@ -332,19 +374,29 @@ export default function VoucherManagementPage() {
                 >
                   {v.vc_target}
                 </Badge>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 text-slate-400 hover:text-primary"
-                  onClick={() => toggleStatus(v.vc_id, v.vc_status)}
-                >
-                  <Power
-                    className={cn(
-                      "w-3.5 h-3.5 transition-colors",
-                      v.vc_status === 1 ? "text-emerald-500" : "text-slate-300",
-                    )}
-                  />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-slate-400 hover:text-primary"
+                    onClick={() => handleEditVoucher(v)}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-slate-400 hover:text-primary"
+                    onClick={() => toggleStatus(v.vc_id, v.vc_status)}
+                  >
+                    <Power
+                      className={cn(
+                        "w-3.5 h-3.5 transition-colors",
+                        v.vc_status === 1 ? "text-emerald-500" : "text-slate-300",
+                      )}
+                    />
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-0.5 mb-4">

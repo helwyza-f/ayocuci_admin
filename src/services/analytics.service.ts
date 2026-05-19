@@ -81,6 +81,20 @@ export interface ReferralSummary {
   top_referrers: TopReferrer[];
 }
 
+export interface InactiveOwner {
+  id: string;
+  name: string;
+  email: string;
+  total_outlets: number;
+  last_transaction_date: string | null;
+}
+
+export interface InactiveOwnerSummary {
+  days: number;
+  total: number;
+  owners: InactiveOwner[];
+}
+
 export const analyticsService = {
   getRevenue: async (days = 30) => {
     const res = await api.get<ApiResponse<RevenueSummary>>(`/analytics/revenue?days=${days}`);
@@ -100,6 +114,10 @@ export const analyticsService = {
   },
   getReferral: async (days = 30) => {
     const res = await api.get<ApiResponse<ReferralSummary>>(`/analytics/referral?days=${days}`);
+    return res.data.data;
+  },
+  getInactiveOwners: async (days = 30) => {
+    const res = await api.get<ApiResponse<InactiveOwnerSummary>>(`/analytics/inactive-owners?days=${days}`);
     return res.data.data;
   },
 };

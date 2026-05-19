@@ -20,7 +20,7 @@ import { Topup } from "@/types/topup";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { analyticsService, GrowthSummary } from "@/services/analytics.service";
+import { analyticsService, GrowthSummary, ActivitySummary } from "@/services/analytics.service";
 import { topupService } from "@/services/topup.service";
 import { addonService, AddonTransaction } from "@/services/addon.service";
 import { toast } from "sonner";
@@ -71,14 +71,17 @@ function KpiCard({
   icon: React.ElementType; color: string;
 }) {
   return (
-    <Card className="border border-slate-200 bg-white rounded-2xl p-5 flex flex-col gap-3 shadow-sm">
-      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${color}`}>
-        <Icon className="h-5 w-5" />
+    <Card className="relative overflow-hidden border border-slate-200/60 bg-white/80 backdrop-blur-xl rounded-2xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
+      <div className="absolute -top-4 -right-4 p-4 opacity-[0.03] group-hover:scale-150 group-hover:rotate-12 transition-all duration-700 pointer-events-none">
+         <Icon className="w-32 h-32" />
       </div>
-      <div>
-        <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{value}</p>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
-        {sub && <p className="text-[10px] text-slate-500 mt-1">{sub}</p>}
+      <div className={`relative z-10 h-10 w-10 rounded-xl flex items-center justify-center shadow-inner group-hover:-translate-y-1 transition-transform duration-300 ${color}`}>
+        <Icon className="h-5 w-5 drop-shadow-sm" />
+      </div>
+      <div className="relative z-10 mt-1">
+        <p className="text-2xl font-extrabold text-slate-900 tracking-tight drop-shadow-sm">{value}</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">{label}</p>
+        {sub && <p className="text-[10px] text-slate-500 mt-1.5 line-clamp-1">{sub}</p>}
       </div>
     </Card>
   );
@@ -103,6 +106,11 @@ export default function DashboardPage() {
   // Recent registrations (3 hari) — pakai endpoint growth dari analytics
   const { data: growth } = useSWR<GrowthSummary>(
     "dashboard-growth-3", () => analyticsService.getGrowth(3), { dedupingInterval: 120_000 }
+  );
+
+  // Today's Activity Summary (GMV)
+  const { data: activitySummary } = useSWR<ActivitySummary>(
+    "dashboard-activity-1", () => analyticsService.getActivity(1), { dedupingInterval: 120_000 }
   );
 
   // Recent owners (3 hari) dari endpoint users — filter client-side
@@ -209,27 +217,34 @@ export default function DashboardPage() {
       )}
 
       {/* ── PLATFORM STATS ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          label="Hari Ini GMV"
+          sub="Total Gross Merchandise Value hari ini"
+          value={activitySummary ? `Rp ${activitySummary.today_gmv.toLocaleString("id-ID")}` : "—"}
+          icon={TrendingUp}
+          color="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-200"
+        />
         <KpiCard
           label="Registered Outlets"
           sub="Total outlet terdaftar di platform"
           value={isLoading ? "—" : stats.total_outlets.toLocaleString("id-ID")}
           icon={Store}
-          color="bg-slate-100 text-slate-600"
+          color="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 shadow-slate-100"
         />
         <KpiCard
           label="Koin Beredar"
           sub="Total koin aktif seluruh outlet"
           value={isLoading ? "—" : stats.total_koin.toLocaleString("id-ID")}
           icon={Coins}
-          color="bg-orange-50 text-primary"
+          color="bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-orange-200"
         />
         <KpiCard
-          label="Outlet Aktif / Langganan"
+          label="Outlet PRO Aktif"
           sub="Outlet dengan lisensi PRO aktif"
           value={isLoading ? "—" : stats.active_tenant.toLocaleString("id-ID")}
           icon={Zap}
-          color="bg-emerald-50 text-emerald-600"
+          color="bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-emerald-200"
         />
       </div>
 

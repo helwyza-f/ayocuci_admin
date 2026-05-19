@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   Trash2,
+  Edit3,
   X,
   RefreshCw,
   Coins,
@@ -29,12 +30,22 @@ export default function KoinPackagesPage() {
   const [packages, setPackages] = useState<KoinPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [pricePerCoin, setPricePerCoin] = useState<number>(100);
 
   const [formData, setFormData] = useState({
     jumlah_koin: "",
     discount_pct: "",
   });
+
+  const handleEdit = (pkg: KoinPackage) => {
+    setFormData({
+      jumlah_koin: pkg.jumlah_koin.toString(),
+      discount_pct: pkg.discount_pct?.toString() || "0",
+    });
+    setEditingId(pkg.id);
+    setIsAdding(true);
+  };
 
   const initData = useCallback(async () => {
     setLoading(true);
@@ -64,22 +75,30 @@ export default function KoinPackagesPage() {
     initData();
   }, [initData]);
 
-  const handleCreate = async () => {
+  const handleSubmit = async () => {
     if (!formData.jumlah_koin) return toast.error("Coin quantity is required");
     try {
-      const res = await economyService.createPackage({
+      const payload = {
         jumlah_koin: Number(formData.jumlah_koin),
         discount_pct: Number(formData.discount_pct || 0),
-      });
+      };
+
+      let res;
+      if (editingId) {
+        res = await economyService.updatePackage(editingId, payload);
+      } else {
+        res = await economyService.createPackage(payload);
+      }
 
       if (res.status === 200 || res.status === 201 || res.data?.status) {
-        toast.success("Package published to ecosystem");
+        toast.success(editingId ? "Package updated successfully" : "Package published to ecosystem");
         setIsAdding(false);
+        setEditingId(null);
         setFormData({ jumlah_koin: "", discount_pct: "" });
         initData();
       }
     } catch {
-      toast.error("Failed to publish package");
+      toast.error(editingId ? "Failed to update package" : "Failed to publish package");
     }
   };
 
@@ -132,7 +151,13 @@ export default function KoinPackagesPage() {
              Base: Rp {pricePerCoin.toLocaleString()}/U
           </Badge>
           <Button
-            onClick={() => setIsAdding(!isAdding)}
+            onClick={() => {
+              setIsAdding(!isAdding);
+              if (isAdding) {
+                setEditingId(null);
+                setFormData({ jumlah_koin: "", discount_pct: "" });
+              }
+            }}
             variant={isAdding ? "outline" : "default"}
             size="sm"
             className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none"
@@ -174,10 +199,10 @@ export default function KoinPackagesPage() {
               </div>
             </div>
             <Button
-              onClick={handleCreate}
+              onClick={handleSubmit}
               className="h-9 rounded font-bold text-[10px] uppercase tracking-wider"
             >
-              Publish Package
+              {editingId ? "Save Changes" : "Publish Package"}
             </Button>
           </div>
         </Card>
@@ -203,14 +228,24 @@ export default function KoinPackagesPage() {
                   <div className="h-8 w-8 rounded bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
                     <Zap className="h-4 w-4" />
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-slate-300 hover:text-rose-600"
-                    onClick={() => handleDelete(pkg.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-slate-300 hover:text-primary"
+                      onClick={() => handleEdit(pkg)}
+                    >
+                      <Edit3 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-slate-300 hover:text-rose-600"
+                      onClick={() => handleDelete(pkg.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-4">

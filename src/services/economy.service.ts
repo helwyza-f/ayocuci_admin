@@ -12,7 +12,8 @@ export const economyService = {
 
   // Vouchers
   getVouchers: () => api.get<ApiResponse<Voucher[]>>("/vouchers"),
-  createVoucher: (data: Partial<Voucher>) => api.post("/vouchers/", data),
+  createVoucher: (data: Partial<Voucher>) => api.post("/vouchers", data),
+  updateVoucher: (id: string, data: Partial<Voucher>) => api.put(`/vouchers/${id}`, data),
   toggleVoucher: (id: string, status: number) =>
     api.patch(`/vouchers/${id}/status`, { status }),
 
@@ -20,6 +21,8 @@ export const economyService = {
   getPackages: () => api.get<ApiResponse<KoinPackage[]>>("/economy/packages"),
   createPackage: (data: { jumlah_koin: number; discount_pct: number }) =>
     api.post("/economy/packages", data),
+  updatePackage: (id: number, data: { jumlah_koin: number; discount_pct: number }) =>
+    api.put(`/economy/packages/${id}`, data),
   deletePackage: (id: number) => api.delete(`/economy/packages/${id}`),
 
   // 🧩 Addon Catalog

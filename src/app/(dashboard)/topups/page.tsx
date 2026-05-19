@@ -362,10 +362,12 @@ export default function TopupsManagementPage() {
                   const status = getStatusConfig(item.tk_status);
                   const dt = formatDateTime(item.tk_created);
                   return (
-                    <tr key={item.tk_id} className="hover:bg-primary/[0.01] transition-all duration-300 group">
+                    <tr key={item.tk_id} className="hover:bg-slate-50/80 hover:shadow-sm transition-all duration-300 group border-l-[3px] border-transparent hover:border-primary">
                       <td className="px-5 py-3">
-                        <div className="font-bold text-slate-900 text-xs group-hover:text-primary transition-colors">#{item.tk_id}</div>
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                        <div className="font-bold text-slate-900 text-xs group-hover:text-primary transition-colors flex items-center gap-1.5">
+                          #{item.tk_id}
+                        </div>
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">
                           {dt.display}
                         </div>
                       </td>
@@ -375,12 +377,12 @@ export default function TopupsManagementPage() {
                       </td>
                       <td className="px-5 py-3 text-center">
                         <div className="inline-flex flex-col items-center">
-                           <span className="font-bold text-xs text-slate-900 leading-none tracking-tight">{item.tk_jumlah?.toLocaleString()} <span className="text-[9px] text-slate-400 font-medium">Koin</span></span>
-                           <span className="text-[9px] font-bold text-primary uppercase mt-0.5">Rp {item.tk_total?.toLocaleString("id-ID")}</span>
+                           <span className="font-bold text-xs text-slate-900 leading-none tracking-tight group-hover:scale-105 transition-transform">{item.tk_jumlah?.toLocaleString()} <span className="text-[9px] text-slate-400 font-medium">Koin</span></span>
+                           <span className="text-[9px] font-bold text-primary uppercase mt-1">Rp {item.tk_total?.toLocaleString("id-ID")}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3">
-                        <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded border border-slate-100 w-fit group-hover:bg-white transition-colors">
+                        <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100 w-fit group-hover:bg-white group-hover:shadow-sm transition-all">
                           {item.tk_metode_bayar === "transfer" ? (
                             <ArrowRightLeft className="h-3 w-3 text-orange-500 group-hover:scale-110 transition-transform" />
                           ) : (
@@ -392,7 +394,7 @@ export default function TopupsManagementPage() {
                         </div>
                       </td>
                       <td className="px-5 py-3 text-center">
-                        <Badge className={cn("rounded-full px-2 py-0 text-[8px] font-bold uppercase border shadow-none transition-all", status.class)}>
+                        <Badge className={cn("rounded-full px-2 py-0.5 text-[8px] font-bold uppercase border shadow-none transition-all group-hover:shadow-sm", status.class)}>
                           {status.label}
                         </Badge>
                       </td>
@@ -401,9 +403,9 @@ export default function TopupsManagementPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => { setSelectedTopup(item); setIsPreviewOpen(true); }}
-                          className="h-8 px-2 font-bold text-[9px] uppercase text-primary hover:bg-primary/5 active:scale-95 transition-all"
+                          className="h-8 px-3 font-bold text-[9px] uppercase text-primary hover:bg-primary/10 active:scale-95 transition-all rounded-lg opacity-80 group-hover:opacity-100 border border-transparent group-hover:border-primary/20"
                         >
-                          Verify <ChevronRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 transition-transform" />
+                          Verify <ChevronRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       </td>
                     </tr>

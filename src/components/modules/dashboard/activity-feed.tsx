@@ -40,24 +40,24 @@ export default function ActivityFeed({ activities, isLoading, onVerify }: Activi
       {activities.map((item) => (
         <div
           key={item.tk_id}
-          className="flex items-center justify-between p-3 hover:bg-slate-50/50 transition-colors group"
+          className="flex items-center justify-between p-3 hover:bg-slate-50/80 transition-all duration-300 group rounded-xl border border-transparent hover:border-slate-100 hover:shadow-sm hover:translate-x-1"
         >
           <div className="flex items-center gap-3">
             <div className={cn(
-              "h-9 w-9 rounded-xl flex items-center justify-center border transition-all",
+              "h-10 w-10 rounded-xl flex items-center justify-center border transition-all duration-300 group-hover:scale-110",
               getStatusColors(item.tk_status)
             )}>
               {item.type === 'addon' ? <Zap className="h-4 w-4" /> : getStatusIcon(item.tk_status)}
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-900 tracking-tight leading-none mb-1">
+              <p className="text-xs font-bold text-slate-900 tracking-tight leading-none mb-1.5 group-hover:text-primary transition-colors">
                 {item.type === 'addon' ? item.item_names : (item.outlet_name || "Unknown Outlet")}
               </p>
               <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                 <span className={cn(item.type === 'addon' ? "text-orange-500" : "text-primary")}>
+                 <span className={cn("px-1.5 py-0.5 rounded-md", item.type === 'addon' ? "bg-orange-50 text-orange-600" : "bg-primary/10 text-primary")}>
                     {item.type === 'addon' ? 'Addon' : 'Koin'}
                  </span>
-                 <div className="h-0.5 w-0.5 bg-slate-300 rounded-full" />
+                 <div className="h-1 w-1 bg-slate-300 rounded-full" />
                  {format(new Date(item.tk_created), "dd/MM/yy • HH:mm")}
               </div>
             </div>

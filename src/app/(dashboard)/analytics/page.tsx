@@ -10,10 +10,10 @@ import {
 import {
   TrendingUp, Users, Activity, MapPin,
   Coins, ShieldCheck, UserPlus, BarChart2, Gift,
-  ArrowUpRight, ArrowDownRight, Minus,
+  ArrowUpRight, ArrowDownRight, Minus, AlertTriangle, Clock
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { analyticsService, RevenueSummary, GrowthSummary, GeoSummary, ActivitySummary, ReferralSummary } from "@/services/analytics.service";
+import { analyticsService, RevenueSummary, GrowthSummary, GeoSummary, ActivitySummary, ReferralSummary, InactiveOwnerSummary } from "@/services/analytics.service";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
@@ -115,6 +115,9 @@ export default function AnalyticsPage() {
   );
   const { data: referral } = useSWR<ReferralSummary>(
     `analytics-referral-${days}`, () => analyticsService.getReferral(days), { dedupingInterval: 60_000 }
+  );
+  const { data: inactiveOwners } = useSWR<InactiveOwnerSummary>(
+    `analytics-inactive-owners-${days}`, () => analyticsService.getInactiveOwners(days), { dedupingInterval: 60_000 }
   );
 
   return (
@@ -357,6 +360,54 @@ export default function AnalyticsPage() {
           </div>
         </Card>
       </div>
+
+      {/* ── CHURN RISK (INACTIVE OWNERS) ── */}
+      <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <SectionHeader icon={AlertTriangle} title="Churn Risk: Inactive Owners" desc={`Owner tanpa transaksi dalam ${days} hari terakhir`} />
+          <div className="text-right">
+             <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100">
+               {inactiveOwners?.total ?? 0} Owner Inaktif
+             </span>
+          </div>
+        </div>
+        <div className="space-y-2.5 max-h-[300px] overflow-y-auto custom-scrollbar mt-1 pr-2">
+          {(inactiveOwners?.owners ?? []).length === 0 ? (
+            <div className="text-center py-10">
+              <ShieldCheck className="h-8 w-8 text-emerald-300 mx-auto mb-2" />
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Semua owner aktif bertransaksi!</p>
+            </div>
+          ) : (
+            (inactiveOwners?.owners ?? []).map((owner, i) => (
+              <div key={owner.id} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors px-2 rounded-xl group">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-slate-300 w-4">{i + 1}</span>
+                  <div className="h-8 w-8 rounded-full bg-rose-50 text-rose-500 text-xs font-bold flex items-center justify-center border border-rose-100 group-hover:scale-110 transition-transform">
+                    {owner.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 group-hover:text-rose-600 transition-colors">{owner.name}</p>
+                    <p className="text-[10px] font-medium text-slate-500">{owner.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6 text-right">
+                   <div>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total Outlets</p>
+                     <p className="text-xs font-bold text-slate-700">{owner.total_outlets}</p>
+                   </div>
+                   <div className="w-[120px]">
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Last TX</p>
+                     <p className="text-xs font-bold text-rose-500 flex items-center justify-end gap-1">
+                        <Clock className="h-3 w-3" />
+                        {owner.last_transaction_date ? fmtDate(owner.last_transaction_date) : "Belum Pernah"}
+                     </p>
+                   </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
     </div>
   );
 }
