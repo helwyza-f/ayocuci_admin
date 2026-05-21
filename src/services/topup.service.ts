@@ -8,7 +8,7 @@ export const topupService = {
    * @param query string (e.g. status=pending&metode=transfer)
    */
   getAll: async (query?: string) => {
-    const url = query ? `/topup-koin?${query}` : "/topup-koin";
+    const url = query ? `/topup-koin/incoming?${query}` : "/topup-koin/incoming";
     const res = await api.get<ApiResponse<Topup[]>>(url);
     return res.data;
   },

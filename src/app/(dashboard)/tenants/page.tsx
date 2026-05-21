@@ -78,7 +78,7 @@ export default function TenantsPage() {
         t.ot_nama.toLowerCase().includes(cleanSearch) ||
         t.ot_id.toLowerCase().includes(cleanSearch);
       const matchesOwner =
-        selectedOwner === "all" || t.owner_name === selectedOwner;
+        selectedOwner === "all" || String(t.owner_id) === selectedOwner;
       return matchesSearch && matchesOwner;
     });
     return filterByDateRange(byFilter, (t) => t.ot_created, dateRange);
@@ -95,8 +95,9 @@ export default function TenantsPage() {
 
   const ownerLabel = useMemo(() => {
     if (selectedOwner === "all") return "All Owners";
-    return selectedOwner;
-  }, [selectedOwner]);
+    const found = owners.find((o) => String(o.id) === selectedOwner);
+    return found ? found.name : selectedOwner;
+  }, [selectedOwner, owners]);
 
   return (
     <div className="space-y-6">
@@ -174,7 +175,10 @@ export default function TenantsPage() {
                     <CommandGroup>
                       <CommandItem onSelect={() => { handleOwnerFilter("all"); setOpen(false); }} className="text-xs">All Owners</CommandItem>
                       {owners.map(o => (
-                        <CommandItem key={o.id} onSelect={() => { handleOwnerFilter(o.name); setOpen(false); }} className="text-xs">{o.name}</CommandItem>
+                        <CommandItem key={o.id} onSelect={() => { handleOwnerFilter(String(o.id)); setOpen(false); }} className="text-xs">
+                          <span>{o.name}</span>
+                          <span className="ml-2 shrink-0 bg-slate-100 border border-slate-200 text-slate-500 font-mono font-semibold text-[9px] px-1.5 py-0.5 rounded">#{o.id}</span>
+                        </CommandItem>
                       ))}
                     </CommandGroup>
                   </CommandList>
@@ -229,7 +233,7 @@ export default function TenantsPage() {
                           <div className="flex items-center gap-2">
                              <p className="text-[9px] font-medium text-slate-400">#{tenant.ot_id}</p>
                              <span className="text-slate-200 text-[8px]">•</span>
-                             <p className="text-[9px] font-medium text-slate-400">{format(new Date(tenant.ot_created), "dd MMM yy")}</p>
+                             <p className="text-[9px] font-medium text-slate-400">{format(new Date(tenant.ot_created), "dd MMM yy, HH:mm")}</p>
                           </div>
                         </div>
                       </div>

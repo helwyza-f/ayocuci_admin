@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Store,
   ArrowLeft,
@@ -91,6 +92,15 @@ export default function TenantDetailPage() {
     addons: 1,
     koin: 1
   });
+  const [koinFilter, setKoinFilter] = useState<'all' | 'masuk' | 'keluar'>('all');
+
+  const filteredKoinHistory = useMemo(() => {
+    return koinHistory.filter(tx => {
+      if (koinFilter === 'all') return true;
+      return tx.hk_jenis_transaksi === koinFilter;
+    });
+  }, [koinHistory, koinFilter]);
+
   const itemsPerPage = 10;
 
   // Modal State
@@ -132,20 +142,25 @@ export default function TenantDetailPage() {
     const resolveRegions = async () => {
       try {
         if (profile?.ot_provinsi) {
-          const p = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/province/${profile.ot_provinsi}.json`).then(r => r.json());
-          if (p) setRegionNames(prev => ({ ...prev, provinsi: p.name }));
+          const provs = await fetch(`https://ibnux.github.io/data-indonesia/provinsi.json`).then(r => r.json());
+          const p = provs.find((x: any) => x.id === profile.ot_provinsi);
+          if (p) setRegionNames(prev => ({ ...prev, provinsi: p.nama }));
           
           if (profile?.ot_kota) {
-            // Remove dots from code for API compatibility if needed
             const cityCode = profile.ot_kota.replace(/\./g, '');
-            const k = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regency/${cityCode}.json`).then(r => r.json());
-            if (k) setRegionNames(prev => ({ ...prev, kota: k.name }));
+            const kabs = await fetch(`https://ibnux.github.io/data-indonesia/kabupaten/${profile.ot_provinsi}.json`).then(r => r.json());
+            const k = kabs.find((x: any) => x.id === cityCode);
+            if (k) setRegionNames(prev => ({ ...prev, kota: k.nama }));
           }
 
           if (profile?.ot_kecamatan) {
+            const cityCode = profile.ot_kota?.replace(/\./g, '');
             const distCode = profile.ot_kecamatan.replace(/\./g, '');
-            const kec = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/district/${distCode}.json`).then(r => r.json());
-            if (kec) setRegionNames(prev => ({ ...prev, kecamatan: kec.name }));
+            if (cityCode) {
+              const kecs = await fetch(`https://ibnux.github.io/data-indonesia/kecamatan/${cityCode}.json`).then(r => r.json());
+              const kec = kecs.find((x: any) => x.id === distCode);
+              if (kec) setRegionNames(prev => ({ ...prev, kecamatan: kec.nama }));
+            }
           }
         }
       } catch (e) {
@@ -311,12 +326,16 @@ export default function TenantDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
-           <Button variant="outline" size="sm" className="h-9 px-4 font-bold text-[10px] uppercase tracking-wider gap-2 border-slate-200 shadow-sm hover:bg-slate-50 active:scale-95 transition-all">
-              <Settings2 className="h-3.5 w-3.5" /> Konfigurasi
-           </Button>
-           <Button size="sm" className="h-9 px-4 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-sm bg-[#FF5F4E] hover:bg-[#E04F3F] active:scale-95 transition-all">
-              <Plus className="h-3.5 w-3.5" /> Aksi Cepat
-           </Button>
+           <Link href={`/users/${profile.owner_id}`}>
+             <Button variant="outline" size="sm" className="h-9 px-4 font-bold text-[10px] uppercase tracking-wider gap-2 border-slate-200 shadow-sm hover:bg-slate-50 active:scale-95 transition-all">
+                <User className="h-3.5 w-3.5" /> Profil Owner
+             </Button>
+           </Link>
+           <Link href={`/topups`}>
+             <Button size="sm" className="h-9 px-4 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-sm bg-[#FF5F4E] hover:bg-[#E04F3F] active:scale-95 transition-all">
+                <Coins className="h-3.5 w-3.5" /> Riwayat Top Up
+             </Button>
+           </Link>
         </div>
       </div>
 
@@ -466,47 +485,78 @@ export default function TenantDetailPage() {
                  </Card>
               </div>
 
-              <div className="space-y-6">
-                 {/* Quick Contact Card */}
-                 <Card className="p-5 border border-slate-200 bg-white shadow-none space-y-4">
-                    <div className="flex items-center gap-4">
-                       <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
-                          <User className="h-6 w-6" />
-                       </div>
-                       <div>
-                          <p className="text-xs font-bold text-slate-900 uppercase tracking-tight">{profile.owner_name}</p>
-                          <p className="text-[10px] font-medium text-slate-400">{profile.owner_email}</p>
-                       </div>
+              <div className="space-y-4">
+                 {/* Owner & Contact */}
+                 <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
+                    <div className="p-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Kontak Owner</p>
+                       <Link href={`/users/${profile.owner_id}`}>
+                          <Button variant="ghost" size="sm" className="h-6 px-2 text-[9px] font-bold text-primary gap-1">
+                             Profil <ArrowUpRight className="h-3 w-3" />
+                          </Button>
+                       </Link>
                     </div>
-                    <div className="pt-4 border-t border-slate-50 space-y-2">
-                       <Button className="w-full h-10 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-[10px] uppercase gap-2 rounded-xl">
-                          <Smartphone className="h-4 w-4" /> WhatsApp Owner
-                       </Button>
-                       <Button variant="outline" className="w-full h-10 font-bold text-[10px] uppercase gap-2 rounded-xl border-slate-200 shadow-sm">
-                          <Mail className="h-4 w-4 text-[#FF5F4E]" /> Kirim Email
-                       </Button>
+                    <div className="p-4 space-y-3">
+                       <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 shrink-0">
+                             <User className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                             <p className="text-xs font-bold text-slate-900 truncate">{profile.owner_name}</p>
+                             <p className="text-[10px] text-slate-500 truncate">{profile.owner_email}</p>
+                          </div>
+                       </div>
+                       <div className="grid grid-cols-2 gap-2">
+                          <a
+                             href={`https://wa.me/62${(profile.ot_nohp || '').replace(/^0/, '').replace(/\D/g, '')}`}
+                             target="_blank"
+                             rel="noreferrer"
+                             className={!profile.ot_nohp ? 'pointer-events-none opacity-40' : ''}
+                          >
+                             <Button className="w-full h-8 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-[9px] uppercase gap-1.5 rounded-lg">
+                                <Smartphone className="h-3 w-3" /> WA Outlet
+                             </Button>
+                          </a>
+                          <a href={`mailto:${profile.owner_email}`}>
+                             <Button variant="outline" className="w-full h-8 font-bold text-[9px] uppercase gap-1.5 border-slate-200 shadow-none rounded-lg">
+                                <Mail className="h-3 w-3 text-[#FF5F4E]" /> Email
+                             </Button>
+                          </a>
+                       </div>
+                       {profile.ot_nohp && (
+                          <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded text-[9px]">
+                             <Phone className="h-3 w-3 text-slate-400 shrink-0" />
+                             <span className="font-mono font-bold text-slate-600">{profile.ot_nohp}</span>
+                          </div>
+                       )}
                     </div>
                  </Card>
 
-                 {/* Security & Node Status */}
-                 <Card className="p-5 border border-slate-200 bg-slate-900 text-white shadow-lg relative overflow-hidden">
-                    <div className="relative z-10 space-y-4">
-                       <div className="flex items-center gap-2 text-[#FF5F4E]">
-                          <ShieldCheck className="h-4 w-4" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">System Integrity</span>
-                       </div>
-                       <div className="space-y-3">
-                          <div className="flex justify-between text-[10px]">
-                             <span className="text-white/40 font-bold uppercase">Uptime</span>
-                             <span className="font-bold text-emerald-400 tracking-widest">99.9%</span>
-                          </div>
-                          <div className="flex justify-between text-[10px]">
-                             <span className="text-white/40 font-bold uppercase">Node ID</span>
-                             <span className="font-bold font-mono">NODE-0{profile.ot_id.split('.')[0]}</span>
-                          </div>
-                       </div>
+                 {/* Account Status */}
+                 <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
+                    <div className="p-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Status Akun</p>
+                       <Badge className={cn(
+                          "text-[8px] font-bold uppercase border-none shadow-none",
+                          profile.ot_activated_at ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                       )}>
+                          {profile.ot_activated_at ? "Permanen" : "Trial"}
+                       </Badge>
                     </div>
-                    <Globe className="absolute -bottom-6 -right-6 h-28 w-28 text-white/[0.04] rotate-12" />
+                    <div className="divide-y divide-slate-50">
+                       {([
+                          { label: "Paket", value: profile.subscription_status, className: profile.subscription_status === "PRO" ? "text-orange-500" : "text-slate-700" },
+                          { label: "Bergabung", value: format(new Date(profile.ot_created), "dd MMM yyyy"), className: "text-slate-700" },
+                          { label: "Aktif Sejak", value: profile.ot_activated_at ? format(new Date(profile.ot_activated_at), "dd MMM yyyy") : "-", className: "text-slate-700" },
+                          { label: "Exp. Langganan", value: profile.expiry_date ? format(new Date(profile.expiry_date), "dd MMM yyyy") : "-", className: profile.expiry_date && differenceInDays(new Date(profile.expiry_date), new Date()) < 7 ? "text-rose-500 font-black" : "text-slate-700" },
+                          { label: "Sisa Trial", value: !profile.ot_activated_at ? `${daysRemaining} hari` : "-", className: daysRemaining < 5 ? "text-rose-500" : "text-amber-600" },
+                       ] as {label: string; value: string; className: string}[]).map((row, i) => (
+                          <div key={i} className="px-4 py-2.5 flex items-center justify-between">
+                             <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">{row.label}</span>
+                             <span className={cn("text-[10px] font-bold uppercase tracking-tight", row.className)}>{row.value}</span>
+                          </div>
+                       ))}
+                    </div>
                  </Card>
               </div>
            </div>
@@ -530,8 +580,8 @@ export default function TenantDetailPage() {
                                { label: "Nomor Kontak", value: profile?.ot_nohp || "-", icon: Phone, isPhone: true },
                                { label: "Tipe Lokasi", value: profile?.ot_tipe_lokasi_usaha, icon: MapPin },
                                { label: "Skala Modal", value: profile?.ot_modal_usaha, icon: Coins },
-                               { label: "Jumlah Pegawai", value: `${profile?.ot_jumlah_karyawan || "0"} Orang`, icon: Users },
-                               { label: "Populasi Mesin", value: `${profile?.ot_jumlah_mesin_cuci || "0"} Unit`, icon: Layers },
+                               { label: "Jumlah Pegawai", value: `${String(profile?.ot_jumlah_karyawan || "0").replace(/orang/i, "").trim()} Orang`, icon: Users },
+                               { label: "Populasi Mesin", value: `${String(profile?.ot_jumlah_mesin_cuci || "0").replace(/unit/i, "").trim()} Unit`, icon: Layers },
                                { label: "Zona Waktu", value: (profile as any)?.ot_timezone, icon: Clock },
                              ].map((item, idx) => (
                                <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
@@ -579,10 +629,7 @@ export default function TenantDetailPage() {
                           ))}
                        </div>
 
-                       <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                          <Globe className="h-4 w-4 text-blue-500" />
-                          <p className="text-[10px] font-bold text-blue-600 uppercase">Kode Area Sistem: <span className="font-mono tracking-tighter">{profile.ot_kecamatan || "00"}.{profile.ot_kota || "00"}.{profile.ot_provinsi || "00"}</span></p>
-                       </div>
+
                     </div>
                  </Card>
               </div>
@@ -590,40 +637,36 @@ export default function TenantDetailPage() {
               {/* Sidebar Info */}
               <div className="space-y-6">
                  <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
-                    <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+                    <div className="p-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Status Langganan</p>
+                       <Badge className={cn(
+                          "text-[8px] font-bold uppercase border-none shadow-none",
+                          profile.ot_activated_at ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600 animate-pulse"
+                       )}>
+                          {profile.ot_activated_at ? "Aktif" : `Trial – ${daysRemaining}h`}
+                       </Badge>
                     </div>
-                    <div className="p-6 space-y-6 text-center">
-                       <div className="relative inline-block">
-                          <div className={cn(
-                            "h-24 w-24 rounded-full flex flex-col items-center justify-center border-4",
-                            profile.ot_activated_at ? "border-emerald-100 bg-emerald-50 text-emerald-600" : "border-amber-100 bg-amber-50 text-amber-600"
-                          )}>
-                             <ShieldCheck className="h-8 w-8 mb-1" />
-                             <span className="text-[10px] font-black">{profile.subscription_status}</span>
+                    <div className="divide-y divide-slate-50">
+                       {([
+                          { label: "Paket", value: profile.subscription_status, bold: profile.subscription_status === "PRO", warn: false },
+                          { label: "Tipe Lisensi", value: profile.ot_activated_at ? "Lisensi Permanen" : "Masa Percobaan", bold: false, warn: false },
+                          { label: "Bergabung", value: format(new Date(profile.ot_created), "dd MMM yyyy"), bold: false, warn: false },
+                          { label: "Aktif Sejak", value: profile.ot_activated_at ? format(new Date(profile.ot_activated_at), "dd MMM yyyy") : "-", bold: false, warn: false },
+                          { label: "Berakhir", value: profile.expiry_date ? format(new Date(profile.expiry_date), "dd MMM yyyy") : "-", bold: false, warn: !!(profile.expiry_date && differenceInDays(new Date(profile.expiry_date), new Date()) < 7) },
+                       ] as {label: string; value: string; bold: boolean; warn: boolean}[]).map((row, i) => (
+                          <div key={i} className="px-4 py-2.5 flex items-center justify-between">
+                             <span className="text-[9px] font-bold uppercase text-slate-400">{row.label}</span>
+                             <span className={cn(
+                                "text-[10px] font-bold uppercase tracking-tight",
+                                row.warn ? "text-rose-500" : row.bold ? "text-orange-500" : "text-slate-700"
+                             )}>{row.value || "-"}</span>
                           </div>
-                          <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white border-2 border-slate-100 flex items-center justify-center shadow-sm">
-                             <BadgeCheck className="h-5 w-5 text-[#FF5F4E]" />
-                          </div>
-                       </div>
-                       
-                       <div className="space-y-2">
-                          <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">
-                             {profile.ot_activated_at ? "Lisensi Permanen" : "Masa Percobaan"}
-                          </p>
-                          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
-                             {profile.ot_activated_at 
-                               ? `Aktif Sejak ${format(new Date(profile.ot_activated_at), "dd MMM yyyy")}`
-                               : `Berakhir Dalam ${daysRemaining} Hari`
-                             }
-                          </p>
-                       </div>
-
-                       <div className="pt-4 border-t border-slate-50">
-                          <Button className="w-full h-10 font-bold text-[10px] uppercase tracking-widest gap-2 rounded-xl shadow-none">
-                             Ubah Paket Lisensi <ArrowUpRight className="h-4 w-4" />
-                          </Button>
-                       </div>
+                       ))}
+                    </div>
+                    <div className="p-3 border-t border-slate-50">
+                       <Button className="w-full h-9 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none rounded-lg">
+                          Ubah Paket Lisensi <ArrowUpRight className="h-3.5 w-3.5" />
+                       </Button>
                     </div>
                  </Card>
 
@@ -765,9 +808,49 @@ export default function TenantDetailPage() {
         {/* TAB: EKONOMI KOIN */}
         <TabsContent value="koin" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
            <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
-              <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Log Mutasi Koin Lengkap</p>
+              <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Log Mutasi Koin Lengkap</p>
+                    
+                    <div className="flex items-center gap-1 bg-slate-100/80 p-0.5 rounded-lg border border-slate-200/50 w-fit">
+                       <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setKoinFilter('all'); setPages(prev => ({ ...prev, koin: 1 })); }}
+                          className={cn(
+                             "h-6 px-2.5 text-[9px] font-bold uppercase tracking-tight rounded-md transition-all shadow-none",
+                             koinFilter === 'all' ? "bg-white text-slate-800 border border-slate-200/50 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                          )}
+                       >
+                          Semua
+                       </Button>
+                       <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setKoinFilter('masuk'); setPages(prev => ({ ...prev, koin: 1 })); }}
+                          className={cn(
+                             "h-6 px-2.5 text-[9px] font-bold uppercase tracking-tight rounded-md transition-all shadow-none",
+                             koinFilter === 'masuk' ? "bg-emerald-500 text-white border border-emerald-600/20" : "text-slate-500 hover:text-slate-700"
+                          )}
+                       >
+                          Pemasukan
+                       </Button>
+                       <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setKoinFilter('keluar'); setPages(prev => ({ ...prev, koin: 1 })); }}
+                          className={cn(
+                             "h-6 px-2.5 text-[9px] font-bold uppercase tracking-tight rounded-md transition-all shadow-none",
+                             koinFilter === 'keluar' ? "bg-rose-500 text-white border border-rose-600/20" : "text-slate-500 hover:text-slate-700"
+                          )}
+                       >
+                          Pengeluaran
+                       </Button>
+                    </div>
+                 </div>
+                 
                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-bold text-slate-400">Hal {pages.koin}</span>
                     <Button 
                       variant="outline" 
                       size="icon" 
@@ -781,7 +864,7 @@ export default function TenantDetailPage() {
                       variant="outline" 
                       size="icon" 
                       className="h-7 w-7" 
-                      disabled={koinHistory.length <= pages.koin * itemsPerPage}
+                      disabled={filteredKoinHistory.length <= pages.koin * itemsPerPage}
                       onClick={() => setPages(prev => ({ ...prev, koin: prev.koin + 1 }))}
                     >
                       <ArrowUpRight className="h-3 w-3 rotate-45" />
@@ -789,29 +872,65 @@ export default function TenantDetailPage() {
                  </div>
               </div>
               <div className="divide-y divide-slate-100">
-                 {koinHistory.length > 0 ? koinHistory.slice((pages.koin - 1) * itemsPerPage, pages.koin * itemsPerPage).map((tx, i) => (
-                    <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                       <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "h-9 w-9 rounded-xl flex items-center justify-center border",
-                            tx.hk_jenis_transaksi === 'masuk' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
-                          )}>
-                             {tx.hk_jenis_transaksi === 'masuk' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-                          </div>
-                          <div>
-                             <p className="text-[12px] font-bold text-slate-900 uppercase tracking-tight line-clamp-1">{tx.hk_keterangan}</p>
-                             <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">{format(new Date(tx.hk_created), "dd MMM yyyy HH:mm")}</p>
-                          </div>
-                       </div>
-                       <div className="text-right">
-                          <p className={cn("text-xs font-bold font-heading", tx.hk_jenis_transaksi === 'masuk' ? "text-emerald-600" : "text-rose-600")}>
-                             {tx.hk_jenis_transaksi === 'masuk' ? '+' : '-'}{tx.hk_jumlah} Koin
-                          </p>
-                          <Badge variant="outline" className="text-[8px] border-none font-bold text-slate-300 uppercase">Settled</Badge>
-                       </div>
-                    </div>
-                 )) : (
-                    <div className="p-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">Tidak ada log koin</div>
+                 {filteredKoinHistory.length > 0 ? filteredKoinHistory.slice((pages.koin - 1) * itemsPerPage, pages.koin * itemsPerPage).map((tx, i) => {
+                     const isMasuk = tx.hk_jenis_transaksi === 'masuk';
+                     
+                     const handleRowClick = () => {
+                        if (!isMasuk) return;
+                        const descLower = tx.hk_keterangan.toLowerCase();
+                        
+                        if (descLower.includes("referral") || descLower.includes("konversi")) {
+                           router.push('/referrals');
+                        } else if (descLower.includes("pendaftaran")) {
+                           router.push('/');
+                        } else if (descLower.includes("top up") || descLower.includes("tk-")) {
+                           const tkMatch = tx.hk_keterangan.match(/TK-[A-Z0-9]+/i);
+                           if (tkMatch) {
+                              router.push(`/topups?search=${tkMatch[0]}`);
+                           } else {
+                              router.push(`/topups`);
+                           }
+                        }
+                     };
+
+                     return (
+                        <div 
+                           key={i} 
+                           onClick={handleRowClick}
+                           className={cn(
+                              "p-4 flex items-center justify-between transition-all duration-300 border-l-[3px] border-l-transparent",
+                              isMasuk ? "hover:bg-emerald-50/20 hover:border-l-emerald-500 cursor-pointer" : "hover:bg-slate-50/30"
+                           )}
+                        >
+                           <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "h-9 w-9 rounded-xl flex items-center justify-center border shrink-0",
+                                isMasuk ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
+                              )}>
+                                 {isMasuk ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                              </div>
+                              <div>
+                                 <p className="text-[12px] font-bold text-slate-900 uppercase tracking-tight line-clamp-1">{tx.hk_keterangan}</p>
+                                 <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter flex items-center gap-2">
+                                    <span>{format(new Date(tx.hk_created), "dd MMM yyyy HH:mm")}</span>
+                                    {isMasuk && (
+                                       <span className="text-[8px] font-bold text-orange-500 lowercase tracking-normal italic normal-case shrink-0">
+                                          (click to view source)
+                                       </span>
+                                    )}
+                                 </p>
+                              </div>
+                           </div>
+                           <div className="text-right">
+                              <p className={cn("text-xs font-bold font-heading", isMasuk ? "text-emerald-600" : "text-rose-600")}>
+                                 {isMasuk ? '+' : '-'}{tx.hk_jumlah} Koin
+                              </p>
+                              <Badge variant="outline" className="text-[8px] border-none font-bold text-slate-300 uppercase">Settled</Badge>
+                           </div>
+                        </div>
+                     );
+                  }) : (
+                     <div className="p-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">Tidak ada log koin</div>
                  )}
               </div>
            </Card>

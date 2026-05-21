@@ -187,11 +187,20 @@ function RoleFormPanel({
 // ============================================================
 export default function AdminManagementPage() {
   const router = useRouter();
-  const { isMaster } = useAuthStore();
+  const { isMaster, _hasHydrated } = useAuthStore();
+  const [authorized, setAuthorized] = useState(false);
 
-  // Redirect jika bukan master admin
-  if (!isMaster()) {
-    router.replace("/");
+  useEffect(() => {
+    if (_hasHydrated) {
+      if (!isMaster()) {
+        router.replace("/");
+      } else {
+        setAuthorized(true);
+      }
+    }
+  }, [_hasHydrated, isMaster, router]);
+
+  if (!authorized) {
     return null;
   }
 

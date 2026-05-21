@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useEffect, useState, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -333,12 +334,13 @@ export default function SubscriptionsPage() {
           
           <div className="h-5 w-px bg-slate-100 hidden lg:block" />
 
-          <div className="flex items-center gap-1 p-1 lg:p-0">
+          <div className="flex items-center gap-1 p-1 lg:p-0 flex-wrap">
             <Popover open={openOutlet} onOpenChange={setOpenOutlet}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-2 text-slate-600">
+                <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-1.5 text-slate-600">
                   <Store className="h-3 w-3" />
-                  {outletFilter === "all" ? "Outlets" : outletFilter}
+                  {outletFilter === "all" ? "Outlet" : outletFilter}
+                  <ChevronsUpDown className="h-2.5 w-2.5 opacity-40" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-56 p-0 rounded-md">
@@ -359,21 +361,36 @@ export default function SubscriptionsPage() {
 
             <div className="h-4 w-px bg-slate-100" />
 
-            <div className="flex items-center gap-1">
-               {["all", "PENDING_VALIDATION", "SUCCESS", "FAILED"].map(s => (
-                 <Button
-                    key={s}
-                    variant={statusFilter === s ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => setStatusFilter(s)}
-                    className={cn(
-                      "h-7 px-2 text-[9px] font-bold uppercase tracking-tight rounded",
-                      statusFilter === s ? "bg-primary/10 text-primary" : "text-slate-500"
-                    )}
-                 >
-                   {s === "all" ? "All" : s === "PENDING_VALIDATION" ? "Review" : s}
-                 </Button>
-               ))}
+            {/* Status Filter — compact select */}
+            <div className="relative flex items-center">
+              <select
+                value={statusFilter}
+                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
+              >
+                <option value="all">All Status</option>
+                <option value="PENDING_VALIDATION">Review</option>
+                <option value="SUCCESS">Success</option>
+                <option value="FAILED">Failed</option>
+                <option value="CANCELED">Canceled</option>
+              </select>
+              <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
+
+            {/* Method Filter — compact select */}
+            <div className="relative flex items-center">
+              <select
+                value={methodFilter}
+                onChange={(e) => { setMethodFilter(e.target.value); setPage(1); }}
+                className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
+              >
+                <option value="all">All Method</option>
+                <option value="TRANSFER">Transfer Bank</option>
+                <option value="MIDTRANS">Midtrans</option>
+                <option value="KOIN">Koin</option>
+                <option value="FREE">Gratis</option>
+              </select>
+              <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
             </div>
 
             <div className="h-4 w-px bg-slate-100 mx-0.5" />
@@ -437,16 +454,30 @@ export default function SubscriptionsPage() {
                         </div>
                       </td>
                       <td className="px-5 py-3">
-                        <div className="font-bold text-slate-800 text-xs">{item.outlet_name}</div>
+                        {item.ha_outlet ? (
+                          <Link
+                            href={`/tenants/${item.ha_outlet}`}
+                            className="font-bold text-slate-800 text-xs hover:text-primary hover:underline transition-colors block"
+                          >
+                            {item.outlet_name}
+                          </Link>
+                        ) : (
+                          <div className="font-bold text-slate-800 text-xs">{item.outlet_name}</div>
+                        )}
                         <div className="text-[10px] font-medium text-slate-500">{item.owner_name}</div>
                       </td>
-                      <td className="px-5 py-3">
-                        <Badge variant="outline" className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-slate-200 bg-slate-50">
+                      <td className="px-5 py-3 max-w-[220px]">
+                        <Badge
+                          variant="outline"
+                          className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-slate-200 bg-slate-50 max-w-full block truncate"
+                          title={item.item_names}
+                        >
                           {item.item_names}
                         </Badge>
                       </td>
-                      <td className="px-5 py-3 text-right font-bold text-slate-900 text-xs">
-                        Rp {item.ha_total.toLocaleString("id-ID")}
+                      <td className="px-5 py-3 text-right">
+                        <div className="font-bold text-slate-900 text-xs">Rp {item.ha_total.toLocaleString("id-ID")}</div>
+                        <div className="text-[9px] font-bold uppercase text-slate-400 tracking-wide mt-0.5">{item.ha_metode_bayar || "—"}</div>
                       </td>
                       <td className="px-5 py-3 text-center">
                         <Badge className={cn("rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none", status.class)}>
@@ -495,7 +526,17 @@ export default function SubscriptionsPage() {
               {selectedTrx?.item_names}
             </h3>
             <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
-              <Store className="h-3 w-3" /> {selectedTrx?.outlet_name}
+              <Store className="h-3 w-3" />
+              {selectedTrx?.ha_outlet ? (
+                <Link
+                  href={`/tenants/${selectedTrx.ha_outlet}`}
+                  className="hover:text-primary hover:underline transition-colors font-semibold"
+                >
+                  {selectedTrx.outlet_name}
+                </Link>
+              ) : (
+                selectedTrx?.outlet_name
+              )}
             </p>
           </div>
 

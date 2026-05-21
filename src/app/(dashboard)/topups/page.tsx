@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import {
   ArrowUpRight,
   History,
   Coins,
+  Gift,
 } from "lucide-react";
 import {
   Dialog,
@@ -94,6 +96,16 @@ export default function TopupsManagementPage() {
 
   const [selectedTopup, setSelectedTopup] = useState<Topup | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const search = params.get("search");
+      if (search) {
+        setSearchQuery(search);
+      }
+    }
+  }, []);
 
   const formatDateTime = (dateStr: string) => {
     try {
@@ -205,17 +217,24 @@ export default function TopupsManagementPage() {
     }
   };
 
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case "pending":
-        return { label: "Verification", class: "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" };
-      case "success":
-        return { label: "Completed", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
-      case "failed":
-        return { label: "Failed", class: "bg-rose-50 text-rose-600 border-rose-100" };
-      default:
-        return { label: status, class: "bg-slate-50 text-slate-400 border-slate-100" };
+  const getStatusConfig = (item: Topup) => {
+    const status = item.tk_status;
+    const method = item.tk_metode_bayar;
+    const hasBukti = !!item.tk_bukti;
+
+    if (status === "success" || status === "completed") {
+      return { label: "Completed", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
     }
+    if (status === "failed") {
+      return { label: "Failed", class: "bg-rose-50 text-rose-600 border-rose-100" };
+    }
+    if (status === "pending" || status === "verification") {
+      if (method === "transfer" && hasBukti) {
+        return { label: "Verification", class: "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" };
+      }
+      return { label: "Pending", class: "bg-blue-50 text-blue-600 border-blue-100" };
+    }
+    return { label: status, class: "bg-slate-50 text-slate-400 border-slate-100" };
   };
 
   return (
@@ -314,7 +333,26 @@ export default function TopupsManagementPage() {
                       statusFilter === s ? "bg-primary/10 text-primary" : "text-slate-500"
                     )}
                  >
-                   {s === "all" ? "All" : s}
+                   {s === "all" ? "All Status" : s}
+                 </Button>
+               ))}
+            </div>
+
+            <div className="h-4 w-px bg-slate-100" />
+
+            <div className="flex items-center gap-1">
+               {["all", "transfer", "midtrans", "bonus"].map(m => (
+                 <Button
+                    key={m}
+                    variant={methodFilter === m ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setMethodFilter(m)}
+                    className={cn(
+                      "h-7 px-2 text-[9px] font-bold uppercase tracking-tight rounded",
+                      methodFilter === m ? "bg-primary/10 text-primary" : "text-slate-500"
+                    )}
+                 >
+                   {m === "all" ? "All Methods" : m === "midtrans" ? "Midtrans" : m === "transfer" ? "Transfer" : "Bonus"}
                  </Button>
                ))}
             </div>
@@ -359,7 +397,7 @@ export default function TopupsManagementPage() {
                 </tr>
               ) : (
               paginatedData.map((item) => {
-                  const status = getStatusConfig(item.tk_status);
+                  const status = getStatusConfig(item);
                   const dt = formatDateTime(item.tk_created);
                   return (
                     <tr key={item.tk_id} className="hover:bg-slate-50/80 hover:shadow-sm transition-all duration-300 group border-l-[3px] border-transparent hover:border-primary">
@@ -372,7 +410,16 @@ export default function TopupsManagementPage() {
                         </div>
                       </td>
                       <td className="px-5 py-3">
-                        <div className="font-bold text-slate-800 text-xs group-hover:text-slate-900 transition-colors">{item.outlet_name}</div>
+                        {item.tk_outlet ? (
+                          <Link
+                            href={`/tenants/${item.tk_outlet}`}
+                            className="font-bold text-slate-800 text-xs hover:text-primary hover:underline transition-colors block"
+                          >
+                            {item.outlet_name}
+                          </Link>
+                        ) : (
+                          <div className="font-bold text-slate-800 text-xs">{item.outlet_name}</div>
+                        )}
                         <div className="text-[10px] font-medium text-slate-500">{item.owner_name}</div>
                       </td>
                       <td className="px-5 py-3 text-center">
@@ -382,16 +429,35 @@ export default function TopupsManagementPage() {
                         </div>
                       </td>
                       <td className="px-5 py-3">
-                        <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100 w-fit group-hover:bg-white group-hover:shadow-sm transition-all">
-                          {item.tk_metode_bayar === "transfer" ? (
+                        {item.tk_metode_bayar === "bonus" ? (
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-1.5 bg-purple-50 px-2.5 py-1.5 rounded-lg border border-purple-100 w-fit group-hover:bg-white group-hover:shadow-sm transition-all dark:bg-purple-950/20 dark:border-purple-900/30">
+                              <Gift className="h-3 w-3 text-purple-500 group-hover:scale-110 transition-transform" />
+                              <span className="font-bold uppercase text-purple-600 tracking-widest text-[8px] dark:text-purple-400">
+                                BONUS
+                              </span>
+                            </div>
+                            {item.bonus_type && (
+                              <span className="text-[8px] font-semibold text-slate-500 italic mt-0.5 ml-1">
+                                ({item.bonus_type})
+                              </span>
+                            )}
+                          </div>
+                        ) : item.tk_metode_bayar === "transfer" ? (
+                          <div className="flex items-center gap-1.5 bg-orange-50 px-2.5 py-1.5 rounded-lg border border-orange-100 w-fit group-hover:bg-white group-hover:shadow-sm transition-all">
                             <ArrowRightLeft className="h-3 w-3 text-orange-500 group-hover:scale-110 transition-transform" />
-                          ) : (
+                            <span className="font-bold uppercase text-slate-600 tracking-widest text-[8px]">
+                              TRANSFER
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-100 w-fit group-hover:bg-white group-hover:shadow-sm transition-all">
                             <CreditCard className="h-3 w-3 text-amber-500 group-hover:scale-110 transition-transform" />
-                          )}
-                          <span className="font-bold uppercase text-slate-600 tracking-widest text-[8px]">
-                            {item.tk_metode_bayar}
-                          </span>
-                        </div>
+                            <span className="font-bold uppercase text-slate-600 tracking-widest text-[8px]">
+                              MIDTRANS
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-5 py-3 text-center">
                         <Badge className={cn("rounded-full px-2 py-0.5 text-[8px] font-bold uppercase border shadow-none transition-all group-hover:shadow-sm", status.class)}>
@@ -403,9 +469,17 @@ export default function TopupsManagementPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => { setSelectedTopup(item); setIsPreviewOpen(true); }}
-                          className="h-8 px-3 font-bold text-[9px] uppercase text-primary hover:bg-primary/10 active:scale-95 transition-all rounded-lg opacity-80 group-hover:opacity-100 border border-transparent group-hover:border-primary/20"
+                          className={cn(
+                            "h-8 px-3 font-bold text-[9px] uppercase active:scale-95 transition-all rounded-lg opacity-80 group-hover:opacity-100 border border-transparent",
+                            (item.tk_status === "pending" || item.tk_status === "verification") && item.tk_metode_bayar !== "bonus"
+                              ? "text-amber-600 hover:bg-amber-50 group-hover:border-amber-200"
+                              : "text-primary hover:bg-primary/10 group-hover:border-primary/20"
+                          )}
                         >
-                          Verify <ChevronRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                          {(item.tk_status === "pending" || item.tk_status === "verification") && item.tk_metode_bayar !== "bonus"
+                            ? <>Verify <ShieldCheck className="h-3 w-3 ml-1" /></>
+                            : <>Detail <ChevronRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" /></>
+                          }
                         </Button>
                       </td>
                     </tr>
@@ -439,8 +513,18 @@ export default function TopupsManagementPage() {
             <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading">
               Topup {selectedTopup?.tk_jumlah?.toLocaleString()} Coins
             </h3>
-            <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
-              <Store className="h-3 w-3" /> {selectedTopup?.outlet_name}
+             <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+              <Store className="h-3 w-3" />
+              {selectedTopup?.tk_outlet ? (
+                <Link
+                  href={`/tenants/${selectedTopup.tk_outlet}`}
+                  className="hover:text-primary hover:underline transition-colors font-semibold"
+                >
+                  {selectedTopup.outlet_name}
+                </Link>
+              ) : (
+                selectedTopup?.outlet_name
+              )}
             </p>
           </div>
 
@@ -462,7 +546,7 @@ export default function TopupsManagementPage() {
                       <img src={`${API_URL}${selectedTopup.tk_bukti}`} className="w-full h-full object-cover" alt="Proof" />
                       <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                         <a href={`${API_URL}${selectedTopup.tk_bukti}`} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded font-bold text-[10px] flex items-center gap-2">
-                          <ExternalLink className="h-3 w-3" /> Fullscreen
+                           <ExternalLink className="h-3 w-3" /> Fullscreen
                         </a>
                       </div>
                    </div>
@@ -472,6 +556,18 @@ export default function TopupsManagementPage() {
                     <p className="text-[9px] font-bold uppercase tracking-widest">Awaiting Proof</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {selectedTopup?.tk_metode_bayar === "bonus" && (
+              <div className="space-y-2">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bonus Allocation Detail</label>
+                <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-lg dark:bg-purple-950/10 dark:border-purple-900/30">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-start gap-2">
+                    <Gift className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                    <span>{selectedTopup.keterangan || "Alokasi bonus sistem otomatis."}</span>
+                  </p>
+                </div>
               </div>
             )}
 

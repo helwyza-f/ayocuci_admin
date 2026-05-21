@@ -1,5 +1,5 @@
-export type TopupStatus = "pending" | "success" | "failed";
-export type TopupMethod = "transfer" | "midtrans";
+export type TopupStatus = "pending" | "success" | "failed" | "completed" | "verification";
+export type TopupMethod = "transfer" | "midtrans" | "bonus" | "manual";
 
 export interface Topup {
   tk_id: string;
@@ -11,6 +11,9 @@ export interface Topup {
   tk_bukti?: string;
   outlet_name?: string;
   owner_name?: string;
+  tk_outlet?: string;
+  keterangan?: string;
+  bonus_type?: string;
 }
 
 export interface TopupFiltersValue {
