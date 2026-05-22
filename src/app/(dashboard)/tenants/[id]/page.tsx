@@ -787,22 +787,75 @@ export default function TenantDetailPage() {
               </div>
               <div className="divide-y divide-slate-100">
                  {addonHistory.length > 0 ? addonHistory.slice((pages.addons - 1) * itemsPerPage, pages.addons * itemsPerPage).map((ha, i) => (
-                    <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50/30 transition-colors">
-                       <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
-                             <Zap className="h-4 w-4" />
+                    <div key={i} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/30 transition-colors">
+                       <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className={cn(
+                             "h-9 w-9 rounded-xl border flex items-center justify-center transition-all",
+                             ha.feature_status === "ACTIVE" ? "bg-emerald-50 text-emerald-600 border-emerald-100/80 shadow-sm shadow-emerald-50/50" :
+                             ha.feature_status === "EXPIRED" ? "bg-rose-50 text-rose-600 border-rose-100/80 shadow-sm shadow-rose-50/50" :
+                             "bg-slate-50 text-slate-400 border-slate-100"
+                          )}>
+                             <Zap className="h-4 w-4 fill-current" />
                           </div>
-                          <div>
-                             <p className="text-[12px] font-bold text-slate-900 line-clamp-1">{ha.ha_item_names}</p>
-                             <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">ID: {ha.ha_id} • Via {ha.ha_metode_bayar} • {format(new Date(ha.ha_created), "dd/MM/yy HH:mm")}</p>
+                          <div className="min-w-0 flex-1">
+                             <p className="text-[12px] font-black text-slate-800 tracking-tight leading-tight line-clamp-1">{ha.ha_item_names}</p>
+                             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">
+                                ID: {ha.ha_id} <span className="text-slate-300 mx-1">•</span> Via {ha.ha_metode_bayar}
+                             </p>
                           </div>
                        </div>
-                       <div className="text-right">
-                          <p className="text-xs font-bold text-slate-900 mb-1">Rp {ha.ha_total?.toLocaleString()}</p>
-                          <Badge className={cn(
-                             "text-[8px] px-1.5 py-0 border-none font-bold uppercase shadow-none",
-                             ha.ha_status === "SUCCESS" ? "bg-emerald-500 text-white" : "bg-amber-500 text-white"
-                          )}>{ha.ha_status}</Badge>
+                       
+                       {/* Lifecycle Dates */}
+                       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px]">
+                          <div className="flex flex-col">
+                             <span className="text-slate-400 font-bold uppercase tracking-wider text-[8px] mb-0.5">Tanggal Pembelian</span>
+                             <span className="font-semibold text-slate-700">
+                                {format(new Date(ha.ha_created), "dd/MM/yy HH:mm")}
+                             </span>
+                          </div>
+                          <div className="flex flex-col">
+                             <span className="text-slate-400 font-bold uppercase tracking-wider text-[8px] mb-0.5">Tanggal Jatuh Tempo/Expired</span>
+                             {ha.ha_berakhir ? (
+                                <span className={cn(
+                                   "font-semibold",
+                                   ha.feature_status === "EXPIRED" ? "text-rose-600 font-bold" : "text-slate-700"
+                                )}>
+                                   {format(new Date(ha.ha_berakhir), "dd/MM/yy HH:mm")}
+                                </span>
+                             ) : (
+                                <span className={cn(
+                                   "font-black",
+                                   ha.feature_status === "ACTIVE" ? "text-emerald-600" : "text-slate-400"
+                                )}>
+                                   {ha.feature_status === "ACTIVE" ? "Permanen (PRO)" : "-"}
+                                </span>
+                             )}
+                          </div>
+                       </div>
+
+                       {/* Price and Statuses */}
+                       <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 sm:min-w-[145px]">
+                          <p className="text-[12px] font-black text-slate-900">Rp {ha.ha_total?.toLocaleString()}</p>
+                          <div className="flex items-center gap-1.5">
+                             {/* Transaction Status Badge */}
+                             <Badge className={cn(
+                                "text-[8px] px-1.5 py-0.5 border font-extrabold uppercase shadow-none tracking-wider",
+                                ha.ha_status === "SUCCESS" ? "bg-emerald-50/50 text-emerald-600 border-emerald-100" :
+                                ha.ha_status === "PENDING_VALIDATION" ? "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" :
+                                "bg-slate-50 text-slate-400 border-slate-100"
+                             )}>
+                                {ha.ha_status === "PENDING_VALIDATION" ? "VALIDASI" : ha.ha_status}
+                             </Badge>
+                             {/* Feature status badge */}
+                             <Badge className={cn(
+                                "text-[8px] px-1.5 py-0.5 border font-extrabold uppercase shadow-none tracking-wider",
+                                ha.feature_status === "ACTIVE" ? "bg-emerald-600 text-white border-emerald-600" :
+                                ha.feature_status === "EXPIRED" ? "bg-rose-600 text-white border-rose-600" :
+                                "bg-slate-500 text-white border-slate-500"
+                             )}>
+                                {ha.feature_status === "ACTIVE" ? "AKTIF" : ha.feature_status === "EXPIRED" ? "EXPIRED" : "NON-AKTIF"}
+                             </Badge>
+                          </div>
                        </div>
                     </div>
                  )) : (
