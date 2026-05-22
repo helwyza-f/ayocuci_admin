@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { exportToExcel, ExcelColumn } from "@/lib/export-excel";
 
-interface ExportExcelButtonProps<T extends Record<string, any>> {
+interface ExportExcelButtonProps<T extends object> {
   data: T[];
   columns: ExcelColumn[];
   filename: string;
@@ -14,7 +14,7 @@ interface ExportExcelButtonProps<T extends Record<string, any>> {
   label?: string;
 }
 
-export function ExportExcelButton<T extends Record<string, any>>({
+export function ExportExcelButton<T extends object>({
   data,
   columns,
   filename,

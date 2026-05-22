@@ -7,26 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Wallet2,
-  Loader2 as LoaderIcon,
   ExternalLink,
   ShieldCheck,
   Store,
   Clock,
   RefreshCw,
   Search,
-  User2,
-  Calendar as CalendarIcon,
   FilterX,
   ChevronRight,
   Check,
-  ChevronsUpDown,
   CreditCard,
   ArrowRightLeft,
-  Ban,
-  Activity,
-  ArrowUpRight,
   History,
-  Coins,
   Gift,
 } from "lucide-react";
 import {
@@ -47,7 +39,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { topupService } from "@/services/topup.service";
 import { toast } from "sonner";
@@ -56,11 +47,15 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { AxiosError } from "axios";
-import { ApiErrorResponse } from "@/types/api";
+import { ApiErrorResponse, ApiResponse } from "@/types/api";
 import { Topup, TopupStatus } from "@/types/topup";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
+import { Tenant } from "@/types/tenant";
+import { Owner } from "@/types/domain";
+import { apiFetcher } from "@/lib/fetcher";
+import useSWR from "swr";
 
 const PAGE_SIZE = 25;
 
@@ -92,10 +87,29 @@ export default function TopupsManagementPage() {
   const [outletFilter, setOutletFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
   const [openOutlet, setOpenOutlet] = useState(false);
-  const [openOwner, setOpenOwner] = useState(false);
 
   const [selectedTopup, setSelectedTopup] = useState<Topup | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const { data: tenantsResponse } = useSWR<ApiResponse<Tenant[]>>(
+    "/tenants",
+    apiFetcher,
+    {
+      dedupingInterval: 60_000,
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
+
+  const { data: ownersResponse } = useSWR<ApiResponse<Owner[]>>(
+    "/users",
+    apiFetcher,
+    {
+      dedupingInterval: 60_000,
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -153,11 +167,6 @@ export default function TopupsManagementPage() {
     [data]
   );
 
-  const uniqueOwners = useMemo(
-    () => Array.from(new Set((data || []).map((item) => item?.owner_name).filter((name): name is string => Boolean(name)))),
-    [data]
-  );
-
   const filteredData = useMemo(() => {
     return (data || []).filter((item) => {
       if (!item) return false;
@@ -168,6 +177,49 @@ export default function TopupsManagementPage() {
       return matchesSearch && matchesOutlet && matchesOwner;
     });
   }, [data, searchQuery, outletFilter, ownerFilter]);
+
+  const tenantMap = useMemo(
+    () => new Map((tenantsResponse?.data || []).map((tenant) => [tenant.ot_id, tenant])),
+    [tenantsResponse],
+  );
+
+  const ownerMap = useMemo(
+    () => new Map((ownersResponse?.data || []).map((owner) => [String(owner.id), owner])),
+    [ownersResponse],
+  );
+
+  const ownerByNameMap = useMemo(
+    () => new Map((ownersResponse?.data || []).map((owner) => [owner.name, owner])),
+    [ownersResponse],
+  );
+
+  const topupExportRows = useMemo(
+    () =>
+      filteredData.map((item) => {
+        const tenant = item.tk_outlet ? tenantMap.get(item.tk_outlet) : undefined;
+        const owner = tenant?.owner_id != null
+          ? ownerMap.get(String(tenant.owner_id))
+          : ownerByNameMap.get(item.owner_name || "");
+
+        return {
+          tk_created: item.tk_created,
+          tk_id: item.tk_id ?? "",
+          owner_id: tenant?.owner_id ?? owner?.id ?? "",
+          owner_name: item.owner_name ?? tenant?.owner_name ?? owner?.name ?? "",
+          owner_nohp: tenant?.owner_nohp ?? owner?.nohp ?? "",
+          tk_outlet: item.tk_outlet ?? "",
+          outlet_name: item.outlet_name ?? tenant?.ot_nama ?? "",
+          outlet_nohp: tenant?.ot_nohp ?? "",
+          outlet_city: tenant?.ot_kota ?? "",
+          outlet_province: tenant?.ot_provinsi ?? "",
+          tk_jumlah: item.tk_jumlah ?? 0,
+          tk_total: item.tk_total ?? 0,
+          tk_metode_bayar: item.tk_metode_bayar ?? "",
+          tk_status: item.tk_status ?? "",
+        };
+      }),
+    [filteredData, ownerByNameMap, ownerMap, tenantMap],
+  );
 
   const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
   const paginatedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -253,18 +305,32 @@ export default function TopupsManagementPage() {
 
         <div className="flex items-center gap-2">
           <ExportExcelButton
-            data={filteredData}
+            data={topupExportRows}
             filename="topups_report"
             sheetName="Topups"
             columns={[
-              { header: "ID", key: "tk_id", width: 22 },
+              { header: "Tanggal", key: "tk_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+              { header: "ID Top Up", key: "tk_id", width: 22 },
+              { header: "ID Owner", key: "owner_id", width: 12 },
               { header: "Nama Owner", key: "owner_name", width: 25 },
+              { header: "No. Hp Owner", key: "owner_nohp", width: 18 },
+              { header: "ID Outlet", key: "tk_outlet", width: 14 },
               { header: "Nama Outlet", key: "outlet_name", width: 25 },
-              { header: "Status", key: "tk_status", width: 12 },
+              { header: "No. Hp Outlet", key: "outlet_nohp", width: 18 },
+              { header: "Kota", key: "outlet_city", width: 18 },
+              { header: "Provinsi", key: "outlet_province", width: 18 },
               { header: "Total Koin", key: "tk_jumlah", width: 15 },
               { header: "Total Bayar", key: "tk_total", width: 18, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
               { header: "Metode", key: "tk_metode_bayar", width: 15 },
-              { header: "Tanggal", key: "tk_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+              {
+                header: "Status",
+                key: "tk_status",
+                width: 12,
+                format: (v, row) =>
+                  row.tk_metode_bayar !== "bonus" && v === "completed"
+                    ? "success"
+                    : String(v ?? ""),
+              },
             ]}
           />
            <Button

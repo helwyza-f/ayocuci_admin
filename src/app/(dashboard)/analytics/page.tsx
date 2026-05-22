@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ElementType, useMemo, useState } from "react";
 import useSWR from "swr";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -10,14 +10,26 @@ import {
 import {
   TrendingUp, Users, Activity, MapPin,
   Coins, ShieldCheck, UserPlus, BarChart2, Gift,
-  ArrowUpRight, ArrowDownRight, Minus, AlertTriangle, Clock
+  ArrowUpRight, ArrowDownRight, Minus, AlertTriangle, Clock,
+  FileDown, Loader2,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { analyticsService, RevenueSummary, GrowthSummary, GeoSummary, ActivitySummary, ReferralSummary, InactiveOwnerSummary } from "@/services/analytics.service";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import DateRangeFilter, { DateRange } from "@/components/shared/date-range-filter";
+import { exportSheetsToExcel } from "@/lib/export-excel";
+import {
+  analyticsService,
+  type AnalyticsQuery,
+  type RevenueSummary,
+  type GrowthSummary,
+  type GeoSummary,
+  type ActivitySummary,
+  type ReferralSummary,
+  type InactiveOwnerSummary,
+} from "@/services/analytics.service";
 
-// ─── PERIOD SELECTOR ───────────────────────────────────────
 const PERIODS = [
   { label: "7H", days: 7 },
   { label: "30H", days: 30 },
@@ -25,27 +37,103 @@ const PERIODS = [
   { label: "1T", days: 365 },
 ];
 
-// ─── FORMATTERS ────────────────────────────────────────────
-const fmtRp = (v: number) => {
-  if (v >= 1_000_000) return `Rp ${(v / 1_000_000).toFixed(1)}jt`;
-  if (v >= 1_000) return `Rp ${(v / 1_000).toFixed(0)}rb`;
-  return `Rp ${v.toFixed(0)}`;
+const SWR_OPTIONS = {
+  dedupingInterval: 60_000,
+  revalidateOnFocus: false,
 };
+
+const fmtRp = (value: number) => {
+  if (value >= 1_000_000) return `Rp ${(value / 1_000_000).toFixed(1)}jt`;
+  if (value >= 1_000) return `Rp ${(value / 1_000).toFixed(0)}rb`;
+  return `Rp ${value.toFixed(0)}`;
+};
+
+const fmtCurrency = (value: number) => `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
 
 const fmtDate = (dateStr: string) => {
-  try { return format(new Date(dateStr), "dd MMM", { locale: localeId }); }
-  catch { return dateStr; }
+  try {
+    return format(new Date(dateStr), "dd MMM", { locale: localeId });
+  } catch {
+    return dateStr;
+  }
 };
 
-// ─── KPI CARD ──────────────────────────────────────────────
+const fmtDateTime = (dateStr?: string) => {
+  if (!dateStr) return "—";
+  try {
+    return format(new Date(`${dateStr}T00:00:00`), "dd MMM yyyy", { locale: localeId });
+  } catch {
+    return dateStr;
+  }
+};
+
+const normalizeAnalyticsQuery = (days: number, dateRange: DateRange): AnalyticsQuery => {
+  const startDate = dateRange.start || dateRange.end;
+  const endDate = dateRange.end || dateRange.start;
+
+  if (startDate && endDate) {
+    return { startDate, endDate };
+  }
+
+  return { days };
+};
+
+const buildAnalyticsKey = (query: AnalyticsQuery) =>
+  query.startDate && query.endDate
+    ? `${query.startDate}_${query.endDate}`
+    : `days_${query.days ?? 30}`;
+
+interface TooltipEntry {
+  color?: string;
+  name?: string;
+  value?: number | string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="bg-slate-900 text-white text-[11px] rounded-xl p-3 shadow-xl min-w-[140px]">
+      <p className="font-bold mb-2 text-slate-300">{fmtDate(label ?? "")}</p>
+      {payload.map((entry, index) => (
+        <div key={`${entry.name || "entry"}-${index}`} className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ background: entry.color }} />
+            {entry.name}
+          </span>
+          <span className="font-bold">
+            {typeof entry.value === "number" && entry.value > 100 ? fmtRp(entry.value) : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 function KpiCard({
-  label, value, sub, icon: Icon, color, trend,
+  label,
+  value,
+  sub,
+  icon: Icon,
+  color,
+  trend,
 }: {
-  label: string; value: string | number; sub?: string;
-  icon: React.ElementType; color: string; trend?: "up" | "down" | "flat";
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon: ElementType;
+  color: string;
+  trend?: "up" | "down" | "flat";
 }) {
   const TrendIcon = trend === "up" ? ArrowUpRight : trend === "down" ? ArrowDownRight : Minus;
   const trendColor = trend === "up" ? "text-emerald-500" : trend === "down" ? "text-rose-500" : "text-slate-400";
+
   return (
     <Card className="border border-slate-200 bg-white rounded-2xl p-5 flex flex-col gap-3 shadow-sm">
       <div className="flex items-start justify-between">
@@ -63,8 +151,15 @@ function KpiCard({
   );
 }
 
-// ─── SECTION HEADER ────────────────────────────────────────
-function SectionHeader({ icon: Icon, title, desc }: { icon: React.ElementType; title: string; desc?: string }) {
+function SectionHeader({
+  icon: Icon,
+  title,
+  desc,
+}: {
+  icon: ElementType;
+  title: string;
+  desc?: string;
+}) {
   return (
     <div className="flex items-center gap-3 mb-4">
       <div className="h-8 w-8 rounded-xl bg-slate-900 flex items-center justify-center text-white">
@@ -78,117 +173,325 @@ function SectionHeader({ icon: Icon, title, desc }: { icon: React.ElementType; t
   );
 }
 
-// ─── TOOLTIP CUSTOM ────────────────────────────────────────
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-slate-900 text-white text-[11px] rounded-xl p-3 shadow-xl min-w-[140px]">
-      <p className="font-bold mb-2 text-slate-300">{fmtDate(label)}</p>
-      {payload.map((entry: any) => (
-        <div key={entry.name} className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ background: entry.color }} />
-            {entry.name}
-          </span>
-          <span className="font-bold">{typeof entry.value === "number" && entry.value > 100 ? fmtRp(entry.value) : entry.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// ─── MAIN PAGE ─────────────────────────────────────────────
 export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
+  const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
+  const [exporting, setExporting] = useState(false);
+
+  const analyticsQuery = useMemo(
+    () => normalizeAnalyticsQuery(days, dateRange),
+    [dateRange, days],
+  );
+
+  const analyticsKey = useMemo(
+    () => buildAnalyticsKey(analyticsQuery),
+    [analyticsQuery],
+  );
+
+  const periodLabel = useMemo(() => {
+    if (analyticsQuery.startDate && analyticsQuery.endDate) {
+      return `${fmtDateTime(analyticsQuery.startDate)} - ${fmtDateTime(analyticsQuery.endDate)}`;
+    }
+    return `${days} hari terakhir`;
+  }, [analyticsQuery, days]);
+
+  const periodEndLabel = analyticsQuery.endDate
+    ? fmtDateTime(analyticsQuery.endDate)
+    : fmtDateTime(format(new Date(), "yyyy-MM-dd"));
+
+  const periodStartLabel = analyticsQuery.startDate
+    ? fmtDateTime(analyticsQuery.startDate)
+    : fmtDateTime(format(new Date(Date.now() - (days - 1) * 86400000), "yyyy-MM-dd"));
 
   const { data: revenue } = useSWR<RevenueSummary>(
-    `analytics-revenue-${days}`, () => analyticsService.getRevenue(days), { dedupingInterval: 60_000 }
+    `analytics-revenue-${analyticsKey}`,
+    () => analyticsService.getRevenue(analyticsQuery),
+    SWR_OPTIONS,
   );
+
   const { data: growth } = useSWR<GrowthSummary>(
-    `analytics-growth-${days}`, () => analyticsService.getGrowth(days), { dedupingInterval: 60_000 }
+    `analytics-growth-${analyticsKey}`,
+    () => analyticsService.getGrowth(analyticsQuery),
+    SWR_OPTIONS,
   );
+
   const { data: geo } = useSWR<GeoSummary>(
-    "analytics-geography", () => analyticsService.getGeography(), { dedupingInterval: 300_000 }
+    `analytics-geography-${analyticsKey}`,
+    () => analyticsService.getGeography(analyticsQuery),
+    { ...SWR_OPTIONS, dedupingInterval: 300_000 },
   );
+
   const { data: activity } = useSWR<ActivitySummary>(
-    `analytics-activity-${days}`, () => analyticsService.getActivity(days), { dedupingInterval: 60_000 }
+    `analytics-activity-${analyticsKey}`,
+    () => analyticsService.getActivity(analyticsQuery),
+    SWR_OPTIONS,
   );
+
   const { data: referral } = useSWR<ReferralSummary>(
-    `analytics-referral-${days}`, () => analyticsService.getReferral(days), { dedupingInterval: 60_000 }
+    `analytics-referral-${analyticsKey}`,
+    () => analyticsService.getReferral(analyticsQuery),
+    SWR_OPTIONS,
   );
+
   const { data: inactiveOwners } = useSWR<InactiveOwnerSummary>(
-    `analytics-inactive-owners-${days}`, () => analyticsService.getInactiveOwners(days), { dedupingInterval: 60_000 }
+    `analytics-inactive-owners-${analyticsKey}`,
+    () => analyticsService.getInactiveOwners(analyticsQuery),
+    SWR_OPTIONS,
   );
+
+  const exportSheets = useMemo(() => [
+    {
+      sheetName: "Summary",
+      data: [
+        {
+          period_label: periodLabel,
+          start_date: periodStartLabel,
+          end_date: periodEndLabel,
+          total_revenue: revenue?.total_revenue ?? 0,
+          topup_revenue: revenue?.topup_revenue ?? 0,
+          addon_revenue: revenue?.addon_revenue ?? 0,
+          avg_daily_revenue: revenue?.avg_daily_revenue ?? 0,
+          total_new_owners: growth?.total_new_owners ?? 0,
+          total_new_outlets: growth?.total_new_outlets ?? 0,
+          total_referral_users: referral?.total_referral_users ?? 0,
+          total_outlets_geo: geo?.total_outlets ?? 0,
+          total_inactive_owners: inactiveOwners?.total ?? 0,
+        },
+      ],
+      columns: [
+        { header: "Periode", key: "period_label", width: 28 },
+        { header: "Tanggal Mulai", key: "start_date", width: 18 },
+        { header: "Tanggal Akhir", key: "end_date", width: 18 },
+        { header: "Total Revenue", key: "total_revenue", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
+        { header: "Revenue Topup", key: "topup_revenue", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
+        { header: "Revenue Addon", key: "addon_revenue", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
+        { header: "Avg Revenue Harian", key: "avg_daily_revenue", width: 20, format: (v: unknown) => fmtCurrency(Number(v)) },
+        { header: "Owner Baru", key: "total_new_owners", width: 14 },
+        { header: "Outlet Baru", key: "total_new_outlets", width: 14 },
+        { header: "User Referral", key: "total_referral_users", width: 14 },
+        { header: "Outlet Terpetakan", key: "total_outlets_geo", width: 16 },
+        { header: "Owner Inaktif", key: "total_inactive_owners", width: 14 },
+      ],
+    },
+    {
+      sheetName: "Revenue",
+      data: revenue?.series ?? [],
+      columns: [
+        { header: "Tanggal", key: "date", width: 16, format: (v: unknown) => v ? format(new Date(String(v)), "dd/MM/yyyy") : "" },
+        { header: "Topup Revenue", key: "topup_revenue", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
+        { header: "Addon Revenue", key: "addon_revenue", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
+        { header: "Total Revenue", key: "total_revenue", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
+      ],
+    },
+    {
+      sheetName: "Growth",
+      data: growth?.series ?? [],
+      columns: [
+        { header: "Tanggal", key: "date", width: 16, format: (v: unknown) => v ? format(new Date(String(v)), "dd/MM/yyyy") : "" },
+        { header: "Owner Baru", key: "new_owners", width: 14 },
+        { header: "Owner Organik", key: "organic_owners", width: 16 },
+        { header: "Owner Referral", key: "referral_owners", width: 16 },
+        { header: "Outlet Baru", key: "new_outlets", width: 14 },
+      ],
+    },
+    {
+      sheetName: "Geo Provinsi",
+      data: geo?.top_provinsi ?? [],
+      columns: [
+        { header: "Provinsi", key: "name", width: 24 },
+        { header: "Jumlah Outlet", key: "count", width: 14 },
+        { header: "Persentase", key: "percentage", width: 14, format: (v: unknown) => `${v}%` },
+      ],
+    },
+    {
+      sheetName: "Geo Kota",
+      data: geo?.top_kota ?? [],
+      columns: [
+        { header: "Kota", key: "name", width: 24 },
+        { header: "Jumlah Outlet", key: "count", width: 14 },
+        { header: "Persentase", key: "percentage", width: 14, format: (v: unknown) => `${v}%` },
+      ],
+    },
+    {
+      sheetName: "Activity",
+      data: activity?.series ?? [],
+      columns: [
+        { header: "Tanggal", key: "date", width: 16, format: (v: unknown) => v ? format(new Date(String(v)), "dd/MM/yyyy") : "" },
+        { header: "Outlet Aktif", key: "active_outlets", width: 14 },
+        { header: "Total Order", key: "total_orders", width: 14 },
+        { header: "GMV", key: "gmv", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
+      ],
+    },
+    {
+      sheetName: "Referral Summary",
+      data: [
+        {
+          total_reward_distributed: referral?.total_reward_distributed ?? 0,
+          total_referral_users: referral?.total_referral_users ?? 0,
+          pending_payouts: referral?.pending_payouts ?? 0,
+          pending_payout_amount: referral?.pending_payout_amount ?? 0,
+        },
+      ],
+      columns: [
+        { header: "Total Reward Diklaim", key: "total_reward_distributed", width: 18 },
+        { header: "User via Referral", key: "total_referral_users", width: 18 },
+        { header: "Pending Payout", key: "pending_payouts", width: 16 },
+        { header: "Nilai Payout Pending", key: "pending_payout_amount", width: 20 },
+      ],
+    },
+    {
+      sheetName: "Top Referrers",
+      data: referral?.top_referrers ?? [],
+      columns: [
+        { header: "Nama", key: "name", width: 24 },
+        { header: "Email", key: "email", width: 28 },
+        { header: "Total Rekrut", key: "recruits", width: 14 },
+        { header: "Total Reward", key: "total_reward", width: 16 },
+      ],
+    },
+    {
+      sheetName: "Inactive Owners",
+      data: inactiveOwners?.owners ?? [],
+      columns: [
+        { header: "ID Owner", key: "id", width: 12 },
+        { header: "Nama Owner", key: "name", width: 24 },
+        { header: "Email", key: "email", width: 28 },
+        { header: "Total Outlet", key: "total_outlets", width: 14 },
+        {
+          header: "Transaksi Terakhir",
+          key: "last_transaction_date",
+          width: 18,
+          format: (v: unknown) => v ? format(new Date(String(v)), "dd/MM/yyyy") : "Belum Pernah",
+        },
+      ],
+    },
+  ], [
+    activity,
+    geo,
+    growth,
+    inactiveOwners,
+    periodEndLabel,
+    periodLabel,
+    periodStartLabel,
+    referral,
+    revenue,
+  ]);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      exportSheetsToExcel(exportSheets, "analytics_report");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
-      {/* ── HEADER ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
-            <BarChart2 className="h-5 w-5 text-primary" />
-            Analytics & Laporan
-          </h1>
-          <p className="text-xs font-medium text-slate-400 mt-0.5">
-            Pantau pertumbuhan dan kesehatan platform secara real-time
-          </p>
-        </div>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
+              <BarChart2 className="h-5 w-5 text-primary" />
+              Analytics & Laporan
+            </h1>
+            <p className="text-xs font-medium text-slate-400 mt-0.5">
+              Pantau pertumbuhan dan kesehatan platform secara real-time
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-2">
+              Periode aktif: {periodLabel}
+            </p>
+          </div>
 
-        {/* Period Selector */}
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-          {PERIODS.map((p) => (
-            <button
-              key={p.days}
-              onClick={() => setDays(p.days)}
-              className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all ${
-                days === p.days
-                  ? "bg-white text-primary shadow border border-slate-200"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+          <div className="flex flex-col items-stretch gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                disabled={exporting}
+                className="h-8 gap-1.5 text-[10px] font-bold uppercase tracking-wider border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50 transition-colors"
+              >
+                {exporting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <FileDown className="h-3.5 w-3.5" />
+                )}
+                Export Excel
+              </Button>
+
+              <div className="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                {PERIODS.map((period) => (
+                  <button
+                    key={period.days}
+                    onClick={() => {
+                      setDays(period.days);
+                      setDateRange({ start: "", end: "" });
+                    }}
+                    className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all ${
+                      !analyticsQuery.startDate && days === period.days
+                        ? "bg-white text-primary shadow border border-slate-200"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    {period.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <DateRangeFilter value={dateRange} onChange={setDateRange} />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── KPI SUMMARY ROW ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <KpiCard
           label="Total Revenue"
           value={revenue ? fmtRp(revenue.total_revenue) : "—"}
           sub={`Avg ${revenue ? fmtRp(revenue.avg_daily_revenue) : "—"}/hari`}
-          icon={TrendingUp} color="bg-emerald-50 text-emerald-600" trend="up"
+          icon={TrendingUp}
+          color="bg-emerald-50 text-emerald-600"
+          trend="up"
         />
         <KpiCard
           label="Owner Baru (Periode)"
           value={growth?.total_new_owners ?? "—"}
           sub={`${growth?.total_referral_owners ?? 0} via referral`}
-          icon={UserPlus} color="bg-blue-50 text-blue-600" trend="up"
+          icon={UserPlus}
+          color="bg-blue-50 text-blue-600"
+          trend="up"
         />
         <KpiCard
           label="Owner Baru 3 Hari"
           value={growth?.recent_new_owners ?? "—"}
-          sub="Registrasi terkini"
-          icon={Users} color="bg-sky-50 text-sky-600" trend="up"
+          sub="Jendela akhir periode"
+          icon={Users}
+          color="bg-sky-50 text-sky-600"
+          trend="up"
         />
         <KpiCard
           label="Trial → PRO"
           value={growth ? `${growth.conversion_rate.toFixed(1)}%` : "—"}
           sub={`${growth?.pro_outlets ?? 0} outlet PRO`}
-          icon={ShieldCheck} color="bg-violet-50 text-violet-600" trend="up"
+          icon={ShieldCheck}
+          color="bg-violet-50 text-violet-600"
+          trend="up"
         />
         <KpiCard
-          label="GMV Hari Ini"
+          label="GMV Hari Akhir"
           value={activity ? fmtRp(activity.today_gmv) : "—"}
-          sub={`${activity?.total_customers ?? 0} total pelanggan`}
-          icon={Coins} color="bg-amber-50 text-amber-600"
+          sub={`Snapshot ${periodEndLabel}`}
+          icon={Coins}
+          color="bg-amber-50 text-amber-600"
         />
       </div>
 
-      {/* ── REVENUE STREAM ── */}
       <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-        <SectionHeader icon={TrendingUp} title="Revenue Stream" desc="Pendapatan harian: topup koin vs aktivasi addon" />
+        <SectionHeader icon={TrendingUp} title="Revenue Stream" desc={`Pendapatan harian pada ${periodLabel.toLowerCase()}`} />
         <ResponsiveContainer width="100%" height={240}>
           <AreaChart data={revenue?.series ?? []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <defs>
@@ -211,7 +514,6 @@ export default function AnalyticsPage() {
           </AreaChart>
         </ResponsiveContainer>
 
-        {/* Revenue breakdown pills */}
         <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-50">
           {[
             { label: "Topup Koin", value: revenue?.topup_revenue ?? 0, color: "bg-orange-100 text-orange-700" },
@@ -226,11 +528,9 @@ export default function AnalyticsPage() {
         </div>
       </Card>
 
-      {/* ── GROWTH + WILAYAH (2 col) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Owner Growth */}
         <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-          <SectionHeader icon={UserPlus} title="Pertumbuhan Owner Baru" desc="Organic vs via referral per hari" />
+          <SectionHeader icon={UserPlus} title="Pertumbuhan Owner Baru" desc="Organic vs referral per hari" />
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={growth?.series ?? []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -243,58 +543,57 @@ export default function AnalyticsPage() {
             </BarChart>
           </ResponsiveContainer>
 
-          {/* Conversion badges */}
           <div className="flex gap-2 mt-3 flex-wrap">
             {[
               { label: `${growth?.trial_outlets ?? 0} Trial`, color: "bg-amber-50 text-amber-600 border-amber-100" },
               { label: `${growth?.pro_outlets ?? 0} PRO`, color: "bg-emerald-50 text-emerald-600 border-emerald-100" },
               { label: `${growth?.expired_outlets ?? 0} Expired`, color: "bg-rose-50 text-rose-500 border-rose-100" },
-            ].map((b) => (
-              <span key={b.label} className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold ${b.color}`}>{b.label}</span>
+            ].map((badge) => (
+              <span key={badge.label} className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold ${badge.color}`}>
+                {badge.label}
+              </span>
             ))}
           </div>
         </Card>
 
-        {/* Geographic Breakdown */}
         <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-          <SectionHeader icon={MapPin} title="Distribusi Wilayah" desc={`${geo?.total_outlets ?? 0} outlet, berdasarkan provinsi`} />
+          <SectionHeader icon={MapPin} title="Distribusi Wilayah" desc={`${geo?.total_outlets ?? 0} outlet pada periode ini`} />
           <div className="space-y-2.5 mt-1 max-h-[240px] overflow-y-auto custom-scrollbar pr-1">
-            {(geo?.top_provinsi ?? []).map((prov, i) => (
+            {(geo?.top_provinsi ?? []).map((prov, index) => (
               <div key={prov.name} className="space-y-1">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                    <span className="text-slate-400 font-medium w-4">{i + 1}.</span>
+                    <span className="text-slate-400 font-medium w-4">{index + 1}.</span>
                     {prov.name}
                   </span>
-                  <span className="font-bold text-slate-500">{prov.count} <span className="text-slate-300">({prov.percentage}%)</span></span>
+                  <span className="font-bold text-slate-500">
+                    {prov.count} <span className="text-slate-300">({prov.percentage}%)</span>
+                  </span>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
                       width: `${prov.percentage}%`,
-                      background: `hsl(${220 + i * 15}, 70%, 55%)`,
+                      background: `hsl(${220 + index * 15}, 70%, 55%)`,
                     }}
                   />
                 </div>
               </div>
             ))}
-            {(!geo?.top_provinsi?.length) && (
+            {!geo?.top_provinsi?.length && (
               <p className="text-center text-[10px] text-slate-400 py-8">Belum ada data wilayah</p>
             )}
           </div>
         </Card>
       </div>
 
-      {/* ── PLATFORM ACTIVITY ── */}
       <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
         <div className="flex items-start justify-between mb-4">
-          <SectionHeader icon={Activity} title="Platform Activity" desc="Daily active outlets & volume order laundry" />
-          <div className="flex gap-2 text-right">
-            <div className="text-right">
-              <p className="text-xs font-extrabold text-slate-900">{activity?.total_workforce ?? 0}</p>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tenaga Kerja</p>
-            </div>
+          <SectionHeader icon={Activity} title="Platform Activity" desc="Outlet aktif, volume order, dan GMV per hari" />
+          <div className="text-right">
+            <p className="text-xs font-extrabold text-slate-900">{activity?.total_workforce ?? 0}</p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tenaga Kerja</p>
           </div>
         </div>
         <ResponsiveContainer width="100%" height={220}>
@@ -312,10 +611,9 @@ export default function AnalyticsPage() {
         </ResponsiveContainer>
       </Card>
 
-      {/* ── REFERRAL ECONOMY ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-          <SectionHeader icon={Gift} title="Referral Economy" desc={`${days} hari terakhir`} />
+          <SectionHeader icon={Gift} title="Referral Economy" desc={periodLabel} />
           <div className="grid grid-cols-2 gap-3 mt-1">
             {[
               { label: "Total Reward Diklaim", value: `${(referral?.total_reward_distributed ?? 0).toLocaleString()} Koin`, color: "bg-amber-50 text-amber-700" },
@@ -331,28 +629,27 @@ export default function AnalyticsPage() {
           </div>
         </Card>
 
-        {/* Top Referrers */}
         <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-          <SectionHeader icon={Users} title="Top Referrers" desc="Owner dengan rekrutmen terbanyak" />
+          <SectionHeader icon={Users} title="Top Referrers" desc="Owner dengan rekrutmen terbanyak pada periode aktif" />
           <div className="space-y-2.5 max-h-[200px] overflow-y-auto custom-scrollbar mt-1">
             {(referral?.top_referrers ?? []).length === 0 ? (
               <p className="text-center text-[10px] text-slate-400 py-8">Belum ada data referral</p>
             ) : (
-              (referral?.top_referrers ?? []).map((r, i) => (
-                <div key={r.email} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+              (referral?.top_referrers ?? []).map((referrer, index) => (
+                <div key={referrer.email} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
                   <div className="flex items-center gap-2.5">
-                    <span className="text-[10px] font-bold text-slate-300 w-4">{i + 1}</span>
+                    <span className="text-[10px] font-bold text-slate-300 w-4">{index + 1}</span>
                     <div className="h-7 w-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
-                      {r.name.charAt(0).toUpperCase()}
+                      {referrer.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-800">{r.name}</p>
-                      <p className="text-[9px] text-slate-400">{r.email}</p>
+                      <p className="text-xs font-bold text-slate-800">{referrer.name}</p>
+                      <p className="text-[9px] text-slate-400">{referrer.email}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-extrabold text-primary">{r.recruits} rekrut</p>
-                    <p className="text-[9px] text-slate-400">{r.total_reward.toLocaleString()} koin</p>
+                    <p className="text-xs font-extrabold text-primary">{referrer.recruits} rekrut</p>
+                    <p className="text-[9px] text-slate-400">{referrer.total_reward.toLocaleString()} koin</p>
                   </div>
                 </div>
               ))
@@ -361,14 +658,13 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      {/* ── CHURN RISK (INACTIVE OWNERS) ── */}
       <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <SectionHeader icon={AlertTriangle} title="Churn Risk: Inactive Owners" desc={`Owner tanpa transaksi dalam ${days} hari terakhir`} />
+          <SectionHeader icon={AlertTriangle} title="Churn Risk: Inactive Owners" desc="Owner tanpa transaksi sepanjang rentang terpilih" />
           <div className="text-right">
-             <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100">
-               {inactiveOwners?.total ?? 0} Owner Inaktif
-             </span>
+            <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100">
+              {inactiveOwners?.total ?? 0} Owner Inaktif
+            </span>
           </div>
         </div>
         <div className="space-y-2.5 max-h-[300px] overflow-y-auto custom-scrollbar mt-1 pr-2">
@@ -378,10 +674,10 @@ export default function AnalyticsPage() {
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Semua owner aktif bertransaksi!</p>
             </div>
           ) : (
-            (inactiveOwners?.owners ?? []).map((owner, i) => (
+            (inactiveOwners?.owners ?? []).map((owner, index) => (
               <div key={owner.id} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors px-2 rounded-xl group">
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-bold text-slate-300 w-4">{i + 1}</span>
+                  <span className="text-[10px] font-bold text-slate-300 w-4">{index + 1}</span>
                   <div className="h-8 w-8 rounded-full bg-rose-50 text-rose-500 text-xs font-bold flex items-center justify-center border border-rose-100 group-hover:scale-110 transition-transform">
                     {owner.name.charAt(0).toUpperCase()}
                   </div>
@@ -391,17 +687,17 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-6 text-right">
-                   <div>
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total Outlets</p>
-                     <p className="text-xs font-bold text-slate-700">{owner.total_outlets}</p>
-                   </div>
-                   <div className="w-[120px]">
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Last TX</p>
-                     <p className="text-xs font-bold text-rose-500 flex items-center justify-end gap-1">
-                        <Clock className="h-3 w-3" />
-                        {owner.last_transaction_date ? fmtDate(owner.last_transaction_date) : "Belum Pernah"}
-                     </p>
-                   </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total Outlets</p>
+                    <p className="text-xs font-bold text-slate-700">{owner.total_outlets}</p>
+                  </div>
+                  <div className="w-[120px]">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Last TX</p>
+                    <p className="text-xs font-bold text-rose-500 flex items-center justify-end gap-1">
+                      <Clock className="h-3 w-3" />
+                      {owner.last_transaction_date ? fmtDate(owner.last_transaction_date) : "Belum Pernah"}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))

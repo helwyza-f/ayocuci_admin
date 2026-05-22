@@ -84,6 +84,33 @@ export default function TenantsPage() {
     return filterByDateRange(byFilter, (t) => t.ot_created, dateRange);
   }, [search, selectedOwner, dateRange, tenants]);
 
+  const tenantExportRows = useMemo(
+    () =>
+      filteredTenants.map((tenant) => ({
+        owner_id: tenant.owner_id ?? "",
+        owner_name: tenant.owner_name ?? "",
+        owner_email: tenant.owner_email ?? "",
+        ot_id: tenant.ot_id ?? "",
+        ot_nama: tenant.ot_nama ?? "",
+        owner_nohp: tenant.owner_nohp ?? "",
+        ot_nohp: tenant.ot_nohp ?? "",
+        ot_kecamatan: tenant.ot_kecamatan ?? "",
+        ot_kota: tenant.ot_kota ?? "",
+        ot_provinsi: tenant.ot_provinsi ?? "",
+        ot_alamat: tenant.ot_alamat ?? "",
+        ot_koin: tenant.ot_koin ?? 0,
+        ot_status: tenant.ot_status,
+        subscription_status: tenant.subscription_status ?? "",
+        ot_created: tenant.ot_created,
+        expiry_date: tenant.expiry_date,
+        daily_tx_count: tenant.daily_tx_count ?? 0,
+        daily_tx_amount: tenant.daily_tx_amount ?? 0,
+        total_tx_count: tenant.total_tx_count ?? 0,
+        total_tx_amount: tenant.total_tx_amount ?? 0,
+      })),
+    [filteredTenants],
+  );
+
   const totalPages = Math.ceil(filteredTenants.length / PAGE_SIZE);
   const paginatedTenants = filteredTenants.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -118,19 +145,26 @@ export default function TenantsPage() {
             {filteredTenants.length} / {tenants.length} Tenants
           </Badge>
           <ExportExcelButton
-            data={filteredTenants}
+            data={tenantExportRows}
             filename="tenants_directory"
             sheetName="Tenants"
             columns={[
-              { header: "ID", key: "ot_id", width: 12 },
-              { header: "Nama Outlet", key: "ot_nama", width: 25 },
+              { header: "ID Owner", key: "owner_id", width: 12 },
               { header: "Owner", key: "owner_name", width: 25 },
               { header: "Email Owner", key: "owner_email", width: 30 },
+              { header: "ID Outlet", key: "ot_id", width: 12 },
+              { header: "Nama Outlet", key: "ot_nama", width: 25 },
+              { header: "No Hp Owner", key: "owner_nohp", width: 18 },
+              { header: "No. Hp Outlet", key: "ot_nohp", width: 18 },
+              { header: "Kecamatan", key: "ot_kecamatan", width: 20 },
+              { header: "Kota", key: "ot_kota", width: 18 },
+              { header: "Provinsi", key: "ot_provinsi", width: 18 },
+              { header: "Alamat Lengkap", key: "ot_alamat", width: 40 },
               { header: "Saldo Koin", key: "ot_koin", width: 15 },
               { header: "Status", key: "ot_status", width: 15, format: (v) => v === 1 ? "Aktif" : "Pending" },
               { header: "Subscription", key: "subscription_status", width: 15 },
-              { header: "Expired At", key: "expiry_date", width: 20, format: (v) => v ? format(new Date(v), "dd/MM/yyyy") : "" },
               { header: "Tanggal Daftar", key: "ot_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+              { header: "Expired At", key: "expiry_date", width: 20, format: (v) => v ? format(new Date(v), "dd/MM/yyyy") : "" },
               { header: "Daily TX", key: "daily_tx_count", width: 12 },
               { header: "Daily Revenue", key: "daily_tx_amount", width: 15 },
               { header: "Total TX", key: "total_tx_count", width: 12 },

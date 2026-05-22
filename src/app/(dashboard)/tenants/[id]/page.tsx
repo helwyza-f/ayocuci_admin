@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, ElementType } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -272,9 +272,9 @@ export default function TenantDetailPage() {
 
   if (loading)
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-        <Activity className="h-6 w-6 text-[#FF5F4E] animate-spin" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sinkronisasi Data Outlet...</p>
+      <div className="flex items-center justify-center min-h-[400px] gap-3">
+        <Activity className="h-5 w-5 text-primary animate-spin" />
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Memuat data outlet...</p>
       </div>
     );
     
@@ -306,13 +306,13 @@ export default function TenantDetailPage() {
                 {profile?.ot_nama}
               </h1>
               <Badge variant="outline" className={cn(
-                "rounded-full px-2 py-0 text-[8px] font-bold uppercase border shadow-none",
+                "rounded px-2 py-0 text-[8px] font-bold uppercase border shadow-none",
                 profile.ot_activated_at ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-amber-50 text-amber-600 border-amber-100"
               )}>
-                {profile.ot_activated_at ? "Aktivasi Permanen" : "Masa Percobaan (Trial)"}
+                {profile.ot_activated_at ? "Aktivasi Permanen" : "Masa Percobaan"}
               </Badge>
               {profile?.subscription_status === "PRO" && (
-                <Badge variant="outline" className="rounded-full px-2 py-0 text-[8px] font-bold uppercase border-orange-100 bg-orange-50 text-orange-600 shadow-none">PRO ACCOUNT</Badge>
+                <Badge variant="outline" className="rounded px-2 py-0 text-[8px] font-bold uppercase border-orange-100 bg-orange-50 text-orange-600 shadow-none">PRO</Badge>
               )}
             </div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
@@ -368,21 +368,21 @@ export default function TenantDetailPage() {
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="bg-slate-100/50 p-1 rounded-xl border border-slate-200 mb-6 flex flex-wrap md:flex-nowrap w-full md:w-fit h-auto md:h-11 shadow-sm">
-          <TabsTrigger value="dashboard" className="rounded-lg flex-1 md:flex-none px-6 font-bold text-[10px] uppercase gap-2 h-9 data-[state=active]:bg-white data-[state=active]:text-[#FF5F4E] data-[state=active]:shadow-sm transition-all">
-            <LayoutGrid className="h-3.5 w-3.5" /> Dashboard
+        <TabsList className="bg-white border border-slate-200 p-0.5 rounded-lg mb-4 flex flex-wrap md:flex-nowrap w-full md:w-fit h-9 shadow-none gap-0.5">
+          <TabsTrigger value="dashboard" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+            <LayoutGrid className="h-3 w-3" /> Dashboard
           </TabsTrigger>
-          <TabsTrigger value="identitas" className="rounded-lg flex-1 md:flex-none px-6 font-bold text-[10px] uppercase gap-2 h-9 data-[state=active]:bg-white data-[state=active]:text-[#FF5F4E] data-[state=active]:shadow-sm transition-all">
-            <Building2 className="h-3.5 w-3.5" /> Identitas
+          <TabsTrigger value="identitas" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+            <Building2 className="h-3 w-3" /> Identitas
           </TabsTrigger>
-          <TabsTrigger value="transaksi" className="rounded-lg flex-1 md:flex-none px-6 font-bold text-[10px] uppercase gap-2 h-9 data-[state=active]:bg-white data-[state=active]:text-[#FF5F4E] data-[state=active]:shadow-sm transition-all">
-            <History className="h-3.5 w-3.5" /> Transaksi
+          <TabsTrigger value="transaksi" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+            <History className="h-3 w-3" /> Transaksi
           </TabsTrigger>
-          <TabsTrigger value="addons" className="rounded-lg flex-1 md:flex-none px-6 font-bold text-[10px] uppercase gap-2 h-9 data-[state=active]:bg-white data-[state=active]:text-[#FF5F4E] data-[state=active]:shadow-sm transition-all">
-            <Zap className="h-3.5 w-3.5" /> Layanan Add-on
+          <TabsTrigger value="addons" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+            <Zap className="h-3 w-3" /> Layanan Add-on
           </TabsTrigger>
-          <TabsTrigger value="koin" className="rounded-lg flex-1 md:flex-none px-6 font-bold text-[10px] uppercase gap-2 h-9 data-[state=active]:bg-white data-[state=active]:text-[#FF5F4E] data-[state=active]:shadow-sm transition-all">
-            <Coins className="h-3.5 w-3.5" /> Ekonomi Koin
+          <TabsTrigger value="koin" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+            <Coins className="h-3 w-3" /> Ekonomi Koin
           </TabsTrigger>
         </TabsList>
 
@@ -459,29 +459,24 @@ export default function TenantDetailPage() {
                        </div>
                     </div>
                     <div className="divide-y divide-slate-100">
-                       {trxHistory.length > 0 ? trxHistory.slice(0, 5).map((trx, i) => (
-                         <div key={i} className="p-4 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
-                            <div className="flex items-center gap-3">
-                               <div className="h-9 w-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
-                                  <History className="h-4 w-4" />
-                               </div>
-                               <div>
-                                  <p className="text-[11px] font-bold text-slate-900 uppercase tracking-tight">{trx.id}</p>
-                                  <p className="text-[9px] text-slate-500 font-medium">{trx.cust || 'Tanpa Nama'} • {format(new Date(trx.date), "dd/MM/yy HH:mm")}</p>
-                               </div>
-                            </div>
-                            <div className="text-right">
-                               <p className="text-xs font-bold text-slate-900 font-heading">Rp {trx.total?.toLocaleString()}</p>
-                               <Badge variant="outline" className={cn(
-                                 "text-[8px] px-1.5 py-0 border-none font-bold uppercase",
-                                 trx.status === "Selesai" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                               )}>{trx.status}</Badge>
-                            </div>
-                         </div>
-                       )) : (
-                          <div className="p-10 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">Tidak ada transaksi terbaru</div>
-                       )}
-                    </div>
+                        {trxHistory.length > 0 ? trxHistory.slice(0, 5).map((trx, i) => (
+                          <div key={i} className="px-4 py-3 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                             <div>
+                                <p className="text-xs font-bold text-slate-900">{trx.id}</p>
+                                <p className="text-[9px] text-slate-400 font-medium mt-0.5">{trx.cust || 'Tanpa Nama'} · {format(new Date(trx.date), "dd/MM/yy HH:mm")}</p>
+                             </div>
+                             <div className="text-right">
+                                <p className="text-xs font-bold text-slate-900 tabular-nums">Rp {trx.total?.toLocaleString()}</p>
+                                <Badge variant="outline" className={cn(
+                                  "text-[8px] px-1.5 py-0 border-none font-bold uppercase mt-0.5",
+                                  trx.status === "Selesai" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                                )}>{trx.status}</Badge>
+                             </div>
+                          </div>
+                        )) : (
+                           <div className="py-10 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">Tidak ada transaksi terbaru</div>
+                        )}
+                     </div>
                  </Card>
               </div>
 
@@ -575,28 +570,40 @@ export default function TenantDetailPage() {
                     <div className="p-0">
                        <table className="w-full text-left border-collapse">
                           <tbody className="divide-y divide-slate-100">
-                             {[
-                               { label: "Nama Outlet", value: profile?.ot_nama, icon: Store },
-                               { label: "Nomor Kontak", value: profile?.ot_nohp || "-", icon: Phone, isPhone: true },
-                               { label: "Tipe Lokasi", value: profile?.ot_tipe_lokasi_usaha, icon: MapPin },
-                               { label: "Skala Modal", value: profile?.ot_modal_usaha, icon: Coins },
-                               { label: "Jumlah Pegawai", value: `${String(profile?.ot_jumlah_karyawan || "0").replace(/orang/i, "").trim()} Orang`, icon: Users },
-                               { label: "Populasi Mesin", value: `${String(profile?.ot_jumlah_mesin_cuci || "0").replace(/unit/i, "").trim()} Unit`, icon: Layers },
-                               { label: "Zona Waktu", value: (profile as any)?.ot_timezone, icon: Clock },
-                             ].map((item, idx) => (
-                               <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
-                                  <td className="px-6 py-4 w-48">
-                                     <div className="flex items-center gap-3">
-                                        <item.icon className="h-3.5 w-3.5 text-slate-400" />
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</span>
-                                     </div>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                     <span className={cn("text-xs font-bold text-slate-900 uppercase tracking-tight", item.isPhone && "text-primary hover:underline cursor-pointer")}>
-                                        {item.value || "BELUM DIATUR"}
-                                     </span>
-                                  </td>
-                               </tr>
+                             {([
+                                { label: "Nama Outlet", value: profile?.ot_nama, icon: Store },
+                                { label: "Nomor Kontak", value: profile?.ot_nohp || "-", icon: Phone, isPhone: true },
+                                { label: "Kode Owner", value: `#${profile?.owner_id}`, icon: User, isMono: true },
+                                { label: "Nama Owner", value: profile?.owner_name, icon: User, isLink: true, href: `/users/${profile?.owner_id}` },
+                                { label: "Tipe Lokasi", value: profile?.ot_tipe_lokasi_usaha, icon: MapPin },
+                                { label: "Skala Modal", value: profile?.ot_modal_usaha, icon: Coins },
+                                { label: "Jumlah Pegawai", value: `${String(profile?.ot_jumlah_karyawan || "0").replace(/orang/i, "").trim()} Orang`, icon: Users },
+                                { label: "Populasi Mesin", value: `${String(profile?.ot_jumlah_mesin_cuci || "0").replace(/unit/i, "").trim()} Unit`, icon: Layers },
+                                { label: "Zona Waktu", value: (profile as any)?.ot_timezone, icon: Clock },
+                              ] as { label: string; value?: string; icon: ElementType; isPhone?: boolean; isMono?: boolean; isLink?: boolean; href?: string }[]).map((item, idx) => (
+                                <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
+                                   <td className="px-6 py-4 w-48">
+                                      <div className="flex items-center gap-3">
+                                         <item.icon className="h-3.5 w-3.5 text-slate-400" />
+                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</span>
+                                      </div>
+                                   </td>
+                                   <td className="px-6 py-4">
+                                      {item.isLink ? (
+                                        <Link href={item.href!} className="text-xs font-bold text-primary uppercase tracking-tight hover:underline">
+                                          {item.value || "—"}
+                                        </Link>
+                                      ) : (
+                                        <span className={cn(
+                                          "text-xs font-bold text-slate-900 uppercase tracking-tight",
+                                          item.isPhone && "text-primary hover:underline cursor-pointer",
+                                          item.isMono && "font-mono text-slate-600"
+                                        )}>
+                                          {item.value || "BELUM DIATUR"}
+                                        </span>
+                                      )}
+                                   </td>
+                                </tr>
                              ))}
                           </tbody>
                        </table>
@@ -876,22 +883,17 @@ export default function TenantDetailPage() {
                      const isMasuk = tx.hk_jenis_transaksi === 'masuk';
                      
                      const handleRowClick = () => {
-                        if (!isMasuk) return;
-                        const descLower = tx.hk_keterangan.toLowerCase();
-                        
-                        if (descLower.includes("referral") || descLower.includes("konversi")) {
-                           router.push('/referrals');
-                        } else if (descLower.includes("pendaftaran")) {
-                           router.push('/');
-                        } else if (descLower.includes("top up") || descLower.includes("tk-")) {
-                           const tkMatch = tx.hk_keterangan.match(/TK-[A-Z0-9]+/i);
-                           if (tkMatch) {
-                              router.push(`/topups?search=${tkMatch[0]}`);
-                           } else {
-                              router.push(`/topups`);
-                           }
-                        }
-                     };
+                         if (!isMasuk) return;
+                         
+                         const tkMatch = tx.hk_keterangan.match(/TK-[A-Z0-9]+/i);
+                         if (tkMatch) {
+                            router.push(`/topups?search=${encodeURIComponent(tkMatch[0])}`);
+                         } else if (tx.hk_id) {
+                            router.push(`/topups?search=${encodeURIComponent(tx.hk_id)}`);
+                         } else {
+                            router.push(`/topups`);
+                         }
+                      };
 
                      return (
                         <div 

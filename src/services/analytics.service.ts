@@ -1,6 +1,37 @@
 import api from "@/lib/api-client";
 import { ApiResponse } from "@/types/api";
 
+export interface AnalyticsQuery {
+  days?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+type AnalyticsQueryInput = AnalyticsQuery | number;
+
+const normalizeAnalyticsQuery = (query: AnalyticsQueryInput = { days: 30 }): AnalyticsQuery => {
+  if (typeof query === "number") {
+    return { days: query };
+  }
+  return query;
+};
+
+const buildAnalyticsQuery = (query: AnalyticsQueryInput = {}) => {
+  const normalized = normalizeAnalyticsQuery(query);
+  const params = new URLSearchParams();
+
+  if (normalized.startDate || normalized.endDate) {
+    const startDate = normalized.startDate || normalized.endDate;
+    const endDate = normalized.endDate || normalized.startDate;
+    if (startDate) params.set("start_date", startDate);
+    if (endDate) params.set("end_date", endDate);
+  } else {
+    params.set("days", String(normalized.days ?? 30));
+  }
+
+  return params.toString();
+};
+
 export interface RevenuePoint {
   date: string;
   topup_revenue: number;
@@ -96,28 +127,28 @@ export interface InactiveOwnerSummary {
 }
 
 export const analyticsService = {
-  getRevenue: async (days = 30) => {
-    const res = await api.get<ApiResponse<RevenueSummary>>(`/analytics/revenue?days=${days}`);
+  getRevenue: async (query: AnalyticsQueryInput = { days: 30 }) => {
+    const res = await api.get<ApiResponse<RevenueSummary>>(`/analytics/revenue?${buildAnalyticsQuery(query)}`);
     return res.data.data;
   },
-  getGrowth: async (days = 30) => {
-    const res = await api.get<ApiResponse<GrowthSummary>>(`/analytics/growth?days=${days}`);
+  getGrowth: async (query: AnalyticsQueryInput = { days: 30 }) => {
+    const res = await api.get<ApiResponse<GrowthSummary>>(`/analytics/growth?${buildAnalyticsQuery(query)}`);
     return res.data.data;
   },
-  getGeography: async () => {
-    const res = await api.get<ApiResponse<GeoSummary>>(`/analytics/geography`);
+  getGeography: async (query: AnalyticsQueryInput = { days: 30 }) => {
+    const res = await api.get<ApiResponse<GeoSummary>>(`/analytics/geography?${buildAnalyticsQuery(query)}`);
     return res.data.data;
   },
-  getActivity: async (days = 30) => {
-    const res = await api.get<ApiResponse<ActivitySummary>>(`/analytics/activity?days=${days}`);
+  getActivity: async (query: AnalyticsQueryInput = { days: 30 }) => {
+    const res = await api.get<ApiResponse<ActivitySummary>>(`/analytics/activity?${buildAnalyticsQuery(query)}`);
     return res.data.data;
   },
-  getReferral: async (days = 30) => {
-    const res = await api.get<ApiResponse<ReferralSummary>>(`/analytics/referral?days=${days}`);
+  getReferral: async (query: AnalyticsQueryInput = { days: 30 }) => {
+    const res = await api.get<ApiResponse<ReferralSummary>>(`/analytics/referral?${buildAnalyticsQuery(query)}`);
     return res.data.data;
   },
-  getInactiveOwners: async (days = 30) => {
-    const res = await api.get<ApiResponse<InactiveOwnerSummary>>(`/analytics/inactive-owners?days=${days}`);
+  getInactiveOwners: async (query: AnalyticsQueryInput = { days: 30 }) => {
+    const res = await api.get<ApiResponse<InactiveOwnerSummary>>(`/analytics/inactive-owners?${buildAnalyticsQuery(query)}`);
     return res.data.data;
   },
 };

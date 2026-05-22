@@ -36,7 +36,8 @@ export default function OwnersPage() {
     const bySearch = owners.filter(
       (o) =>
         o.name.toLowerCase().includes(search.toLowerCase()) ||
-        o.email.toLowerCase().includes(search.toLowerCase()),
+        o.email.toLowerCase().includes(search.toLowerCase()) ||
+        String(o.id).includes(search.trim()),
     );
     return filterByDateRange(bySearch, (o) => o.created_at, dateRange);
   }, [owners, search, dateRange]);
@@ -91,7 +92,7 @@ export default function OwnersPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
-              placeholder="Search by name or email..."
+              placeholder="Search by name, email or owner ID..."
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
@@ -139,9 +140,12 @@ export default function OwnersPage() {
                           <UserCircle className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900 text-xs">{owner.name}</p>
-                          <p className="text-[9px] font-medium text-slate-400">{owner.email}</p>
-                        </div>
+                           <p className="font-bold text-slate-900 text-xs">{owner.name}</p>
+                           <p className="text-[9px] font-medium text-slate-400">{owner.email}</p>
+                           <span className="inline-block mt-0.5 bg-slate-100 border border-slate-200 text-slate-500 font-mono font-semibold text-[9px] px-1.5 py-0.5 rounded">
+                             #{owner.id}
+                           </span>
+                         </div>
                       </div>
                     </td>
                     <td className="px-5 py-3 text-center">

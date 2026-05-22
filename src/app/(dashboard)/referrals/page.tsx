@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowRightLeft,
   Banknote,
@@ -77,7 +78,7 @@ function KpiCard({
   );
 }
 
-export default function ReferralAdminPage() {
+function ReferralAdminPageContent() {
   const [summary, setSummary] = useState<ReferralAdminSummary | null>(null);
   const [payouts, setPayouts] = useState<ReferralAdminPayout[]>([]);
   const [rewards, setRewards] = useState<ReferralAdminReward[]>([]);
@@ -89,7 +90,18 @@ export default function ReferralAdminPage() {
   const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
   const [rewardTypeFilter, setRewardTypeFilter] = useState<"all" | "recruit" | "topup">("all");
   const [rewardDateRange, setRewardDateRange] = useState<DateRange>({ start: "", end: "" });
-  const [rewardSearch, setRewardSearch] = useState("");
+  const searchParams = useSearchParams();
+  const [rewardSearch, setRewardSearch] = useState(searchParams.get("search") || "");
+
+  useEffect(() => {
+    if (searchParams.get("search")) {
+      setRewardSearch(searchParams.get("search") || "");
+      // Scroll to rewards section
+      setTimeout(() => {
+         document.getElementById("rewards-section")?.scrollIntoView({ behavior: "smooth" });
+      }, 500);
+    }
+  }, [searchParams]);
 
   const loadData = useCallback(async (status: ReferralStatusFilter) => {
     setLoading(true);
@@ -160,7 +172,8 @@ export default function ReferralAdminPage() {
         rw.referrer_email?.toLowerCase().includes(q) ||
         rw.referred_nama?.toLowerCase().includes(q) ||
         rw.referred_email?.toLowerCase().includes(q) ||
-        rw.rr_referred_outlet?.toLowerCase().includes(q)
+        rw.rr_referred_outlet?.toLowerCase().includes(q) ||
+        rw.referrer_id?.toString() === q
       );
     }
     return r;
@@ -352,7 +365,7 @@ export default function ReferralAdminPage() {
         </div>
 
         {/* REWARD HISTORY — Riwayat mutasi reward masuk */}
-        <div className="space-y-4">
+        <div className="space-y-4" id="rewards-section">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
               <GitBranch className="h-3.5 w-3.5" />
@@ -467,5 +480,13 @@ export default function ReferralAdminPage() {
           </Card>
         </div>
     </div>
+  );
+}
+
+export default function ReferralAdminPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>}>
+      <ReferralAdminPageContent />
+    </Suspense>
   );
 }
