@@ -90,7 +90,8 @@ export default function TenantDetailPage() {
   const [pages, setPages] = useState({
     transactions: 1,
     addons: 1,
-    koin: 1
+    koin: 1,
+    topups: 1
   });
   const [koinFilter, setKoinFilter] = useState<'all' | 'masuk' | 'keluar'>('all');
 
@@ -270,6 +271,26 @@ export default function TenantDetailPage() {
     return `${API_BASE_URL}${profile.ot_gambar}`;
   }, [profile]);
 
+  const getTopupStatusConfig = (status?: string, method?: string, hasProof?: boolean) => {
+    const normalized = (status || "").toLowerCase();
+    if (normalized === "success" || normalized === "completed") {
+      return { label: "Success", className: "bg-emerald-50 text-emerald-600 border-emerald-100" };
+    }
+    if (normalized === "failed") {
+      return { label: "Failed", className: "bg-rose-50 text-rose-600 border-rose-100" };
+    }
+    if (normalized === "expired") {
+      return { label: "Expired", className: "bg-slate-100 text-slate-500 border-slate-200" };
+    }
+    if (normalized === "pending" || normalized === "verification") {
+      if (method === "transfer" && hasProof) {
+        return { label: "Verification", className: "bg-amber-50 text-amber-600 border-amber-100" };
+      }
+      return { label: "Pending", className: "bg-blue-50 text-blue-600 border-blue-100" };
+    }
+    return { label: normalized || "-", className: "bg-slate-50 text-slate-400 border-slate-100" };
+  };
+
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-[400px] gap-3">
@@ -331,11 +352,6 @@ export default function TenantDetailPage() {
                 <User className="h-3.5 w-3.5" /> Profil Owner
              </Button>
            </Link>
-           <Link href={`/topups`}>
-             <Button size="sm" className="h-9 px-4 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-sm bg-[#FF5F4E] hover:bg-[#E04F3F] active:scale-95 transition-all">
-                <Coins className="h-3.5 w-3.5" /> Riwayat Top Up
-             </Button>
-           </Link>
         </div>
       </div>
 
@@ -383,6 +399,9 @@ export default function TenantDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="koin" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Coins className="h-3 w-3" /> Ekonomi Koin
+          </TabsTrigger>
+          <TabsTrigger value="topups" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+            <Receipt className="h-3 w-3" /> Riwayat Top Up
           </TabsTrigger>
         </TabsList>
 
@@ -987,6 +1006,126 @@ export default function TenantDetailPage() {
                   }) : (
                      <div className="p-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">Tidak ada log koin</div>
                  )}
+              </div>
+           </Card>
+        </TabsContent>
+
+        {/* TAB: RIWAYAT TOP UP */}
+        <TabsContent value="topups" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+           <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
+              <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                 <div className="space-y-1">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Riwayat Top Up Outlet</p>
+                    <p className="text-[10px] font-medium text-slate-400">Tanggal, nominal, metode, bukti pembayaran, dan status transaksi.</p>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-bold text-slate-400">Hal {pages.topups}</span>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-7 w-7" 
+                      disabled={pages.topups === 1}
+                      onClick={() => setPages(prev => ({ ...prev, topups: prev.topups - 1 }))}
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-7 w-7" 
+                      disabled={topupHistory.length <= pages.topups * itemsPerPage}
+                      onClick={() => setPages(prev => ({ ...prev, topups: prev.topups + 1 }))}
+                    >
+                      <ArrowUpRight className="h-3 w-3 rotate-45" />
+                    </Button>
+                 </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                 <table className="w-full text-left border-collapse">
+                    <thead>
+                       <tr className="bg-slate-50/30 border-b border-slate-100">
+                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Tanggal & Jam</th>
+                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">ID Top Up</th>
+                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Nominal</th>
+                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Metode</th>
+                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Bukti</th>
+                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Status</th>
+                       </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                       {topupHistory.length > 0 ? topupHistory.slice((pages.topups - 1) * itemsPerPage, pages.topups * itemsPerPage).map((topup, i) => {
+                          const statusConfig = getTopupStatusConfig(topup.tk_status, topup.tk_metode_bayar, !!topup.tk_bukti);
+                          const proofUrl = topup.tk_bukti
+                             ? `${topup.tk_bukti.startsWith("http") ? "" : API_BASE_URL}${topup.tk_bukti}`
+                             : "";
+
+                          return (
+                             <tr key={topup.tk_id || i} className="hover:bg-slate-50/30 transition-colors">
+                                <td className="px-6 py-4">
+                                   <div className="flex items-center gap-2">
+                                      <Clock3 className="h-3.5 w-3.5 text-slate-300" />
+                                      <span className="text-[10px] font-bold text-slate-500 uppercase">
+                                         {topup.tk_created ? format(new Date(topup.tk_created), "dd MMM yyyy HH:mm", { locale: localeId }) : "-"}
+                                      </span>
+                                   </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                   <button
+                                      type="button"
+                                      onClick={() => { setSelectedKoin(topup); setIsKoinModalOpen(true); }}
+                                      className="font-mono text-[11px] font-black text-slate-900 hover:text-primary hover:underline uppercase"
+                                   >
+                                      {topup.tk_id || "-"}
+                                   </button>
+                                </td>
+                                <td className="px-6 py-4">
+                                   <div className="space-y-0.5">
+                                      <p className="text-xs font-black text-slate-900">Rp {(topup.tk_total || 0).toLocaleString("id-ID")}</p>
+                                      <p className="text-[9px] font-bold text-emerald-600 uppercase">+{(topup.tk_jumlah || 0).toLocaleString("id-ID")} Koin</p>
+                                   </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                   <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-100 text-[8px] font-bold uppercase">
+                                      {topup.tk_metode_bayar || "-"}
+                                   </Badge>
+                                </td>
+                                <td className="px-6 py-4">
+                                   {proofUrl ? (
+                                      <a
+                                         href={proofUrl}
+                                         target="_blank"
+                                         rel="noreferrer"
+                                         className="inline-flex items-center gap-1.5 text-[10px] font-bold text-primary hover:underline uppercase"
+                                      >
+                                         Payment Proof <ExternalLink className="h-3 w-3" />
+                                      </a>
+                                   ) : (
+                                      <span className="text-[10px] font-bold text-slate-300 uppercase">Tidak ada</span>
+                                   )}
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                   <button
+                                      type="button"
+                                      onClick={() => { setSelectedKoin(topup); setIsKoinModalOpen(true); }}
+                                      className="inline-flex items-center justify-end"
+                                   >
+                                      <Badge variant="outline" className={cn("text-[8px] px-2 py-0.5 font-bold uppercase border", statusConfig.className)}>
+                                         {statusConfig.label}
+                                      </Badge>
+                                   </button>
+                                </td>
+                             </tr>
+                          );
+                       }) : (
+                          <tr>
+                             <td colSpan={6} className="py-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                                Belum ada riwayat top up
+                             </td>
+                          </tr>
+                       )}
+                    </tbody>
+                 </table>
               </div>
            </Card>
         </TabsContent>

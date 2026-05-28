@@ -3,19 +3,14 @@
 import React, { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  ArrowRightLeft,
-  Banknote,
   CheckCircle2,
   Clock3,
   Loader2,
   Users2,
   Wallet2,
   History,
-  ExternalLink,
   ChevronRight,
-  UserCheck,
   Activity,
-  Coins,
   TrendingUp,
   GitBranch,
 } from "lucide-react";
@@ -88,7 +83,7 @@ function ReferralAdminPageContent() {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
-  const [rewardTypeFilter, setRewardTypeFilter] = useState<"all" | "recruit" | "topup">("all");
+  const [rewardTypeFilter, setRewardTypeFilter] = useState<"all" | "topup">("all");
   const [rewardDateRange, setRewardDateRange] = useState<DateRange>({ start: "", end: "" });
   const searchParams = useSearchParams();
   const [rewardSearch, setRewardSearch] = useState(searchParams.get("search") || "");
@@ -112,7 +107,10 @@ function ReferralAdminPageContent() {
         referralAdminService.getRewards(),
       ]);
 
-      if (summaryRes.data.status) setSummary(summaryRes.data.data);
+      if (summaryRes.data.status) {
+        const data = summaryRes.data.data;
+        setSummary(data);
+      }
       if (rewardsRes.data.status) setRewards(rewardsRes.data.data || []);
       if (payoutsRes.data.status) {
         setPayouts(payoutsRes.data.data || []);
@@ -198,10 +196,10 @@ function ReferralAdminPageContent() {
       {/* METRICS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          label="Reward / Acq"
-          sub="Nilai reward per owner referral"
-          value={loading ? "—" : currency(Number(summary?.reward_per_owner ?? 0))}
-          icon={Wallet2}
+          label="Topup Commission"
+          sub="Pertama / berikutnya"
+          value={loading ? "—" : `${summary?.first_topup_percent ?? 0}% / ${summary?.next_topup_percent ?? 0}%`}
+          icon={TrendingUp}
           color="bg-orange-50 text-primary"
         />
         <KpiCard
@@ -212,10 +210,10 @@ function ReferralAdminPageContent() {
           color="bg-slate-100 text-slate-600"
         />
         <KpiCard
-          label="Issued Rewards"
-          sub="Total reward yang sudah dikreditkan"
-          value={loading ? "—" : currency(summary?.total_rewards ?? 0)}
-          icon={Coins}
+          label="Payout Budget"
+          sub={`Sisa dari ${currency(summary?.payout_monthly_budget ?? 0)}`}
+          value={loading ? "—" : currency(summary?.payout_monthly_remaining ?? 0)}
+          icon={Wallet2}
           color="bg-violet-50 text-violet-600"
         />
         <KpiCard
@@ -314,7 +312,7 @@ function ReferralAdminPageContent() {
                       {item.rp_note && (
                         <div className="p-2 bg-amber-50/20 border border-amber-100/50 rounded text-[10px] font-medium text-amber-700 italic group-hover:bg-amber-50/40 transition-colors">
                           <span className="font-bold uppercase not-italic mr-1 text-[8px] opacity-60">Note:</span>
-                          "{item.rp_note}"
+                          <span>{item.rp_note}</span>
                         </div>
                       )}
                     </div>
@@ -381,7 +379,7 @@ function ReferralAdminPageContent() {
                 className="h-8 text-[10px] rounded border-slate-200 shadow-none w-48 bg-white"
               />
               <div className="flex gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
-                {(["all", "recruit", "topup"] as const).map((t) => (
+                {(["all", "topup"] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => setRewardTypeFilter(t)}

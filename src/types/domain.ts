@@ -52,7 +52,12 @@ export interface ReferralConfig {
 }
 
 export interface ReferralAdminSummary {
-  reward_per_owner: string;
+  first_topup_percent: string;
+  next_topup_percent: string;
+  monthly_reward_limit: string;
+  payout_monthly_budget: number;
+  payout_monthly_used: number;
+  payout_monthly_remaining: number;
   total_referrals: number;
   total_rewards: number;
   pending_payouts: number;

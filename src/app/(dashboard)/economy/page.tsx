@@ -14,8 +14,6 @@ import {
   Plus,
   Trash2,
   Power,
-  CheckCircle2,
-  AlertCircle,
   Database,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -24,9 +22,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/api-client";
@@ -35,22 +31,19 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ApiResponse } from "@/types/api";
 import { EconomyConfig } from "@/types/domain";
-import { Badge } from "@/components/ui/badge";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 // Keys yang satuannya KOIN (bukan Rupiah), meski cfg_type = 'amount' di DB
 const KOIN_KEYS = new Set([
   "coin_per_transaction",
   "bonus_koin_new_user",
-  "referral_bonus_new_user",
-  "referral_bonus_inviter",
 ]);
 
 // Keys yang satuannya Rupiah
 const RUPIAH_KEYS = new Set([
   "price_per_coin",
   "activation_fee",
-  "referral_cash_reward_owner",
+  "referral_payout_monthly_budget",
 ]);
 
 // Keys yang satuannya kali/multiplier (x)
@@ -63,6 +56,13 @@ const PCT_KEYS = new Set([
   "activation_discount_pct",
   "referral_percent_first",
   "referral_percent_subsequent",
+]);
+
+const DEPRECATED_CONFIG_KEYS = new Set([
+  "referral_bonus_new_user",
+  "referral_bonus_inviter",
+  "referral_cash_reward_owner",
+  "referral_percent_topup",
 ]);
 
 export default function AdminEconomyPage() {
@@ -91,7 +91,13 @@ export default function AdminEconomyPage() {
       const res = await api.get<ApiResponse<EconomyConfig[]>>(
         "/economy/configs",
       );
-      if (res.data.status) setConfigs(res.data.data || []);
+      if (res.data.status) {
+        setConfigs(
+          (res.data.data || []).filter(
+            (config) => !DEPRECATED_CONFIG_KEYS.has(config.cfg_key),
+          ),
+        );
+      }
     } catch {
       toast.error("Failed to sync configuration parameters");
     } finally {

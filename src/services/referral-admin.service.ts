@@ -7,12 +7,14 @@ import {
   ReferralConfig,
 } from "@/types/domain";
 
+export type ReferralConfigMap = Record<string, ReferralConfig>;
+
 export const referralAdminService = {
   getDashboard: () =>
     api.get<ApiResponse<ReferralAdminSummary>>("/referrals/dashboard"),
-  getConfig: () => api.get<ApiResponse<ReferralConfig>>("/referrals/config"),
-  updateConfig: (value: string) =>
-    api.patch("/referrals/config", { value }),
+  getConfig: () => api.get<ApiResponse<ReferralConfigMap>>("/referrals/config"),
+  updateConfig: (key: string, value: string) =>
+    api.patch("/referrals/config", { key, value }),
   getPayouts: (status = "all") =>
     api.get<ApiResponse<ReferralAdminPayout[]>>(
       `/referrals/payouts?status=${status}`,

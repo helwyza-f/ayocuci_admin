@@ -616,10 +616,10 @@ export default function AnalyticsPage() {
           <SectionHeader icon={Gift} title="Referral Economy" desc={periodLabel} />
           <div className="grid grid-cols-2 gap-3 mt-1">
             {[
-              { label: "Total Reward Diklaim", value: `${(referral?.total_reward_distributed ?? 0).toLocaleString()} Koin`, color: "bg-amber-50 text-amber-700" },
-              { label: "User via Referral", value: `${referral?.total_referral_users ?? 0}`, color: "bg-blue-50 text-blue-700" },
+              { label: "Total Komisi Topup", value: fmtCurrency(referral?.total_reward_distributed ?? 0), color: "bg-amber-50 text-amber-700" },
+              { label: "Owner via Referral", value: `${referral?.total_referral_users ?? 0}`, color: "bg-blue-50 text-blue-700" },
               { label: "Pending Payout", value: `${referral?.pending_payouts ?? 0} req`, color: "bg-rose-50 text-rose-600" },
-              { label: "Nilai Payout Pending", value: `${(referral?.pending_payout_amount ?? 0).toLocaleString()} Koin`, color: "bg-violet-50 text-violet-700" },
+              { label: "Nilai Payout Pending", value: fmtCurrency(referral?.pending_payout_amount ?? 0), color: "bg-violet-50 text-violet-700" },
             ].map((item) => (
               <div key={item.label} className={`rounded-xl p-4 ${item.color}`}>
                 <p className="text-base font-extrabold">{item.value}</p>
