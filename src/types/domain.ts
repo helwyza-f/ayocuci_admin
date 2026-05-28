@@ -58,6 +58,8 @@ export interface ReferralAdminSummary {
   payout_monthly_budget: number;
   payout_monthly_used: number;
   payout_monthly_remaining: number;
+  payout_min_amount: number;
+  payout_max_amount: number;
   total_referrals: number;
   total_rewards: number;
   pending_payouts: number;

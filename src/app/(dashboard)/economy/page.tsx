@@ -44,6 +44,8 @@ const RUPIAH_KEYS = new Set([
   "price_per_coin",
   "activation_fee",
   "referral_payout_monthly_budget",
+  "referral_payout_min_amount",
+  "referral_payout_max_amount",
 ]);
 
 // Keys yang satuannya kali/multiplier (x)
