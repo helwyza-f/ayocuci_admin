@@ -18,6 +18,7 @@ export interface Tenant {
   ot_modal_usaha?: string;
   ot_jumlah_karyawan?: string;
   ot_jumlah_mesin_cuci?: string;
+  ot_tanggal_berjalan?: string;
 
   owner_id: number;
   owner_name: string;

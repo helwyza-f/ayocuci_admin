@@ -599,6 +599,46 @@ export default function TenantDetailPage() {
                                 { label: "Jumlah Pegawai", value: `${String(profile?.ot_jumlah_karyawan || "0").replace(/orang/i, "").trim()} Orang`, icon: Users },
                                 { label: "Populasi Mesin", value: `${String(profile?.ot_jumlah_mesin_cuci || "0").replace(/unit/i, "").trim()} Unit`, icon: Layers },
                                 { label: "Zona Waktu", value: (profile as any)?.ot_timezone, icon: Clock },
+                                {
+                                  label: "Usia Bisnis",
+                                  value: (() => {
+                                    // Usia bisnis = sejak bergabung di app (ot_created)
+                                    const baseDateStr = profile?.ot_created;
+                                    if (!baseDateStr) return "BELUM DIATUR";
+                                    try {
+                                      const baseDate = new Date(baseDateStr);
+                                      const now = new Date();
+                                      
+                                      let years = now.getFullYear() - baseDate.getFullYear();
+                                      let months = now.getMonth() - baseDate.getMonth();
+                                      let days = now.getDate() - baseDate.getDate();
+                                      
+                                      if (days < 0) {
+                                        months -= 1;
+                                        // Dapatkan jumlah hari di bulan sebelumnya
+                                        const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+                                        days += prevMonth.getDate();
+                                      }
+                                      
+                                      if (months < 0) {
+                                        years -= 1;
+                                        months += 12;
+                                      }
+                                      
+                                      const parts = [];
+                                      if (years > 0) parts.push(`${years} Tahun`);
+                                      if (months > 0) parts.push(`${months} Bulan`);
+                                      if (years === 0 && months === 0) {
+                                        parts.push(`${days} Hari`);
+                                      }
+                                      
+                                      return parts.length > 0 ? parts.join(" ") : "Baru Buka";
+                                    } catch (e) {
+                                      return "BELUM DIATUR";
+                                    }
+                                  })(),
+                                  icon: Calendar
+                                },
                               ] as { label: string; value?: string; icon: ElementType; isPhone?: boolean; isMono?: boolean; isLink?: boolean; href?: string }[]).map((item, idx) => (
                                 <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
                                    <td className="px-6 py-4 w-48">
