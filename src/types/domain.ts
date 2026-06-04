@@ -70,7 +70,7 @@ export interface ReferralAdminSummary {
 export interface ReferralAdminPayout {
   rp_id: string;
   rp_amount: number;
-  rp_status: "pending" | "approved" | "process" | "done";
+  rp_status: "pending" | "approved" | "process" | "done" | "paid";
   rp_bank_name: string;
   rp_account_name: string;
   rp_account_number: string;
@@ -79,6 +79,9 @@ export interface ReferralAdminPayout {
   rp_created: string;
   rp_processed_at?: string | null;
   rp_completed_at?: string | null;
+  bonus_count?: number;
+  referred_owner_names?: string | null;
+  referred_outlet_names?: string | null;
   usr_id: number;
   usr_nama: string;
   usr_email: string;

@@ -34,7 +34,7 @@ import { format } from "date-fns";
 
 const PAGE_SIZE = 10;
 
-const statusOptions = ["all", "pending", "approved", "process", "done"] as const;
+const statusOptions = ["all", "pending", "approved", "process", "paid"] as const;
 type ReferralStatusFilter = (typeof statusOptions)[number];
 type ReferralPayoutStatus = Exclude<ReferralStatusFilter, "all">;
 
@@ -42,7 +42,7 @@ const payoutStatusOrder: Record<ReferralPayoutStatus, number> = {
   pending: 1,
   approved: 2,
   process: 3,
-  done: 4,
+  paid: 4,
 };
 
 const currency = (value: number | string) =>
@@ -51,6 +51,20 @@ const currency = (value: number | string) =>
     currency: "IDR",
     minimumFractionDigits: 0,
   }).format(Number(value || 0));
+
+const dateTime = (value?: string | null) =>
+  value ? format(new Date(value), "dd/MM/yyyy HH:mm") : "—";
+
+const statusLabel = (status: ReferralPayoutStatus) => {
+  if (status === "pending") return "Pending";
+  if (status === "approved") return "Approved";
+  if (status === "process") return "Process";
+  if (status === "paid") return "Paid";
+  return status;
+};
+
+const normalizePayoutStatus = (status: ReferralAdminPayout["rp_status"]): ReferralPayoutStatus =>
+  status === "done" ? "paid" : status;
 
 // ─── KPI Card ──────────────────────────────────────────────
 function KpiCard({
@@ -152,7 +166,7 @@ function ReferralAdminPageContent() {
   };
 
   const getNextStatuses = (status: ReferralPayoutStatus) => {
-    return (["approved", "process", "done"] as ReferralPayoutStatus[]).filter(
+    return (["approved", "process", "paid"] as ReferralPayoutStatus[]).filter(
       (item) => payoutStatusOrder[item] > payoutStatusOrder[status],
     );
   };
@@ -262,7 +276,12 @@ function ReferralAdminPageContent() {
                 { header: "Account No", key: "rp_account_number", width: 18 },
                 { header: "Amount", key: "rp_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
                 { header: "Status", key: "rp_status", width: 12 },
+                { header: "Bonus Count", key: "bonus_count", width: 12 },
+                { header: "Referred Owners", key: "referred_owner_names", width: 30 },
+                { header: "Referred Outlets", key: "referred_outlet_names", width: 30 },
                 { header: "Requested", key: "rp_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+                { header: "Processed", key: "rp_processed_at", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+                { header: "Paid", key: "rp_completed_at", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
               ]}
             />
           </div>
@@ -278,7 +297,9 @@ function ReferralAdminPageContent() {
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No requests found</p>
               </div>
             ) : (
-              paginatedPayouts.map((item) => (
+              paginatedPayouts.map((item) => {
+                const normalizedStatus = normalizePayoutStatus(item.rp_status);
+                return (
                 <Card key={item.rp_id} className="p-4 border border-slate-200 shadow-none rounded-lg bg-white overflow-hidden group hover:border-primary/20 hover:shadow-sm transition-all duration-300">
                   <div className="flex flex-col xl:flex-row gap-4">
                     <div className="flex-1 space-y-3">
@@ -289,9 +310,9 @@ function ReferralAdminPageContent() {
                          </div>
                          <Badge variant="outline" className={cn(
                             "rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none transition-colors",
-                            item.rp_status === 'done' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-orange-50 text-orange-600 border-orange-100"
+                            normalizedStatus === 'paid' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-orange-50 text-orange-600 border-orange-100"
                          )}>
-                            {item.rp_status}
+                            {statusLabel(normalizedStatus)}
                          </Badge>
                       </div>
 
@@ -299,6 +320,7 @@ function ReferralAdminPageContent() {
                          <div className="space-y-0.5">
                             <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Settlement</p>
                             <p className="text-base font-bold text-primary font-heading tracking-tight">{currency(item.rp_amount)}</p>
+                            <p className="text-[9px] font-semibold text-slate-400">{item.bonus_count ?? 0} bonus selected</p>
                          </div>
                          <div className="space-y-0.5">
                             <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Bank Destination</p>
@@ -307,6 +329,32 @@ function ReferralAdminPageContent() {
                             </p>
                             <p className="text-[9px] font-medium text-slate-400 italic">a.n {item.rp_account_name}</p>
                          </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 p-2 rounded bg-slate-50/70 border border-slate-100">
+                        <div>
+                          <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Requested</p>
+                          <p className="text-[10px] font-bold text-slate-700">{dateTime(item.rp_created)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Processed</p>
+                          <p className="text-[10px] font-bold text-slate-700">{dateTime(item.rp_processed_at)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Paid</p>
+                          <p className="text-[10px] font-bold text-slate-700">{dateTime(item.rp_completed_at)}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="p-2 rounded border border-slate-100 bg-white">
+                          <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Referred Owners</p>
+                          <p className="text-[10px] font-semibold text-slate-700 line-clamp-2">{item.referred_owner_names || "—"}</p>
+                        </div>
+                        <div className="p-2 rounded border border-slate-100 bg-white">
+                          <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Referral Outlets</p>
+                          <p className="text-[10px] font-semibold text-slate-700 line-clamp-2">{item.referred_outlet_names || "—"}</p>
+                        </div>
                       </div>
 
                       {item.rp_note && (
@@ -326,7 +374,7 @@ function ReferralAdminPageContent() {
                         className="rounded text-[10px] font-medium border-slate-200 shadow-none bg-slate-50/20 focus:bg-white transition-all resize-none"
                       />
                       <div className="flex flex-col gap-1.5">
-                        {getNextStatuses(item.rp_status).map((status) => (
+                        {getNextStatuses(normalizedStatus).map((status) => (
                           <Button
                             key={status}
                             size="sm"
@@ -334,14 +382,14 @@ function ReferralAdminPageContent() {
                             onClick={() => handleUpdatePayout(item.rp_id, status)}
                             className={cn(
                               "rounded font-bold uppercase text-[9px] tracking-widest h-8 active:scale-[0.98] transition-all",
-                              status === "done" ? "bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-100" : "bg-slate-900 hover:bg-black shadow-sm shadow-slate-200"
+                              status === "paid" ? "bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-100" : "bg-slate-900 hover:bg-black shadow-sm shadow-slate-200"
                             )}
                           >
                             {savingPayoutId === item.rp_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronRight className="h-3 w-3 mr-1 group-hover:translate-x-0.5 transition-transform" />}
-                            To {status}
+                            To {statusLabel(status)}
                           </Button>
                         ))}
-                        {getNextStatuses(item.rp_status).length === 0 && (
+                        {getNextStatuses(normalizedStatus).length === 0 && (
                           <div className="flex items-center justify-center gap-1.5 py-2 text-emerald-600 font-bold text-[9px] uppercase italic tracking-wider">
                             <CheckCircle2 className="h-3 w-3" /> Fully Settled
                           </div>
@@ -350,7 +398,8 @@ function ReferralAdminPageContent() {
                     </div>
                   </div>
                 </Card>
-              ))
+                );
+              })
             )}
           </div>
           <Pagination
