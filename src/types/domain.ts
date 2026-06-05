@@ -91,10 +91,13 @@ export interface ReferralAdminReward {
   rr_id: number;
   rr_reward_amount: number;
   rr_type: string;          // 'recruit' | 'topup'
+  rr_percent: number;
   rr_reference_id: string;
-  rr_status: string;        // 'credited'
+  rr_status: string;        // 'credited' | 'paid'
   rr_created: string;
   rr_referred_outlet: string;
+  referred_outlet_name: string | null;
+  topup_amount: number;
   referrer_id: number;
   referrer_nama: string;
   referrer_email: string;

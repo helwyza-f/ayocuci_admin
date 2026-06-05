@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
@@ -97,7 +98,8 @@ function ReferralAdminPageContent() {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
-  const [rewardTypeFilter, setRewardTypeFilter] = useState<"all" | "topup">("all");
+  const [rewardTypeFilter, setRewardTypeFilter] = useState<"all" | "first" | "monthly">("all");
+  const [rewardStatusFilter, setRewardStatusFilter] = useState<"all" | "pending" | "paid">("all");
   const [rewardDateRange, setRewardDateRange] = useState<DateRange>({ start: "", end: "" });
   const searchParams = useSearchParams();
   const [rewardSearch, setRewardSearch] = useState(searchParams.get("search") || "");
@@ -176,7 +178,22 @@ function ReferralAdminPageContent() {
 
   const filteredRewards = useMemo(() => {
     let r = filterByDateRange(rewards, (rw) => rw.rr_created, rewardDateRange);
-    if (rewardTypeFilter !== "all") r = r.filter((rw) => rw.rr_type === rewardTypeFilter);
+    
+    if (rewardTypeFilter !== "all") {
+      if (rewardTypeFilter === "first") {
+        r = r.filter((rw) => rw.rr_type === "topup" && rw.rr_percent >= 10);
+      } else if (rewardTypeFilter === "monthly") {
+        r = r.filter((rw) => rw.rr_type === "topup" && rw.rr_percent > 0 && rw.rr_percent < 10);
+      }
+    }
+    
+    if (rewardStatusFilter !== "all") {
+      r = r.filter((rw) => {
+        if (rewardStatusFilter === "pending") return rw.rr_status === "credited" || rw.rr_status === "pending";
+        return rw.rr_status === "paid" || rw.rr_status === "done";
+      });
+    }
+
     if (rewardSearch.trim()) {
       const q = rewardSearch.toLowerCase();
       r = r.filter((rw) =>
@@ -185,11 +202,12 @@ function ReferralAdminPageContent() {
         rw.referred_nama?.toLowerCase().includes(q) ||
         rw.referred_email?.toLowerCase().includes(q) ||
         rw.rr_referred_outlet?.toLowerCase().includes(q) ||
+        rw.referred_outlet_name?.toLowerCase().includes(q) ||
         rw.referrer_id?.toString() === q
       );
     }
     return r;
-  }, [rewards, rewardTypeFilter, rewardDateRange, rewardSearch]);
+  }, [rewards, rewardTypeFilter, rewardStatusFilter, rewardDateRange, rewardSearch]);
   const paginatedPayouts = filteredPayouts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
@@ -428,7 +446,7 @@ function ReferralAdminPageContent() {
                 className="h-8 text-[10px] rounded border-slate-200 shadow-none w-48 bg-white"
               />
               <div className="flex gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
-                {(["all", "topup"] as const).map((t) => (
+                {(["all", "first", "monthly"] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => setRewardTypeFilter(t)}
@@ -437,7 +455,21 @@ function ReferralAdminPageContent() {
                       rewardTypeFilter === t ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-500 hover:text-slate-700"
                     )}
                   >
-                    {t === "all" ? "Semua" : t}
+                    {t === "all" ? "Semua Tipe" : t === "first" ? "First Top Up" : "Monthly Top Up"}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
+                {(["all", "pending", "paid"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setRewardStatusFilter(t)}
+                    className={cn(
+                      "rounded px-2.5 h-7 text-[8px] font-bold uppercase tracking-tight transition-all",
+                      rewardStatusFilter === t ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    {t === "all" ? "Semua Status" : t === "pending" ? "Pending" : "Sudah Dicairkan"}
                   </button>
                 ))}
               </div>
@@ -447,19 +479,23 @@ function ReferralAdminPageContent() {
                 filename="referral_rewards"
                 sheetName="Rewards"
                 columns={[
+                  { header: "Tanggal", key: "rr_created", width: 22, format: (v) => v ? format(new Date(v as string), "dd/MM/yyyy HH:mm") : "" },
                   { header: "Referrer", key: "referrer_nama", width: 25 },
                   { header: "Referred", key: "referred_nama", width: 25 },
-                  { header: "Outlet", key: "rr_referred_outlet", width: 15 },
+                  { header: "Kode Outlet", key: "rr_referred_outlet", width: 15 },
+                  { header: "Nama Outlet", key: "referred_outlet_name", width: 25 },
                   { header: "Type", key: "rr_type", width: 12 },
-                  { header: "Amount", key: "rr_reward_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
-                  { header: "Date", key: "rr_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+                  { header: "Locked Percent", key: "rr_percent", width: 15, format: (v) => `${v}%` },
+                  { header: "Nominal Top Up", key: "topup_amount", width: 18, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
+                  { header: "Reward", key: "rr_reward_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
+                  { header: "Status", key: "rr_status", width: 15 },
                 ]}
               />
-              {(rewardSearch || rewardTypeFilter !== "all" || rewardDateRange.start) && (
+              {(rewardSearch || rewardTypeFilter !== "all" || rewardStatusFilter !== "all" || rewardDateRange.start) && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => { setRewardSearch(""); setRewardTypeFilter("all"); setRewardDateRange({ start: "", end: "" }); }}
+                  onClick={() => { setRewardSearch(""); setRewardTypeFilter("all"); setRewardStatusFilter("all"); setRewardDateRange({ start: "", end: "" }); }}
                   className="h-7 px-2 text-[9px] font-bold text-slate-400 hover:text-slate-700 uppercase"
                 >
                   Reset
@@ -472,12 +508,14 @@ function ReferralAdminPageContent() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-200">
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider w-24">Tanggal</th>
                     <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Referrer (Pengajak)</th>
                     <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Referred (Diajak)</th>
-                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Outlet</th>
-                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Tipe</th>
-                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Reward</th>
-                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Tanggal</th>
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Outlet Utama</th>
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Tipe Reward</th>
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Nominal Top Up</th>
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Komisi / Reward</th>
+                    <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Status Pencairan</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -494,29 +532,57 @@ function ReferralAdminPageContent() {
                     filteredRewards.map((r) => (
                       <tr key={r.rr_id} className="hover:bg-primary/[0.01] transition-colors group">
                         <td className="px-5 py-3">
-                          <p className="text-xs font-bold text-slate-900">{r.referrer_nama}</p>
-                          <p className="text-[10px] text-slate-400">{r.referrer_email}</p>
+                          <span className="text-[10px] font-medium text-slate-500 whitespace-nowrap">
+                            {new Date(r.rr_created).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </span>
                         </td>
                         <td className="px-5 py-3">
-                          <p className="text-xs font-bold text-slate-900">{r.referred_nama}</p>
-                          <p className="text-[10px] text-slate-400">{r.referred_email}</p>
+                          <Link href={`/users/${r.referrer_id}`} className="hover:underline group-hover:text-primary transition-colors block">
+                            <p className="text-xs font-bold text-slate-900">{r.referrer_nama}</p>
+                            <p className="text-[10px] text-slate-400">{r.referrer_email}</p>
+                          </Link>
                         </td>
                         <td className="px-5 py-3">
-                          <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">{r.rr_referred_outlet || "—"}</span>
+                          <Link href={`/users/${r.referred_id}`} className="hover:underline group-hover:text-primary transition-colors block">
+                            <p className="text-xs font-bold text-slate-900">{r.referred_nama}</p>
+                            <p className="text-[10px] text-slate-400">{r.referred_email}</p>
+                          </Link>
                         </td>
                         <td className="px-5 py-3">
-                          <span className={cn(
-                            "text-[9px] font-bold uppercase px-2 py-0.5 rounded-full",
-                            r.rr_type === "recruit" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
-                          )}>{r.rr_type}</span>
+                          {r.rr_referred_outlet ? (
+                            <Link href={`/tenants/${r.rr_referred_outlet}`} className="hover:underline group-hover:text-primary transition-colors block">
+                              <p className="text-xs font-bold text-slate-900">{r.referred_outlet_name || "Outlet Tidak Diketahui"}</p>
+                              <span className="text-[9px] font-mono font-bold text-slate-500">{r.rr_referred_outlet}</span>
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3">
+                          {r.rr_type === "recruit" ? (
+                            <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 whitespace-nowrap">Signup Bonus</span>
+                          ) : (
+                            <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 whitespace-nowrap">
+                              {r.rr_percent >= 10 ? `First Top Up (${r.rr_percent}%)` : `Monthly Top Up (${r.rr_percent}%)`}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <span className="text-xs font-bold text-slate-600 tracking-tight">{r.topup_amount > 0 ? currency(r.topup_amount) : "—"}</span>
                         </td>
                         <td className="px-5 py-3 text-right">
                           <span className="text-sm font-extrabold text-primary tracking-tight">{currency(r.rr_reward_amount)}</span>
                         </td>
                         <td className="px-5 py-3 text-right">
-                          <span className="text-[10px] font-medium text-slate-500">
-                            {new Date(r.rr_created).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
-                          </span>
+                          {(r.rr_status === "paid" || r.rr_status === "done") ? (
+                            <Badge variant="outline" className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-600 shadow-none">
+                              Sudah Dicairkan
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-orange-100 bg-orange-50 text-orange-600 shadow-none">
+                              Pending
+                            </Badge>
+                          )}
                         </td>
                       </tr>
                     ))
