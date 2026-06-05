@@ -56,6 +56,7 @@ import { Tenant } from "@/types/tenant";
 import { Owner } from "@/types/domain";
 import { apiFetcher } from "@/lib/fetcher";
 import useSWR from "swr";
+import { useRegionNames } from "@/hooks/use-region-names";
 
 const PAGE_SIZE = 25;
 
@@ -167,6 +168,9 @@ export default function TopupsManagementPage() {
     [data]
   );
 
+  const tenants = useMemo(() => tenantsResponse?.data || [], [tenantsResponse]);
+  const regionNames = useRegionNames(tenants);
+
   const filteredData = useMemo(() => {
     return (data || []).filter((item) => {
       if (!item) return false;
@@ -179,8 +183,8 @@ export default function TopupsManagementPage() {
   }, [data, searchQuery, outletFilter, ownerFilter]);
 
   const tenantMap = useMemo(
-    () => new Map((tenantsResponse?.data || []).map((tenant) => [tenant.ot_id, tenant])),
-    [tenantsResponse],
+    () => new Map(tenants.map((tenant) => [tenant.ot_id, tenant])),
+    [tenants],
   );
 
   const ownerMap = useMemo(
@@ -210,15 +214,15 @@ export default function TopupsManagementPage() {
           tk_outlet: item.tk_outlet ?? "",
           outlet_name: item.outlet_name ?? tenant?.ot_nama ?? "",
           outlet_nohp: tenant?.ot_nohp ?? "",
-          outlet_city: tenant?.ot_kota ?? "",
-          outlet_province: tenant?.ot_provinsi ?? "",
+          outlet_city: regionNames.cityName(tenant?.ot_kota),
+          outlet_province: regionNames.provinceName(tenant?.ot_provinsi),
           tk_jumlah: item.tk_jumlah ?? 0,
           tk_total: item.tk_total ?? 0,
           tk_metode_bayar: item.tk_metode_bayar ?? "",
           tk_status: item.tk_status ?? "",
         };
       }),
-    [filteredData, ownerByNameMap, ownerMap, tenantMap],
+    [filteredData, ownerByNameMap, ownerMap, regionNames, tenantMap],
   );
 
   const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
@@ -308,6 +312,7 @@ export default function TopupsManagementPage() {
             data={topupExportRows}
             filename="topups_report"
             sheetName="Topups"
+            disabled={regionNames.isLoading}
             columns={[
               { header: "Tanggal", key: "tk_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
               { header: "ID Top Up", key: "tk_id", width: 22 },

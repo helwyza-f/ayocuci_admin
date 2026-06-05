@@ -40,6 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
+import { useRegionNames } from "@/hooks/use-region-names";
 
 const PAGE_SIZE = 20;
 
@@ -66,6 +67,7 @@ export default function TenantsPage() {
   );
   const tenants = useMemo(() => tenantsResponse?.data || [], [tenantsResponse]);
   const owners = useMemo(() => ownersResponse?.data || [], [ownersResponse]);
+  const regionNames = useRegionNames(tenants);
 
   const [open, setOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState("all");
@@ -94,9 +96,9 @@ export default function TenantsPage() {
         ot_nama: tenant.ot_nama ?? "",
         owner_nohp: tenant.owner_nohp ?? "",
         ot_nohp: tenant.ot_nohp ?? "",
-        ot_kecamatan: tenant.ot_kecamatan ?? "",
-        ot_kota: tenant.ot_kota ?? "",
-        ot_provinsi: tenant.ot_provinsi ?? "",
+        ot_kecamatan: regionNames.districtName(tenant.ot_kecamatan),
+        ot_kota: regionNames.cityName(tenant.ot_kota),
+        ot_provinsi: regionNames.provinceName(tenant.ot_provinsi),
         ot_alamat: tenant.ot_alamat ?? "",
         ot_koin: tenant.ot_koin ?? 0,
         ot_status: tenant.ot_status,
@@ -108,7 +110,7 @@ export default function TenantsPage() {
         total_tx_count: tenant.total_tx_count ?? 0,
         total_tx_amount: tenant.total_tx_amount ?? 0,
       })),
-    [filteredTenants],
+    [filteredTenants, regionNames],
   );
 
   const totalPages = Math.ceil(filteredTenants.length / PAGE_SIZE);
@@ -148,6 +150,7 @@ export default function TenantsPage() {
             data={tenantExportRows}
             filename="tenants_directory"
             sheetName="Tenants"
+            disabled={regionNames.isLoading}
             columns={[
               { header: "ID Owner", key: "owner_id", width: 12 },
               { header: "Owner", key: "owner_name", width: 25 },

@@ -12,8 +12,6 @@ import {
   RefreshCw,
   Search,
   Store,
-  User2,
-  Calendar as CalendarIcon,
   FilterX,
   ChevronRight,
   ExternalLink,
@@ -24,7 +22,6 @@ import {
   ChevronsUpDown,
   History,
   Activity,
-  ArrowUpRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -44,7 +41,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { addonService, AddonTransaction } from "@/services/addon.service";
 import { toast } from "sonner";
@@ -53,10 +49,15 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { AxiosError } from "axios";
-import { ApiErrorResponse } from "@/types/api";
+import { ApiErrorResponse, ApiResponse } from "@/types/api";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
+import { Tenant } from "@/types/tenant";
+import { Owner } from "@/types/domain";
+import { apiFetcher } from "@/lib/fetcher";
+import useSWR from "swr";
+import { useRegionNames } from "@/hooks/use-region-names";
 
 const PAGE_SIZE = 25;
 
@@ -111,6 +112,26 @@ export default function SubscriptionsPage() {
 
   const [selectedTrx, setSelectedTrx] = useState<AddonTransaction | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const { data: tenantsResponse } = useSWR<ApiResponse<Tenant[]>>(
+    "/tenants",
+    apiFetcher,
+    {
+      dedupingInterval: 60_000,
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
+
+  const { data: ownersResponse } = useSWR<ApiResponse<Owner[]>>(
+    "/users",
+    apiFetcher,
+    {
+      dedupingInterval: 60_000,
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
 
   const formatDateTime = (dateStr: string) => {
     try {
@@ -187,6 +208,52 @@ export default function SubscriptionsPage() {
     });
     return filterByDateRange(byFilter, (item) => item.ha_created, dateRange);
   }, [data, searchQuery, outletFilter, dateRange]);
+
+  const tenants = useMemo(() => tenantsResponse?.data || [], [tenantsResponse]);
+  const regionNames = useRegionNames(tenants);
+
+  const tenantMap = useMemo(
+    () => new Map(tenants.map((tenant) => [tenant.ot_id, tenant])),
+    [tenants],
+  );
+
+  const ownerMap = useMemo(
+    () => new Map((ownersResponse?.data || []).map((owner) => [String(owner.id), owner])),
+    [ownersResponse],
+  );
+
+  const ownerByNameMap = useMemo(
+    () => new Map((ownersResponse?.data || []).map((owner) => [owner.name, owner])),
+    [ownersResponse],
+  );
+
+  const subscriptionExportRows = useMemo(
+    () =>
+      filteredData.map((item) => {
+        const tenant = item.ha_outlet ? tenantMap.get(item.ha_outlet) : undefined;
+        const owner = tenant?.owner_id != null
+          ? ownerMap.get(String(tenant.owner_id))
+          : ownerByNameMap.get(item.owner_name || "");
+
+        return {
+          ha_id: item.ha_id ?? "",
+          owner_id: tenant?.owner_id ?? owner?.id ?? "",
+          owner_name: item.owner_name ?? tenant?.owner_name ?? owner?.name ?? "",
+          owner_email: tenant?.owner_email ?? owner?.email ?? "",
+          owner_nohp: tenant?.owner_nohp ?? owner?.nohp ?? "",
+          ha_outlet: item.ha_outlet ?? "",
+          outlet_name: item.outlet_name ?? tenant?.ot_nama ?? "",
+          outlet_city: regionNames.cityName(tenant?.ot_kota),
+          outlet_province: regionNames.provinceName(tenant?.ot_provinsi),
+          join_date: tenant?.ot_created ?? owner?.created_at ?? "",
+          outlet_koin: tenant?.ot_koin ?? "",
+          ha_total: item.ha_total ?? 0,
+          ha_metode_bayar: item.ha_metode_bayar ?? "",
+          item_names: item.item_names ?? "",
+        };
+      }),
+    [filteredData, ownerByNameMap, ownerMap, regionNames, tenantMap],
+  );
 
   const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
   const paginatedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -268,17 +335,25 @@ export default function SubscriptionsPage() {
 
         <div className="flex items-center gap-2">
            <ExportExcelButton
-            data={filteredData}
+            data={subscriptionExportRows}
             filename="subscriptions_report"
             sheetName="Subscriptions"
+            disabled={regionNames.isLoading}
             columns={[
               { header: "ID", key: "ha_id", width: 22 },
+              { header: "ID Owner", key: "owner_id", width: 12 },
               { header: "Nama Owner", key: "owner_name", width: 25 },
+              { header: "Email", key: "owner_email", width: 30 },
+              { header: "No HP Owner", key: "owner_nohp", width: 18 },
+              { header: "ID Outlet", key: "ha_outlet", width: 14 },
               { header: "Nama Outlet", key: "outlet_name", width: 25 },
-              { header: "Addon", key: "item_names", width: 30 },
-              { header: "Status", key: "ha_status", width: 18 },
+              { header: "Kota", key: "outlet_city", width: 18 },
+              { header: "Provinsi", key: "outlet_province", width: 18 },
+              { header: "Data of Join", key: "join_date", width: 18, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+              { header: "Koin", key: "outlet_koin", width: 12 },
               { header: "Harga", key: "ha_total", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
-              { header: "Tanggal", key: "ha_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+              { header: "Metode Pembayaran", key: "ha_metode_bayar", width: 20 },
+              { header: "Item", key: "item_names", width: 45 },
             ]}
           />
            <Button

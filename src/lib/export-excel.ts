@@ -30,13 +30,18 @@ function buildSheetRows<T extends object>(
   );
 }
 
-function buildWorksheet<T extends object>(data: T[], columns: ExcelColumn[]) {
+function buildWorksheet<T extends object>(
+  data: T[],
+  columns: ExcelColumn[],
+) {
   const rows = buildSheetRows(data, columns);
+  const headers = columns.map((c) => c.header);
+  const worksheetRows = [
+    headers,
+    ...rows.map((row) => headers.map((header) => row[header] ?? "")),
+  ];
 
-  const ws = XLSX.utils.json_to_sheet(rows, {
-    header: columns.map((c) => c.header),
-  });
-
+  const ws = XLSX.utils.aoa_to_sheet(worksheetRows);
   ws["!cols"] = columns.map((c) => ({ wch: c.width ?? 20 }));
   return ws;
 }
@@ -51,10 +56,14 @@ export function exportToExcel<T extends object>(
   data: T[],
   columns: ExcelColumn[],
   filename: string,
-  sheetName = "Data"
+  sheetName = "Data",
 ) {
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, buildWorksheet(data, columns), sheetName);
+  XLSX.utils.book_append_sheet(
+    wb,
+    buildWorksheet(data, columns),
+    sheetName,
+  );
   XLSX.writeFile(wb, buildTimestampedFilename(filename));
 }
 
