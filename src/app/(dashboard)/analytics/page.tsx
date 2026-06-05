@@ -387,9 +387,9 @@ export default function AnalyticsPage() {
         { header: "Tanggal Registrasi", key: "registration_date", width: 18 },
         { header: "Nominal Top Up", key: "total_topup", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
         { header: "Rata-rata Nominal Top Up", key: "avg_topup", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
-        { header: "Nama Pengajak", key: "referrer_name", width: 24, format: (v: unknown) => v || "-" },
-        { header: "Kode Pengajak", key: "referrer_code", width: 16, format: (v: unknown) => v || "-" },
-        { header: "Referral Code", key: "referral_code", width: 16, format: (v: unknown) => v || "-" },
+        { header: "Nama Pengajak", key: "referrer_name", width: 24, format: (v: unknown) => v ? String(v) : "-" },
+        { header: "Kode Pengajak", key: "referrer_code", width: 16, format: (v: unknown) => v ? String(v) : "-" },
+        { header: "Referral Code", key: "referral_code", width: 16, format: (v: unknown) => v ? String(v) : "-" },
       ],
     },
   ], [
