@@ -28,6 +28,7 @@ import {
   type ActivitySummary,
   type ReferralSummary,
   type InactiveOwnerSummary,
+  type TopupExportRow,
 } from "@/services/analytics.service";
 
 const PERIODS = [
@@ -239,6 +240,12 @@ export default function AnalyticsPage() {
     SWR_OPTIONS,
   );
 
+  const { data: referralTopupDetails } = useSWR<TopupExportRow[]>(
+    `analytics-referral-topup-details-${analyticsKey}`,
+    () => analyticsService.getReferralTopupDetails(analyticsQuery),
+    SWR_OPTIONS,
+  );
+
   const exportSheets = useMemo(() => [
     {
       sheetName: "Summary",
@@ -365,6 +372,26 @@ export default function AnalyticsPage() {
         },
       ],
     },
+    {
+      sheetName: "Topup Details",
+      data: referralTopupDetails?.map((row) => ({
+        ...row,
+        export_date: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+      })) ?? [],
+      columns: [
+        { header: "Tanggal Eksport Data", key: "export_date", width: 20 },
+        { header: "Kategori Owner", key: "category", width: 16 },
+        { header: "Kode Owner", key: "owner_code", width: 14 },
+        { header: "Nama Owner", key: "owner_name", width: 24 },
+        { header: "Jumlah Outlet", key: "total_outlets", width: 14 },
+        { header: "Tanggal Registrasi", key: "registration_date", width: 18 },
+        { header: "Nominal Top Up", key: "total_topup", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
+        { header: "Rata-rata Nominal Top Up", key: "avg_topup", width: 18, format: (v: unknown) => fmtCurrency(Number(v)) },
+        { header: "Nama Pengajak", key: "referrer_name", width: 24, format: (v: unknown) => v || "-" },
+        { header: "Kode Pengajak", key: "referrer_code", width: 16, format: (v: unknown) => v || "-" },
+        { header: "Referral Code", key: "referral_code", width: 16, format: (v: unknown) => v || "-" },
+      ],
+    },
   ], [
     activity,
     geo,
@@ -374,6 +401,7 @@ export default function AnalyticsPage() {
     periodLabel,
     periodStartLabel,
     referral,
+    referralTopupDetails,
     revenue,
   ]);
 
@@ -609,6 +637,29 @@ export default function AnalyticsPage() {
             <Line yAxisId="right" type="monotone" dataKey="gmv" name="GMV" stroke="#10b981" strokeWidth={2} dot={false} strokeDasharray="8 3" />
           </LineChart>
         </ResponsiveContainer>
+      </Card>
+
+      <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
+        <SectionHeader icon={Coins} title="Pendapatan Top Up (Referral vs Non Referral)" desc="Perbandingan kontribusi pendapatan top up dari owner referral dan organik" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+          <div className="rounded-xl p-4 bg-orange-50 border border-orange-100 flex flex-col gap-1">
+            <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">Top Up Referral</p>
+            <p className="text-xl font-extrabold text-orange-700">{fmtCurrency(referral?.referral_topup_revenue ?? 0)}</p>
+            <p className="text-xs font-medium text-orange-600/70">{referral?.referral_topup_owners ?? 0} owner referral pernah top up</p>
+          </div>
+          <div className="rounded-xl p-4 bg-blue-50 border border-blue-100 flex flex-col gap-1">
+            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Top Up Non Referral</p>
+            <p className="text-xl font-extrabold text-blue-700">{fmtCurrency(referral?.non_referral_topup_revenue ?? 0)}</p>
+            <p className="text-xs font-medium text-blue-600/70">{referral?.non_referral_topup_owners ?? 0} owner organik pernah top up</p>
+          </div>
+          <div className="rounded-xl p-4 bg-emerald-50 border border-emerald-100 flex flex-col gap-1">
+            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Total Top Up Keseluruhan</p>
+            <p className="text-xl font-extrabold text-emerald-700">{fmtCurrency(referral?.total_topup_revenue ?? 0)}</p>
+            <p className="text-xs font-medium text-emerald-600/70">
+              {referral?.total_topup_revenue ? ((referral.referral_topup_revenue / referral.total_topup_revenue) * 100).toFixed(1) : 0}% kontribusi Referral
+            </p>
+          </div>
+        </div>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

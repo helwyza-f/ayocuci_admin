@@ -109,7 +109,25 @@ export interface ReferralSummary {
   total_referral_users: number;
   pending_payouts: number;
   pending_payout_amount: number;
+  referral_topup_revenue: number;
+  referral_topup_owners: number;
+  non_referral_topup_revenue: number;
+  non_referral_topup_owners: number;
+  total_topup_revenue: number;
   top_referrers: TopReferrer[];
+}
+
+export interface TopupExportRow {
+  category: string;
+  owner_code: string;
+  owner_name: string;
+  total_outlets: number;
+  registration_date: string;
+  total_topup: number;
+  avg_topup: number;
+  referrer_name: string | null;
+  referrer_code: string | null;
+  referral_code: string | null;
 }
 
 export interface InactiveOwner {
@@ -145,6 +163,10 @@ export const analyticsService = {
   },
   getReferral: async (query: AnalyticsQueryInput = { days: 30 }) => {
     const res = await api.get<ApiResponse<ReferralSummary>>(`/analytics/referral?${buildAnalyticsQuery(query)}`);
+    return res.data.data;
+  },
+  getReferralTopupDetails: async (query: AnalyticsQueryInput = { days: 30 }) => {
+    const res = await api.get<ApiResponse<TopupExportRow[]>>(`/analytics/referral-topup-details?${buildAnalyticsQuery(query)}`);
     return res.data.data;
   },
   getInactiveOwners: async (query: AnalyticsQueryInput = { days: 30 }) => {
