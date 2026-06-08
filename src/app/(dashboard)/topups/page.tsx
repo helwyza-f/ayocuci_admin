@@ -279,16 +279,16 @@ export default function TopupsManagementPage() {
     const hasBukti = !!item.tk_bukti;
 
     if (status === "success" || status === "completed" || status === "accepted") {
-      return { label: "Success / Accepted", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
+      return { label: "Sukses / Diterima", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
     }
     if (status === "failed" || status === "rejected") {
-      return { label: "Rejected", class: "bg-rose-50 text-rose-600 border-rose-100" };
+      return { label: "Ditolak", class: "bg-rose-50 text-rose-600 border-rose-100" };
     }
     if (status === "expired") {
-      return { label: "Expired", class: "bg-slate-100 text-slate-500 border-slate-200" };
+      return { label: "Kedaluwarsa", class: "bg-slate-100 text-slate-500 border-slate-200" };
     }
     if (status === "pending" || status === "verification") {
-      return { label: "Pending Verification", class: "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" };
+      return { label: "Menunggu Verifikasi", class: "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" };
     }
     return { label: status || "-", class: "bg-slate-50 text-slate-400 border-slate-100" };
   };
@@ -300,10 +300,10 @@ export default function TopupsManagementPage() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <Wallet2 className="h-5 w-5 text-primary" />
-            Topups & Revenue
+            Top Up & Pendapatan
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Monitoring financial liquidity and coin replenishment.
+            Pemantauan likuiditas keuangan dan pengisian koin.
           </p>
         </div>
 
@@ -346,7 +346,7 @@ export default function TopupsManagementPage() {
             className="h-8 px-2 font-bold text-[10px] uppercase tracking-wider gap-2 text-slate-500"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-            Sync
+            Sinkronisasi
           </Button>
         </div>
       </div>
@@ -357,7 +357,7 @@ export default function TopupsManagementPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
-              placeholder="Search Transaction ID..."
+              placeholder="Cari ID Transaksi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
@@ -378,9 +378,9 @@ export default function TopupsManagementPage() {
                 <Command>
                   <CommandInput placeholder="Search outlet..." className="text-xs" />
                   <CommandList>
-                    <CommandEmpty className="text-[10px] p-2">No results.</CommandEmpty>
+                    <CommandEmpty className="text-[10px] p-2">Tidak ditemukan.</CommandEmpty>
                     <CommandGroup>
-                      <CommandItem onSelect={() => { setOutletFilter("all"); setOpenOutlet(false); }} className="text-xs">All Outlets</CommandItem>
+                      <CommandItem onSelect={() => { setOutletFilter("all"); setOpenOutlet(false); }} className="text-xs">Semua Outlet</CommandItem>
                       {uniqueOutlets.map(o => (
                         <CommandItem key={o} onSelect={() => { setOutletFilter(o); setOpenOutlet(false); }} className="text-xs">{o}</CommandItem>
                       ))}
@@ -404,7 +404,7 @@ export default function TopupsManagementPage() {
                       statusFilter === s ? "bg-primary/10 text-primary" : "text-slate-500"
                     )}
                  >
-                   {s === "all" ? "All Status" : s}
+                   {s === "all" ? "Semua Status" : s}
                  </Button>
                ))}
             </div>
@@ -423,7 +423,7 @@ export default function TopupsManagementPage() {
                       methodFilter === m ? "bg-primary/10 text-primary" : "text-slate-500"
                     )}
                  >
-                   {m === "all" ? "All Methods" : m === "midtrans" ? "Midtrans" : m === "transfer" ? "Transfer" : "Bonus"}
+                   {m === "all" ? "Semua Metode" : m === "midtrans" ? "Midtrans" : m === "transfer" ? "Transfer" : "Bonus"}
                  </Button>
                ))}
             </div>
@@ -450,12 +450,12 @@ export default function TopupsManagementPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Transaction</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Business</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Liquidity</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Method</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Transaksi</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Bisnis</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Likuiditas</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Metode</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Status</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Action</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -463,7 +463,7 @@ export default function TopupsManagementPage() {
                 <tr>
                   <td colSpan={6} className="py-24 text-center">
                     <History className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No matching records found</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tidak ada data yang sesuai</p>
                   </td>
                 </tr>
               ) : (
@@ -548,7 +548,7 @@ export default function TopupsManagementPage() {
                           )}
                         >
                           {(item.tk_status === "pending" || item.tk_status === "verification") && item.tk_metode_bayar !== "bonus"
-                            ? <>Verify <ShieldCheck className="h-3 w-3 ml-1" /></>
+                            ? <>Verifikasi <ShieldCheck className="h-3 w-3 ml-1" /></>
                             : <>Detail <ChevronRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" /></>
                           }
                         </Button>
@@ -572,7 +572,7 @@ export default function TopupsManagementPage() {
       {/* OPERATIONAL DETAIL MODAL */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-md p-0 overflow-hidden border border-slate-200 rounded-lg shadow-xl bg-white">
-          <VisuallyHidden.Root><DialogTitle>Topup Details</DialogTitle></VisuallyHidden.Root>
+          <VisuallyHidden.Root><DialogTitle>Detail Topup</DialogTitle></VisuallyHidden.Root>
           
           <div className="p-4 border-b border-slate-100 bg-white">
             <div className="flex items-center justify-between mb-3">
@@ -582,7 +582,7 @@ export default function TopupsManagementPage() {
               <span className="text-[9px] font-medium text-slate-400 uppercase">{selectedTopup && formatDateTime(selectedTopup.tk_created).display}</span>
             </div>
             <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading">
-              Topup {selectedTopup?.tk_jumlah?.toLocaleString()} Coins
+              Topup {selectedTopup?.tk_jumlah?.toLocaleString()} Koin
             </h3>
              <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
               <Store className="h-3 w-3" />
@@ -604,10 +604,10 @@ export default function TopupsManagementPage() {
             {selectedTopup?.tk_metode_bayar === "transfer" && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Payment Evidence</label>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bukti Pembayaran</label>
                   {selectedTopup.tk_bukti && (
                     <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-600">
-                      <Check className="h-3 w-3" /> Proof Uploaded
+                      <Check className="h-3 w-3" /> Bukti Diunggah
                     </div>
                   )}
                 </div>
@@ -624,7 +624,7 @@ export default function TopupsManagementPage() {
                 ) : (
                   <div className="aspect-video rounded bg-slate-100 border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
                     <Clock className="h-6 w-6 mb-1 opacity-30" />
-                    <p className="text-[9px] font-bold uppercase tracking-widest">Awaiting Proof</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest">Menunggu Bukti</p>
                   </div>
                 )}
               </div>
@@ -632,7 +632,7 @@ export default function TopupsManagementPage() {
 
             {selectedTopup?.tk_metode_bayar === "bonus" && (
               <div className="space-y-2">
-                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bonus Allocation Detail</label>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Detail Alokasi Bonus</label>
                 <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-lg dark:bg-purple-950/10 dark:border-purple-900/30">
                   <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-start gap-2">
                     <Gift className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
@@ -645,11 +645,11 @@ export default function TopupsManagementPage() {
             {/* TRANSACTION SUMMARY */}
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 bg-white border border-slate-200 rounded">
-                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Method</p>
+                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Metode</p>
                 <div className="font-bold text-xs text-slate-700 uppercase">{selectedTopup?.tk_metode_bayar}</div>
               </div>
               <div className="p-3 bg-white border border-slate-200 rounded">
-                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Value</p>
+                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Nominal</p>
                 <div className="font-bold text-xs text-primary">Rp {selectedTopup?.tk_total?.toLocaleString("id-ID")}</div>
               </div>
             </div>
@@ -665,7 +665,7 @@ export default function TopupsManagementPage() {
                       onClick={() => handleAction(selectedTopup.tk_id, "success")}
                       className="h-10 rounded font-bold text-[10px] uppercase tracking-wider"
                     >
-                      Approve
+                      Setujui
                     </Button>
                     <Button
                       variant="outline"
@@ -673,7 +673,7 @@ export default function TopupsManagementPage() {
                       onClick={() => handleAction(selectedTopup.tk_id, "failed")}
                       className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-rose-600 border-slate-200"
                     >
-                      Reject
+                      Tolak
                     </Button>
                   </div>
                 ) : (
@@ -683,19 +683,19 @@ export default function TopupsManagementPage() {
                     onClick={() => handleCancelMidtrans(selectedTopup.tk_id)}
                     className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-amber-600 border-amber-200 bg-amber-50/30"
                   >
-                    Cancel Midtrans
+                    Batalkan Midtrans
                   </Button>
                 )}
               </div>
             ) : (
               <div className="p-2.5 bg-slate-50 rounded border border-slate-100 text-center">
                  <p className="text-[9px] font-bold uppercase text-slate-400 tracking-widest italic">
-                   Ledger Finalized: {selectedTopup?.tk_status}
+                   Pembukuan Final: {selectedTopup?.tk_status}
                  </p>
               </div>
             )}
              <p className="text-[8px] text-center font-medium text-slate-400 italic">
-                Affects tenant balance immediately.
+                Saldo tenant akan langsung diperbarui.
              </p>
           </div>
         </DialogContent>

@@ -275,7 +275,7 @@ export default function NewNotificationPage() {
                           </div>
                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">AyoCuci</span>
                         </div>
-                        <span className="text-[9px] font-medium text-slate-400">now</span>
+                        <span className="text-[9px] font-medium text-slate-400">sekarang</span>
                       </div>
                       <div className="space-y-1">
                         <h4 className="text-[11px] font-black leading-tight text-slate-900">
@@ -302,7 +302,7 @@ export default function NewNotificationPage() {
               </div>
             </div>
             <p className="mt-4 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              Live App Preview
+              Pratinjau Aplikasi
             </p>
           </div>
 

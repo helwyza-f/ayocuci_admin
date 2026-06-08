@@ -139,7 +139,7 @@ export default function AddonCatalogPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this feature from the catalog?")) return;
+    if (!confirm("Yakin mau menghapus fitur ini dari katalog?")) return;
 
     try {
       const res = await economyService.deleteAddon(id);
@@ -173,10 +173,10 @@ export default function AddonCatalogPage() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <Zap className="h-5 w-5 text-primary" />
-            Addon Catalog Management
+            Manajemen Layanan Addon
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Configure premium features and per-unit pricing for the ecosystem.
+            Kelola fitur premium dan harga per-unit untuk ekosistem.
           </p>
         </div>
 
@@ -188,11 +188,11 @@ export default function AddonCatalogPage() {
             className="h-8 px-2 font-bold text-[10px] uppercase tracking-wider gap-2 text-slate-500"
           >
             <RefreshCcw className={cn("h-3 w-3", loading && "animate-spin")} />
-            Refresh
+            Segarkan
           </Button>
 
           <Button onClick={handleOpenCreate} className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2">
-            <PlusCircle className="h-3.5 w-3.5" /> Define New Feature
+            <PlusCircle className="h-3.5 w-3.5" /> Buat Fitur Baru
           </Button>
         </div>
       </div>
@@ -206,7 +206,7 @@ export default function AddonCatalogPage() {
         ) : addons.length === 0 ? (
           <div className="col-span-full py-24 text-center bg-white rounded-lg border border-dashed border-slate-200">
             <Box className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No features defined</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Tidak ada fitur yang tersedia</p>
           </div>
         ) : (
           addons.map((addon) => (
@@ -280,7 +280,7 @@ export default function AddonCatalogPage() {
                       addon.ad_status === 1 ? "bg-emerald-500" : "bg-slate-300"
                     )} />
                     <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                      {addon.ad_status === 1 ? "Active" : "Inactive"}
+                      {addon.ad_status === 1 ? "Aktif" : "Nonaktif"}
                     </span>
                  </div>
                  <Button
@@ -292,7 +292,7 @@ export default function AddonCatalogPage() {
                       addon.ad_status === 1 ? "text-slate-400" : "text-emerald-600"
                     )}
                  >
-                    {addon.ad_status === 1 ? "Deactivate" : "Activate"}
+                    {addon.ad_status === 1 ? "Nonaktifkan" : "Aktifkan"}
                  </Button>
               </div>
             </Card>
@@ -304,19 +304,19 @@ export default function AddonCatalogPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="rounded-lg p-0 border border-slate-200 shadow-xl max-w-md overflow-hidden bg-white">
           <VisuallyHidden.Root>
-            <DialogTitle>{editingAddon ? "Edit Addon" : "Create Addon"}</DialogTitle>
+            <DialogTitle>{editingAddon ? "Ubah Addon" : "Buat Addon"}</DialogTitle>
           </VisuallyHidden.Root>
           <div className="p-4 border-b border-slate-100 bg-white">
             <h3 className="text-sm font-bold uppercase tracking-tight flex items-center gap-2">
               <Settings className="h-4 w-4 text-primary" />
-              {editingAddon ? "Edit Catalog Item" : "Define New Feature"}
+              {editingAddon ? "Ubah Layanan" : "Buat Fitur Baru"}
             </h3>
           </div>
 
           <div className="p-4 bg-slate-50/30 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Unique ID</label>
+                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">ID Unik</label>
                 <Input
                   disabled={!!editingAddon}
                   placeholder="e.g. AD-006"
@@ -327,7 +327,7 @@ export default function AddonCatalogPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Internal Link Key</label>
+                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Kunci Tautan Internal</label>
                 <Input
                   placeholder="e.g. REPORT_DEBT"
                   className="rounded border-slate-200 font-bold h-9 text-xs shadow-none bg-white uppercase"
@@ -337,9 +337,9 @@ export default function AddonCatalogPage() {
               </div>
 
               <div className="col-span-2 space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Display Name</label>
+                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Nama Layanan</label>
                 <Input
-                  placeholder="Feature title seen by users"
+                  placeholder="Judul fitur yang dilihat pengguna"
                   className="rounded border-slate-200 font-bold h-9 text-xs shadow-none bg-white"
                   value={formData.ad_nama}
                   onChange={(e) => setFormData({ ...formData, ad_nama: e.target.value })}
@@ -347,7 +347,7 @@ export default function AddonCatalogPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Price (Koin)</label>
+                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Harga (Koin)</label>
                 <div className="relative">
                    <Database className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
                    <Input
@@ -361,7 +361,7 @@ export default function AddonCatalogPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Initial Status</label>
+                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Status Awal</label>
                 <div className="flex items-center h-9 gap-4">
                    <label className="flex items-center gap-2 cursor-pointer group">
                       <input 
@@ -371,7 +371,7 @@ export default function AddonCatalogPage() {
                         onChange={() => setFormData({...formData, ad_status: 1})}
                         className="w-3 h-3 accent-primary"
                       />
-                      <span className="text-[10px] font-bold uppercase text-slate-600">Active</span>
+                      <span className="text-[10px] font-bold uppercase text-slate-600">Aktif</span>
                    </label>
                    <label className="flex items-center gap-2 cursor-pointer group">
                       <input 
@@ -381,15 +381,15 @@ export default function AddonCatalogPage() {
                         onChange={() => setFormData({...formData, ad_status: 0})}
                         className="w-3 h-3 accent-primary"
                       />
-                      <span className="text-[10px] font-bold uppercase text-slate-600">Inactive</span>
+                      <span className="text-[10px] font-bold uppercase text-slate-600">Nonaktif</span>
                    </label>
                 </div>
               </div>
 
               <div className="col-span-2 space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Description / Benefit</label>
+                <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Deskripsi / Manfaat</label>
                 <Input
-                  placeholder="Summary of what this feature does"
+                  placeholder="Ringkasan fungsi fitur ini"
                   className="rounded border-slate-200 font-bold h-9 text-xs shadow-none bg-white"
                   value={formData.ad_keterangan}
                   onChange={(e) => setFormData({ ...formData, ad_keterangan: e.target.value })}
@@ -404,7 +404,7 @@ export default function AddonCatalogPage() {
               onClick={() => setIsDialogOpen(false)}
               className="flex-1 h-10 rounded font-bold text-[10px] uppercase tracking-wider shadow-none"
             >
-              Cancel
+              Batal
             </Button>
             <Button
               onClick={handleSubmit}
@@ -414,7 +414,7 @@ export default function AddonCatalogPage() {
               {isSubmitting ? (
                 <LoaderIcon className="animate-spin h-4 w-4" />
               ) : (
-                editingAddon ? "Update Feature" : "Publish to Ecosystem"
+                editingAddon ? "Simpan Perubahan" : "Terbitkan Layanan"
               )}
             </Button>
           </div>

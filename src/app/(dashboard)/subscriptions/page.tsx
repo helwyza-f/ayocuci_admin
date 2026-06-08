@@ -321,15 +321,15 @@ export default function SubscriptionsPage() {
   const getStatusConfig = (status: string) => {
     switch (status) {
       case "PENDING":
-        return { label: "Waiting Payment", class: "bg-amber-50 text-amber-600 border-amber-100" };
+        return { label: "Menunggu Pembayaran", class: "bg-amber-50 text-amber-600 border-amber-100" };
       case "PENDING_VALIDATION":
-        return { label: "Need Review", class: "bg-orange-50 text-orange-600 border-orange-100 animate-pulse" };
+        return { label: "Menunggu Validasi", class: "bg-orange-50 text-orange-600 border-orange-100 animate-pulse" };
       case "SUCCESS":
-        return { label: "Active", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
+        return { label: "Aktif", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
       case "FAILED":
-        return { label: "Rejected", class: "bg-rose-50 text-rose-600 border-rose-100" };
+        return { label: "Ditolak", class: "bg-rose-50 text-rose-600 border-rose-100" };
       case "CANCELED":
-        return { label: "Canceled", class: "bg-slate-100 text-slate-500 border-slate-200" };
+        return { label: "Dibatalkan", class: "bg-slate-100 text-slate-500 border-slate-200" };
       default:
         return { label: status, class: "bg-slate-50 text-slate-400 border-slate-100" };
     }
@@ -342,10 +342,10 @@ export default function SubscriptionsPage() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <ShieldCheck className="h-5 w-5 text-primary" />
-            Subscriptions Management
+            Manajemen Langganan
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Operational center for license activations and feature addons.
+            Pusat operasional aktivasi lisensi dan layanan add-on.
           </p>
         </div>
 
@@ -365,7 +365,7 @@ export default function SubscriptionsPage() {
               { header: "Nama Outlet", key: "outlet_name", width: 25 },
               { header: "Kota", key: "outlet_city", width: 18 },
               { header: "Provinsi", key: "outlet_province", width: 18 },
-              { header: "Data of Join", key: "join_date", width: 18, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+              { header: "Tanggal Bergabung", key: "join_date", width: 18, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
               { header: "Koin", key: "outlet_koin", width: 12 },
               { header: "Harga", key: "ha_total", width: 15, format: (v, item) => {
                  if (v == null) return "Rp 0";
@@ -384,7 +384,7 @@ export default function SubscriptionsPage() {
             className="h-8 px-2 font-bold text-[10px] uppercase tracking-wider gap-2 text-slate-500"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-            Sync Data
+            Sinkron Data
           </Button>
         </div>
       </div>
@@ -392,21 +392,21 @@ export default function SubscriptionsPage() {
       {/* OPERATIONAL METRICS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KpiCard
-          label="Total Request"
+          label="Total Permintaan"
           sub="Semua transaksi langganan masuk"
           value={loading ? "—" : stats.total}
           icon={Activity}
           color="bg-slate-100 text-slate-600"
         />
         <KpiCard
-          label="Pending Review"
+          label="Menunggu Review"
           sub="Menunggu verifikasi pembayaran"
           value={loading ? "—" : stats.pending}
           icon={Clock}
           color="bg-orange-50 text-primary"
         />
         <KpiCard
-          label="Active Licenses"
+          label="Lisensi Aktif"
           sub="Lisensi PRO yang berhasil aktif"
           value={loading ? "—" : stats.success}
           icon={Check}
@@ -420,7 +420,7 @@ export default function SubscriptionsPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
-              placeholder="Filter by ID or Service..."
+              placeholder="Filter ID atau layanan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
@@ -442,9 +442,9 @@ export default function SubscriptionsPage() {
                 <Command>
                   <CommandInput placeholder="Search outlet..." className="text-xs" />
                   <CommandList>
-                    <CommandEmpty className="text-[10px] p-2">No results.</CommandEmpty>
+                    <CommandEmpty className="text-[10px] p-2">Tidak ditemukan.</CommandEmpty>
                     <CommandGroup>
-                      <CommandItem onSelect={() => { setOutletFilter("all"); setOpenOutlet(false); }} className="text-xs">All Outlets</CommandItem>
+                      <CommandItem onSelect={() => { setOutletFilter("all"); setOpenOutlet(false); }} className="text-xs">Semua Outlet</CommandItem>
                       {uniqueOutlets.map(o => (
                         <CommandItem key={o} onSelect={() => { setOutletFilter(o); setOpenOutlet(false); }} className="text-xs">{o}</CommandItem>
                       ))}
@@ -463,11 +463,11 @@ export default function SubscriptionsPage() {
                 onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                 className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
               >
-                <option value="all">All Status</option>
-                <option value="PENDING_VALIDATION">Review</option>
-                <option value="SUCCESS">Success</option>
-                <option value="FAILED">Failed</option>
-                <option value="CANCELED">Canceled</option>
+                <option value="all">Semua Status</option>
+                <option value="PENDING_VALIDATION">Menunggu Review</option>
+                <option value="SUCCESS">Sukses</option>
+                <option value="FAILED">Gagal</option>
+                <option value="CANCELED">Dibatalkan</option>
               </select>
               <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
             </div>
@@ -479,7 +479,7 @@ export default function SubscriptionsPage() {
                 onChange={(e) => { setMethodFilter(e.target.value); setPage(1); }}
                 className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
               >
-                <option value="all">All Method</option>
+                <option value="all">Semua Metode</option>
                 <option value="TRANSFER">Transfer Bank</option>
                 <option value="MIDTRANS">Midtrans</option>
                 <option value="KOIN">Koin</option>
@@ -512,7 +512,7 @@ export default function SubscriptionsPage() {
         {loading && (
           <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-50 flex flex-col items-center justify-center">
             <LoaderIcon className="h-6 w-6 animate-spin text-primary" />
-            <p className="mt-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">Syncing Ecosystem...</p>
+            <p className="mt-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">Sinkronisasi Data...</p>
           </div>
         )}
 
@@ -520,12 +520,12 @@ export default function SubscriptionsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Transaction</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Business</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Service Item</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Amount</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Transaksi</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Bisnis</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Item Layanan</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Nominal</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Status</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Action</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -533,7 +533,7 @@ export default function SubscriptionsPage() {
                 <tr>
                   <td colSpan={6} className="py-24 text-center">
                     <History className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No matching records found</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tidak ada data yang sesuai</p>
                   </td>
                 </tr>
               ) : (
@@ -603,7 +603,7 @@ export default function SubscriptionsPage() {
                           onClick={() => { setSelectedTrx(item); setIsPreviewOpen(true); }}
                           className="h-7 px-2 font-bold text-[9px] uppercase text-primary hover:bg-primary/5 gap-1"
                         >
-                          Details <ChevronRight className="h-3 w-3" />
+                          Detail <ChevronRight className="h-3 w-3" />
                         </Button>
                       </td>
                     </tr>
@@ -625,7 +625,7 @@ export default function SubscriptionsPage() {
       {/* OPERATIONAL DETAIL MODAL */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-md p-0 overflow-hidden border border-slate-200 rounded-lg shadow-xl bg-white">
-          <VisuallyHidden.Root><DialogTitle>Transaction Detail</DialogTitle></VisuallyHidden.Root>
+          <VisuallyHidden.Root><DialogTitle>Detail Transaksi</DialogTitle></VisuallyHidden.Root>
           
           <div className="p-4 border-b border-slate-100 bg-white">
             <div className="flex items-center justify-between mb-3">
@@ -657,10 +657,10 @@ export default function SubscriptionsPage() {
             {selectedTrx?.ha_metode_bayar === "TRANSFER" && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Payment Evidence</label>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bukti Pembayaran</label>
                   {selectedTrx.ha_bukti && (
                     <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-600">
-                      <Check className="h-3 w-3" /> Proof Uploaded
+                      <Check className="h-3 w-3" /> Bukti Diunggah
                     </div>
                   )}
                 </div>
@@ -678,7 +678,7 @@ export default function SubscriptionsPage() {
                 ) : (
                   <div className="aspect-video rounded bg-slate-100 border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
                     <Clock className="h-6 w-6 mb-1 opacity-30" />
-                    <p className="text-[9px] font-bold uppercase tracking-widest">Awaiting Upload</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest">Menunggu Upload</p>
                   </div>
                 )}
               </div>
@@ -687,14 +687,14 @@ export default function SubscriptionsPage() {
             {/* TRANSACTION SUMMARY */}
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 bg-white border border-slate-200 rounded">
-                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Method</p>
+                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Metode</p>
                 <div className="font-bold text-xs text-slate-700 flex items-center gap-1.5 uppercase">
                   {selectedTrx?.ha_metode_bayar === 'TRANSFER' ? <ArrowRightLeft className="h-3 w-3" /> : <CreditCard className="h-3 w-3" />}
                   {selectedTrx?.ha_metode_bayar}
                 </div>
               </div>
               <div className="p-3 bg-white border border-slate-200 rounded">
-                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Amount</p>
+                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Nominal</p>
                 <div className="font-bold text-xs text-primary">
                   Rp {selectedTrx?.ha_metode_bayar === "KOIN" 
                         ? (selectedTrx.ha_total * pricePerCoin).toLocaleString("id-ID")
@@ -717,7 +717,7 @@ export default function SubscriptionsPage() {
                   onClick={() => handleApprove(selectedTrx.ha_id)}
                   className="h-10 rounded font-bold text-[10px] uppercase tracking-wider"
                 >
-                  {confirming ? <LoaderIcon className="h-4 w-4 animate-spin" /> : "Approve"}
+                  {confirming ? <LoaderIcon className="h-4 w-4 animate-spin" /> : "Setujui"}
                 </Button>
                 <Button
                   variant="outline"
@@ -725,18 +725,18 @@ export default function SubscriptionsPage() {
                   onClick={() => handleReject(selectedTrx.ha_id)}
                   className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-rose-600 border-slate-200"
                 >
-                  Reject
+                  Tolak
                 </Button>
               </div>
             ) : (
               <div className="p-2.5 bg-slate-50 rounded border border-slate-100 text-center">
                  <p className="text-[9px] font-bold uppercase text-slate-400 tracking-widest italic">
-                   Transaction Final: {selectedTrx?.ha_status}
+                   Transaksi Final: {selectedTrx?.ha_status}
                  </p>
               </div>
             )}
             <p className="text-[8px] text-center font-medium text-slate-400 italic">
-               Affects tenant access immediately.
+               Perubahan akses tenant akan langsung berlaku.
             </p>
           </div>
         </DialogContent>

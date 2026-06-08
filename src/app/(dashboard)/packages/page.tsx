@@ -139,10 +139,10 @@ export default function KoinPackagesPage() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <Coins className="h-5 w-5 text-primary" />
-            Supply & Inventory
+            Paket Koin
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Define coin purchase bundles and promotional bulk pricing.
+            Kelola paket pembelian koin dan harga promosi.
           </p>
         </div>
 
@@ -163,7 +163,7 @@ export default function KoinPackagesPage() {
             className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none"
           >
             {isAdding ? <X className="h-3.5 w-3.5" /> : <PlusCircle className="h-3.5 w-3.5" />}
-            {isAdding ? "Cancel" : "Create New"}
+            {isAdding ? "Batal" : "Buat Baru"}
           </Button>
         </div>
       </div>
@@ -173,7 +173,7 @@ export default function KoinPackagesPage() {
         <Card className="p-4 border border-slate-200 shadow-none rounded-lg bg-white animate-in slide-in-from-top-1 duration-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Quantity Units</label>
+              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Jumlah Koin</label>
               <div className="relative">
                 <Coins className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                 <Input
@@ -186,7 +186,7 @@ export default function KoinPackagesPage() {
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Discount (%)</label>
+              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Diskon (%)</label>
               <div className="relative">
                 <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                 <Input
@@ -202,7 +202,7 @@ export default function KoinPackagesPage() {
               onClick={handleSubmit}
               className="h-9 rounded font-bold text-[10px] uppercase tracking-wider"
             >
-              {editingId ? "Save Changes" : "Publish Package"}
+              {editingId ? "Simpan Perubahan" : "Terbitkan Paket"}
             </Button>
           </div>
         </Card>
@@ -217,7 +217,7 @@ export default function KoinPackagesPage() {
         ) : packages.length === 0 ? (
           <div className="col-span-full py-24 text-center bg-white rounded-lg border border-dashed border-slate-200">
             <Database className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No packages defined</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Tidak ada paket yang tersedia</p>
           </div>
         ) : (
           packages.map((pkg) => {
@@ -258,7 +258,7 @@ export default function KoinPackagesPage() {
 
                   <div className="space-y-2 p-3 bg-slate-50/30 rounded border border-slate-100">
                     <div className="flex justify-between items-center text-[9px]">
-                      <span className="font-bold text-slate-400 uppercase tracking-tight">Gross</span>
+                      <span className="font-bold text-slate-400 uppercase tracking-tight">Total Kotor</span>
                       <span className={cn("font-bold text-slate-500", pricing.hasDiscount && "line-through opacity-40")}>
                         {pricing.gross}
                       </span>
@@ -266,13 +266,13 @@ export default function KoinPackagesPage() {
                     {pricing.hasDiscount && (
                       <div className="flex justify-between items-center text-[9px]">
                         <span className="font-bold text-emerald-600 uppercase tracking-tight flex items-center gap-1">
-                          Incentive
+                          Insentif
                         </span>
                         <span className="font-bold text-emerald-600">-{pricing.saving}</span>
                       </div>
                     )}
                     <div className="pt-1.5 mt-1.5 border-t border-slate-100 flex justify-between items-center">
-                      <span className="text-[9px] font-bold text-slate-900 uppercase">Settlement</span>
+                      <span className="text-[9px] font-bold text-slate-900 uppercase">Total Bersih</span>
                       <span className="text-xs font-bold text-primary">{pricing.final}</span>
                     </div>
                   </div>
@@ -283,11 +283,11 @@ export default function KoinPackagesPage() {
                     "rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none",
                     pricing.hasDiscount ? "bg-primary/5 text-primary border-primary/10" : "bg-slate-50 text-slate-400 border-slate-200"
                   )}>
-                    {pricing.hasDiscount ? `${pkg.discount_pct}% Off` : "Standard"}
+                    {pricing.hasDiscount ? `Diskon ${pkg.discount_pct}%` : "Standar"}
                   </Badge>
                   <div className="flex items-center gap-1 opacity-30">
                      <ShieldCheck className="h-3 w-3 text-emerald-500" />
-                     <span className="text-[8px] font-bold uppercase tracking-tight">Live</span>
+                     <span className="text-[8px] font-bold uppercase tracking-tight">Aktif</span>
                   </div>
                 </div>
               </Card>

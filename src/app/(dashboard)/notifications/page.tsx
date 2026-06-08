@@ -99,7 +99,7 @@ export default function NotificationsPage() {
       if (resLogs.data.status) setLogs(resLogs.data.data || []);
       if (resTenants.data.status) setTenants(resTenants.data.data || []);
     } catch {
-      toast.error("Failed to load notification history");
+      toast.error("Gagal memuat riwayat notifikasi");
     } finally {
       setLoading(false);
     }
@@ -146,7 +146,7 @@ export default function NotificationsPage() {
       const res = await api.get(`/notifications/logs/${log.id}`);
       if (res.data.status) setReceivers(res.data.data || []);
     } catch {
-      toast.error("Failed to fetch delivery details");
+      toast.error("Gagal memuat detail pengiriman");
     } finally {
       setLoadingDetail(false);
     }
@@ -161,16 +161,16 @@ export default function NotificationsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this broadcast? This will also remove it from receivers' history.")) return;
+    if (!confirm("Yakin ingin menghapus siaran ini? Ini juga akan menghapusnya dari riwayat penerima.")) return;
     
     try {
       const res = await api.delete(`/notifications/logs/${id}`);
       if (res.data.status) {
-        toast.success("Broadcast deleted successfully");
+        toast.success("Siaran berhasil dihapus");
         setLogs(prev => prev.filter(l => l.id !== id));
       }
     } catch {
-      toast.error("Failed to delete broadcast");
+      toast.error("Gagal menghapus siaran");
     }
   };
 
@@ -181,17 +181,17 @@ export default function NotificationsPage() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <Megaphone className="h-5 w-5 text-primary" />
-            Communication Hub
+            Pusat Komunikasi
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Broadcast messages and monitor read status across the ecosystem.
+            Siarkan pesan dan pantau status baca di seluruh ekosistem.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
            <Button asChild size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
               <Link href="/notifications/new">
-                <Send className="h-3.5 w-3.5" /> Dispatch New
+                <Send className="h-3.5 w-3.5" /> Kirim Baru
               </Link>
            </Button>
         </div>
@@ -199,10 +199,10 @@ export default function NotificationsPage() {
 
       {/* METRICS GRID */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Campaigns Sent" value={loading ? "..." : stats.total} icon={Megaphone} />
+        <StatCard label="Kampanye Terkirim" value={loading ? "..." : stats.total} icon={Megaphone} />
         <StatCard label="Promo" value={loading ? "..." : stats.promo} icon={Sparkles} />
         <StatCard label="Info" value={loading ? "..." : stats.info} icon={Bell} />
-        <StatCard label="Impressions" value={loading ? "..." : stats.read} icon={MailOpen} />
+        <StatCard label="Dilihat" value={loading ? "..." : stats.read} icon={MailOpen} />
       </div>
 
       {/* SOURCE TABS */}
@@ -214,7 +214,7 @@ export default function NotificationsPage() {
             source === "ADMIN" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
           )}
         >
-          Admin Broadcasts
+          Siaran Admin
         </button>
         <button
           onClick={() => setSource("SYSTEM")}
@@ -223,7 +223,7 @@ export default function NotificationsPage() {
             source === "SYSTEM" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
           )}
         >
-          System Logs
+          Log Sistem
         </button>
         <button
           onClick={() => setSource("ALL")}
@@ -232,7 +232,7 @@ export default function NotificationsPage() {
             source === "ALL" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
           )}
         >
-          All Activities
+          Semua Aktivitas
         </button>
       </div>
 
@@ -242,7 +242,7 @@ export default function NotificationsPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
-              placeholder="Filter by title or content..."
+              placeholder="Filter berdasarkan judul atau konten..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
@@ -254,13 +254,13 @@ export default function NotificationsPage() {
           <div className="flex flex-wrap items-center gap-1 p-1 xl:p-0">
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="h-8 font-bold text-[10px] border-none shadow-none focus:ring-0 w-36 gap-2">
-                <SelectValue placeholder="Categories" />
+                <SelectValue placeholder="Kategori" />
               </SelectTrigger>
               <SelectContent className="rounded-md">
-                <SelectItem value="ALL" className="text-xs font-bold">All Categories</SelectItem>
-                <SelectItem value="INFO" className="text-xs font-bold">Information</SelectItem>
-                <SelectItem value="PROMO" className="text-xs font-bold">Promotions</SelectItem>
-                <SelectItem value="SISTEM" className="text-xs font-bold">System Alerts</SelectItem>
+                <SelectItem value="ALL" className="text-xs font-bold">Semua Kategori</SelectItem>
+                <SelectItem value="INFO" className="text-xs font-bold">Informasi</SelectItem>
+                <SelectItem value="PROMO" className="text-xs font-bold">Promosi</SelectItem>
+                <SelectItem value="SISTEM" className="text-xs font-bold">Peringatan Sistem</SelectItem>
               </SelectContent>
             </Select>
 
@@ -269,10 +269,10 @@ export default function NotificationsPage() {
             <Select value={outlet} onValueChange={setOutlet}>
               <SelectTrigger className="h-8 font-bold text-[10px] border-none shadow-none focus:ring-0 w-44 gap-2">
                 <Store className="h-3 w-3 opacity-40" />
-                <SelectValue placeholder="Outlets" />
+                <SelectValue placeholder="Outlet" />
               </SelectTrigger>
               <SelectContent className="rounded-md">
-                <SelectItem value="ALL" className="text-xs font-bold">All Outlets</SelectItem>
+                <SelectItem value="ALL" className="text-xs font-bold">Semua Outlet</SelectItem>
                 {tenants.map(t => (
                   <SelectItem key={t.ot_id} value={t.ot_nama} className="text-xs font-bold">{t.ot_nama}</SelectItem>
                 ))}
@@ -298,7 +298,7 @@ export default function NotificationsPage() {
         ) : filteredLogs.length === 0 ? (
           <div className="py-24 text-center">
             <FileText className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No history found</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Tidak ada riwayat ditemukan</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -329,11 +329,11 @@ export default function NotificationsPage() {
                        <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
                              <Users className="h-2.5 w-2.5 opacity-60" />
-                             {totalTarget >= tenants.length ? "Global" : "Segmented"}
+                             {totalTarget >= tenants.length ? "Global" : "Tersegmen"}
                           </div>
                           <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
                              <MailOpen className="h-2.5 w-2.5 opacity-60" />
-                             {totalRead}/{totalTarget} <span className="text-[8px] font-medium opacity-50 ml-0.5">Impressions</span>
+                             {totalRead}/{totalTarget} <span className="text-[8px] font-medium opacity-50 ml-0.5">Dilihat</span>
                           </div>
                        </div>
                     </div>
@@ -342,7 +342,7 @@ export default function NotificationsPage() {
                   <div className="lg:w-56 flex items-center gap-4 justify-between lg:justify-end">
                     <div className="flex-1 lg:max-w-24 space-y-1.5">
                        <div className="flex items-center justify-between text-[8px] font-bold uppercase text-slate-400 tracking-widest">
-                          <span>Read Rate</span>
+                          <span>Tingkat Baca</span>
                           <span className={cn(percent > 50 ? "text-emerald-500" : "text-slate-500")}>{Math.round(percent)}%</span>
                        </div>
                        <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -356,7 +356,7 @@ export default function NotificationsPage() {
                         onClick={() => fetchDetail(log)}
                         className="h-8 px-2 font-bold text-[9px] uppercase text-primary hover:bg-primary/5 gap-1 active:scale-95 transition-all"
                       >
-                        Audit Log <ChevronRight className="h-3 w-3 group-hover/item:translate-x-0.5 transition-transform" />
+                        Log Audit <ChevronRight className="h-3 w-3 group-hover/item:translate-x-0.5 transition-transform" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -378,14 +378,14 @@ export default function NotificationsPage() {
       {/* AUDIT DIALOG */}
       <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
         <DialogContent className="!w-[96vw] !max-w-[96vw] h-[92vh] p-0 overflow-hidden border border-slate-200 rounded-2xl shadow-2xl bg-white animate-in zoom-in-95 duration-200 flex flex-col">
-           <VisuallyHidden.Root><DialogTitle>Campaign Audit</DialogTitle></VisuallyHidden.Root>
+           <VisuallyHidden.Root><DialogTitle>Audit Kampanye</DialogTitle></VisuallyHidden.Root>
            <div className="p-4 border-b border-slate-100 bg-slate-900 text-white flex-shrink-0">
               <Badge className="bg-primary/20 text-primary border-none font-bold text-[8px] uppercase mb-2">{selectedLog?.kategori}</Badge>
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-bold tracking-tight mb-0.5 font-heading">{selectedLog?.judul}</h3>
                   <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider italic">
-                    Dispatched: {selectedLog && format(new Date(selectedLog.created_at), "dd/MM/yy, HH:mm")}
+                    Dikirim: {selectedLog && format(new Date(selectedLog.created_at), "dd/MM/yy, HH:mm")}
                   </p>
                 </div>
                 <Button 
@@ -403,14 +403,14 @@ export default function NotificationsPage() {
               {/* LEFT COLUMN: CONTENT */}
               <div className="w-[450px] flex-shrink-0 p-6 space-y-6 border-r border-slate-100 bg-slate-50/50 overflow-y-auto">
                  <div className="space-y-1.5">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Content Body</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Isi Konten</p>
                     <div className="text-[13px] font-medium text-slate-600 leading-relaxed bg-white p-6 rounded-xl border border-slate-200/60 shadow-sm whitespace-pre-wrap">
                         {selectedLog?.pesan}
                     </div>
                  </div>
                  {selectedLog?.image_url && (
                     <div className="space-y-2">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Attached Media</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Media Lampiran</p>
                         <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-2">
                            <img 
                             src={selectedLog.image_url.startsWith('http') ? selectedLog.image_url : `https://api.ayocuci.id${selectedLog.image_url}`} 
@@ -426,8 +426,8 @@ export default function NotificationsPage() {
               <div className="flex-1 flex flex-col min-w-0 bg-white">
                  <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white flex-shrink-0">
                     <div className="flex items-center gap-2">
-                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Delivery Status</p>
-                       <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-slate-100 text-slate-600 border-none">{receivers.length} Targets</Badge>
+                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status Pengiriman</p>
+                       <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-slate-100 text-slate-600 border-none">{receivers.length} Target</Badge>
                     </div>
                  </div>
                  
@@ -435,11 +435,11 @@ export default function NotificationsPage() {
                     {loadingDetail ? (
                       <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400 py-20">
                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                         <p className="text-[10px] font-bold uppercase tracking-tighter">Syncing stats...</p>
+                         <p className="text-[10px] font-bold uppercase tracking-tighter">Menyinkronkan statistik...</p>
                       </div>
                     ) : receivers.length === 0 ? (
                       <div className="py-20 text-center">
-                         <p className="text-[10px] font-bold text-slate-300 uppercase">No delivery data</p>
+                         <p className="text-[10px] font-bold text-slate-300 uppercase">Tidak ada data pengiriman</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
@@ -456,12 +456,12 @@ export default function NotificationsPage() {
                                    <p className="font-bold text-slate-800 text-[13px] group-hover:text-primary transition-colors">{r.outlet_name}</p>
                                    <div className="flex items-center gap-1.5">
                                       <p className="text-[10px] font-medium text-slate-400">
-                                         {r.read_at ? format(new Date(r.read_at), "dd MMM, HH:mm") : "Pending reception"}
+                                         {r.read_at ? format(new Date(r.read_at), "dd MMM, HH:mm") : "Menunggu penerimaan"}
                                       </p>
                                       {r.status === 1 && <span className="h-1 w-1 rounded-full bg-slate-200" />}
                                       {r.status === 1 && (
                                          <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter flex items-center gap-1">
-                                            <Eye className="h-2.5 w-2.5" /> Seen
+                                            <Eye className="h-2.5 w-2.5" /> Dilihat
                                          </p>
                                       )}
                                    </div>
@@ -471,7 +471,7 @@ export default function NotificationsPage() {
                                 "rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase border shadow-none transition-all",
                                 r.status === 1 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-200"
                              )}>
-                                {r.status === 1 ? "Opened" : "Sent"}
+                                {r.status === 1 ? "Dibuka" : "Terkirim"}
                              </Badge>
                           </div>
                         ))}
@@ -482,7 +482,7 @@ export default function NotificationsPage() {
                  {receivers.length > receiversPerPage && (
                     <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50 flex-shrink-0">
                        <p className="text-[10px] font-bold text-slate-400 uppercase">
-                          Page {receiverPage} of {Math.ceil(receivers.length / receiversPerPage)}
+                          Halaman {receiverPage} dari {Math.ceil(receivers.length / receiversPerPage)}
                        </p>
                        <div className="flex gap-2">
                           <Button 
@@ -492,7 +492,7 @@ export default function NotificationsPage() {
                             disabled={receiverPage === 1}
                             onClick={() => setReceiverPage(p => p - 1)}
                           >
-                             Previous
+                             Sebelumnya
                           </Button>
                           <Button 
                             variant="outline" 
@@ -501,7 +501,7 @@ export default function NotificationsPage() {
                             disabled={receiverPage === Math.ceil(receivers.length / receiversPerPage)}
                             onClick={() => setReceiverPage(p => p + 1)}
                           >
-                             Next
+                             Selanjutnya
                           </Button>
                        </div>
                     </div>

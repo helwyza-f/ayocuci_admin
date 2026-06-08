@@ -89,8 +89,8 @@ export default function CustomersPage() {
   const isFiltered = search || selectedOutlet !== "all" || dateRange.start || dateRange.end;
 
   const selectedLabel = useMemo(() => {
-    if (selectedOutlet === "all") return "All Outlets";
-    return tenants.find((t) => t.ot_id === selectedOutlet)?.ot_nama || "Select Outlet...";
+    if (selectedOutlet === "all") return "Semua Outlet";
+    return tenants.find((t) => t.ot_id === selectedOutlet)?.ot_nama || "Pilih Outlet...";
   }, [selectedOutlet, tenants]);
 
   return (
@@ -100,16 +100,16 @@ export default function CustomersPage() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <Users className="h-5 w-5 text-primary" />
-            End-User Database
+            Database Pelanggan
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Unified repository of customers across the ecosystem.
+            Repositori terpadu pelanggan di seluruh ekosistem.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
            <Badge variant="outline" className="h-8 px-3 rounded-md font-bold text-[10px] uppercase tracking-wider text-slate-500 border-slate-200 bg-white shadow-none">
-              {filtered.length} Total Records
+              {filtered.length} Total Data
            </Badge>
            <ExportExcelButton
             data={filtered}
@@ -132,7 +132,7 @@ export default function CustomersPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
-              placeholder="Search by name or phone..."
+              placeholder="Cari nama atau no. hp..."
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
@@ -152,11 +152,11 @@ export default function CustomersPage() {
               </PopoverTrigger>
               <PopoverContent className="w-64 p-0 rounded-md" align="end">
                 <Command>
-                  <CommandInput placeholder="Search outlet..." className="text-xs" />
+                  <CommandInput placeholder="Cari outlet..." className="text-xs" />
                   <CommandList>
-                    <CommandEmpty className="text-[10px] p-2">No results.</CommandEmpty>
+                    <CommandEmpty className="text-[10px] p-2">Tidak ditemukan.</CommandEmpty>
                     <CommandGroup>
-                      <CommandItem onSelect={() => { handleOutletChange("all"); setOpen(false); }} className="text-xs">All Outlets</CommandItem>
+                      <CommandItem onSelect={() => { handleOutletChange("all"); setOpen(false); }} className="text-xs">Semua Outlet</CommandItem>
                       {tenants.map(t => (
                         <CommandItem key={t.ot_id} onSelect={() => { handleOutletChange(t.ot_id); setOpen(false); }} className="text-xs">
                            <div className="flex flex-col">
@@ -193,9 +193,9 @@ export default function CustomersPage() {
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Customer</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Primary Outlet</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Activity</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Join Date</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Outlet Utama</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Aktivitas</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Tgl Bergabung</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -237,7 +237,7 @@ export default function CustomersPage() {
                 <tr>
                   <td colSpan={4} className="py-24 text-center">
                     <Activity className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No records found</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Belum ada data pelanggan</p>
                   </td>
                 </tr>
               )}

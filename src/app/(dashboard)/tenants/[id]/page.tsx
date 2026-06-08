@@ -982,6 +982,15 @@ export default function TenantDetailPage() {
                              )}>
                                 {ha.feature_status === "ACTIVE" ? "AKTIF" : ha.feature_status === "EXPIRED" ? "EXPIRED" : "NON-AKTIF"}
                              </Badge>
+
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               onClick={() => { setSelectedAddon(ha); setIsAddonModalOpen(true); }}
+                               className="h-7 px-2 font-bold text-[9px] uppercase tracking-wider text-primary hover:bg-primary/10 transition-colors ml-1"
+                             >
+                               Detail <ArrowUpRight className="h-3 w-3 ml-1" />
+                             </Button>
                           </div>
                        </div>
                     </div>
@@ -1229,17 +1238,20 @@ export default function TenantDetailPage() {
                                    )}
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                   <button
-                                      type="button"
-                                      onClick={() => { setSelectedKoin(topup); setIsKoinModalOpen(true); }}
-                                      className="inline-flex items-center justify-end gap-1.5 group"
-                                   >
-                                      <Badge variant="outline" className={cn("text-[8px] px-2 py-0.5 font-bold uppercase border transition-colors group-hover:brightness-95", statusConfig.className)}>
-                                         {statusConfig.label}
-                                      </Badge>
-                                      <ArrowUpRight className="h-3 w-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
-                                   </button>
-                                </td>
+                                    <div className="flex items-center justify-end gap-2">
+                                       <Badge variant="outline" className={cn("text-[8px] px-2 py-0.5 font-bold uppercase border transition-colors", statusConfig.className)}>
+                                          {statusConfig.label}
+                                       </Badge>
+                                       <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => { setSelectedKoin(topup); setIsKoinModalOpen(true); }}
+                                          className="h-7 px-2 font-bold text-[9px] uppercase tracking-wider text-primary hover:bg-primary/10 transition-colors"
+                                       >
+                                          Detail <ArrowUpRight className="h-3 w-3 ml-1" />
+                                       </Button>
+                                    </div>
+                                 </td>
                              </tr>
                           );
                        }) : (
@@ -1282,7 +1294,7 @@ export default function TenantDetailPage() {
           <div className="p-5 space-y-5 bg-slate-50/30">
              {selectedKoin?.tk_metode_bayar === 'bonus' ? (
                 <div className="space-y-2">
-                   <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bonus Allocation Detail</label>
+                   <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Detail Alokasi Bonus</label>
                    <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-lg dark:bg-purple-950/10 dark:border-purple-900/30">
                       <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-start gap-2">
                          <Gift className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />

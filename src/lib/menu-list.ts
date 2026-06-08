@@ -16,6 +16,7 @@ import {
   ShieldAlert,
   BarChart2,
   Zap,
+  GitBranch,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -64,7 +65,8 @@ export const adminMenus: MenuGroup[] = [
       { label: "Voucher & Promo",    href: "/vouchers",      icon: Ticket,    module: "vouchers" },
       { label: "Siaran Notifikasi",  href: "/notifications", icon: Megaphone, module: "notifications" },
       { label: "Konten & Banner",    href: "/content",       icon: Repeat,    module: "content" },
-      { label: "Program Referral",     href: "/referrals",     icon: Wallet2,   module: "referrals" },
+      { label: "Pencairan Referral", href: "/referrals/payouts", icon: Wallet2,   module: "referrals" },
+      { label: "Komisi Referral",    href: "/referrals/rewards", icon: GitBranch, module: "referrals" },
     ],
   },
   {

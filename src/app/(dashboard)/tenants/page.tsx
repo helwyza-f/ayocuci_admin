@@ -135,10 +135,10 @@ export default function TenantsPage() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <Store className="h-5 w-5 text-primary" />
-            Tenants Directory
+            Direktori Tenant
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Operational database of all registered outlets.
+            Database operasional seluruh outlet yang terdaftar.
           </p>
         </div>
 
@@ -175,7 +175,7 @@ export default function TenantsPage() {
             ]}
           />
           <Button className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
-            <Plus className="h-4 w-4" /> Register New
+            <Plus className="h-4 w-4" /> Daftar Baru
           </Button>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function TenantsPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
-              placeholder="Search by Name or ID..."
+              placeholder="Cari Nama atau ID..."
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
@@ -206,11 +206,11 @@ export default function TenantsPage() {
               </PopoverTrigger>
               <PopoverContent className="w-56 p-0 rounded-md" align="end">
                 <Command>
-                  <CommandInput placeholder="Search owner..." className="text-xs" />
+                  <CommandInput placeholder="Cari owner..." className="text-xs" />
                   <CommandList>
-                    <CommandEmpty className="text-[10px] p-2">No results.</CommandEmpty>
+                    <CommandEmpty className="text-[10px] p-2">Tidak ditemukan.</CommandEmpty>
                     <CommandGroup>
-                      <CommandItem onSelect={() => { handleOwnerFilter("all"); setOpen(false); }} className="text-xs">All Owners</CommandItem>
+                      <CommandItem onSelect={() => { handleOwnerFilter("all"); setOpen(false); }} className="text-xs">Semua Owner</CommandItem>
                       {owners.map(o => (
                         <CommandItem key={o.id} onSelect={() => { handleOwnerFilter(String(o.id)); setOpen(false); }} className="text-xs">
                           <span>{o.name}</span>
@@ -245,13 +245,13 @@ export default function TenantsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Outlet Profile</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Ownership</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Daily Performance</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Total Performance</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Liquidity</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Profil Outlet</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Kepemilikan</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Performa Harian</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Total Performa</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Likuiditas</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Status</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Action</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -304,7 +304,7 @@ export default function TenantsPage() {
                               : "bg-amber-50 text-amber-600 border-amber-100 animate-pulse"
                           )}
                         >
-                          {tenant.ot_status === 1 ? "Active" : "Pending Activation"}
+                          {tenant.ot_status === 1 ? "Aktif" : "Menunggu Aktivasi"}
                         </Badge>
                         <Badge
                           variant="outline"
@@ -324,7 +324,7 @@ export default function TenantsPage() {
                             size="sm"
                             className="h-7 px-2 font-bold text-[9px] uppercase text-primary hover:bg-primary/5"
                           >
-                            Control Hub <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+                            Pusat Kontrol <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
                           </Button>
                        </Link>
                     </td>
@@ -334,7 +334,7 @@ export default function TenantsPage() {
                 <tr>
                   <td colSpan={7} className="py-24 text-center">
                     <Database className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No operational data found</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Belum ada data operasional</p>
                   </td>
                 </tr>
               )}

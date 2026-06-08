@@ -58,15 +58,15 @@ export default function OwnersPage() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <Users className="h-5 w-5 text-primary" />
-            Owners Directory
+            Direktori Owner
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Database of account owners managing laundry outlets.
+            Database akun owner yang mengelola outlet.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="h-8 px-3 rounded-md font-bold text-[10px] uppercase tracking-wider text-slate-500 border-slate-200 bg-white">
-            {filteredOwners.length} / {owners.length} Accounts
+            {filteredOwners.length} / {owners.length} Akun
           </Badge>
           <ExportExcelButton
             data={filteredOwners}
@@ -92,7 +92,7 @@ export default function OwnersPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
-              placeholder="Search by name, email or owner ID..."
+              placeholder="Cari nama, email, atau ID owner..."
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
@@ -122,10 +122,10 @@ export default function OwnersPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Owner Profile</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Portfolio</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Profil Owner</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Portofolio</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Tgl Daftar</th>
-                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Action</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -150,7 +150,7 @@ export default function OwnersPage() {
                     </td>
                     <td className="px-5 py-3 text-center">
                       <div className="inline-flex items-center gap-1 font-bold text-slate-700 text-[10px]">
-                        {owner.total_outlets || 0} Outlets
+                        {owner.total_outlets || 0} Outlet
                       </div>
                     </td>
                     <td className="px-5 py-3 text-center">
@@ -161,7 +161,7 @@ export default function OwnersPage() {
                     <td className="px-5 py-3 text-right">
                       <Link href={`/users/${owner.id}`}>
                         <Button variant="ghost" size="sm" className="h-7 px-2 font-bold text-[9px] uppercase text-primary hover:bg-primary/5">
-                          View Profile <ExternalLink className="h-3 w-3 ml-1" />
+                          Lihat Profil <ExternalLink className="h-3 w-3 ml-1" />
                         </Button>
                       </Link>
                     </td>
@@ -171,7 +171,7 @@ export default function OwnersPage() {
                 <tr>
                   <td colSpan={4} className="py-24 text-center">
                     <Activity className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No records found</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Belum ada data owner</p>
                   </td>
                 </tr>
               )}

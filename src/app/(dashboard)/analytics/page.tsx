@@ -522,9 +522,9 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <KpiCard
-          label="Total Revenue"
+          label="Total Pendapatan"
           value={revenue ? fmtRp(revenue.total_revenue) : "—"}
-          sub={`Avg ${revenue ? fmtRp(revenue.avg_daily_revenue) : "—"}/hari`}
+          sub={`Rata-rata ${revenue ? fmtRp(revenue.avg_daily_revenue) : "—"}/hari`}
           icon={TrendingUp}
           color="bg-emerald-50 text-emerald-600"
           trend="up"
@@ -581,7 +581,7 @@ export default function AnalyticsPage() {
             ) : (
               <FileDown className="h-3.5 w-3.5" />
             )}
-            Export Detail
+            {exportingReferralDetails ? "Mengekspor..." : "Ekspor Detail"}
           </Button>
         </div>
 
@@ -611,12 +611,12 @@ export default function AnalyticsPage() {
       </Card>
 
       <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-        <SectionHeader 
-          icon={TrendingUp} 
-          title="Revenue Stream" 
-          desc={`Pendapatan harian pada ${periodLabel.toLowerCase()}`} 
-          action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Revenue")} filename="revenue_stream" />}
-        />
+          <SectionHeader 
+            icon={TrendingUp} 
+            title="Arus Pendapatan" 
+            desc={`Pendapatan harian pada ${periodLabel.toLowerCase()}`} 
+            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Revenue")} filename="arus_pendapatan" />}
+          />
         <ResponsiveContainer width="100%" height={240}>
           <AreaChart data={revenue?.series ?? []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <defs>
@@ -727,9 +727,9 @@ export default function AnalyticsPage() {
         <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4 gap-4 w-full">
           <SectionHeader 
             icon={Activity} 
-            title="Platform Activity" 
+            title="Aktivitas Platform" 
             desc="Outlet aktif, volume order, dan GMV per hari" 
-            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Activity")} filename="platform_activity" />}
+            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Activity")} filename="aktivitas_platform" />}
           />
           <div className="text-right shrink-0 mt-2 md:mt-0">
             <p className="text-xs font-extrabold text-slate-900">{activity?.total_workforce ?? 0}</p>
@@ -755,9 +755,9 @@ export default function AnalyticsPage() {
         <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
           <SectionHeader 
             icon={Gift} 
-            title="Referral Economy" 
+            title="Ekonomi Referral" 
             desc={periodLabel} 
-            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Referral Summary" || s.sheetName === "Top Referrers")} filename="referral_economy" />}
+            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Referral Summary" || s.sheetName === "Top Referrers")} filename="ekonomi_referral" />}
           />
           <div className="grid grid-cols-2 gap-3 mt-1">
             {[
@@ -775,7 +775,7 @@ export default function AnalyticsPage() {
         </Card>
 
         <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-          <SectionHeader icon={Users} title="Top Referrers" desc="Owner dengan rekrutmen terbanyak pada periode aktif" />
+          <SectionHeader icon={Users} title="Referrer Teratas" desc="Owner dengan rekrutmen terbanyak pada periode aktif" />
           <div className="space-y-2.5 max-h-[200px] overflow-y-auto custom-scrollbar mt-1">
             {(referral?.top_referrers ?? []).length === 0 ? (
               <p className="text-center text-[10px] text-slate-400 py-8">Belum ada data referral</p>
@@ -807,9 +807,9 @@ export default function AnalyticsPage() {
         <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4 gap-4 w-full">
           <SectionHeader 
             icon={AlertTriangle} 
-            title="Churn Risk: Inactive Owners" 
+            title="Risiko Churn: Owner Inaktif" 
             desc="Owner tanpa transaksi sepanjang rentang terpilih" 
-            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Inactive Owners")} filename="churn_risk" />}
+            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Inactive Owners")} filename="risiko_churn" />}
           />
           <div className="text-right shrink-0 mt-2 md:mt-0">
             <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100">

@@ -109,17 +109,17 @@ export default function DashboardContentPage() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <FileText className="h-5 w-5 text-primary" />
-            Content & Banners
+            Konten & Banner
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Manage promotions and informational banners for the mobile app.
+            Kelola promosi dan banner informasi untuk aplikasi mobile.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
            <Button asChild size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
               <Link href="/content/new">
-                <Plus className="h-3.5 w-3.5" /> Create New
+                <Plus className="h-3.5 w-3.5" /> Buat Baru
               </Link>
            </Button>
         </div>
@@ -127,10 +127,10 @@ export default function DashboardContentPage() {
 
       {/* METRICS GRID */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Items" value={stats.total} />
-        <StatCard label="Promotions" value={stats.promo} />
-        <StatCard label="Information" value={stats.info} />
-        <StatCard label="Active Items" value={stats.active} />
+        <StatCard label="Total Item" value={stats.total} />
+        <StatCard label="Promosi" value={stats.promo} />
+        <StatCard label="Informasi" value={stats.info} />
+        <StatCard label="Item Aktif" value={stats.active} />
       </div>
 
       {/* FILTER COMMAND BAR */}
@@ -141,7 +141,7 @@ export default function DashboardContentPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by title or content..."
+              placeholder="Cari berdasarkan judul atau konten..."
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
             />
           </div>
@@ -151,12 +151,12 @@ export default function DashboardContentPage() {
           <div className="flex items-center gap-1 p-1 md:p-0">
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="h-8 font-bold text-[10px] border-none shadow-none focus:ring-0 w-36 gap-2">
-                <SelectValue placeholder="Categories" />
+                <SelectValue placeholder="Kategori" />
               </SelectTrigger>
               <SelectContent className="rounded-md">
-                <SelectItem value="ALL" className="text-xs font-bold">All Categories</SelectItem>
-                <SelectItem value="PROMO" className="text-xs font-bold">Promotions</SelectItem>
-                <SelectItem value="INFORMASI" className="text-xs font-bold">Information</SelectItem>
+                <SelectItem value="ALL" className="text-xs font-bold">Semua Kategori</SelectItem>
+                <SelectItem value="PROMO" className="text-xs font-bold">Promosi</SelectItem>
+                <SelectItem value="INFORMASI" className="text-xs font-bold">Informasi</SelectItem>
               </SelectContent>
             </Select>
 
@@ -167,9 +167,9 @@ export default function DashboardContentPage() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="rounded-md">
-                <SelectItem value="ALL" className="text-xs font-bold">All Status</SelectItem>
-                <SelectItem value="ACTIVE" className="text-xs font-bold">Active</SelectItem>
-                <SelectItem value="INACTIVE" className="text-xs font-bold">Inactive</SelectItem>
+                <SelectItem value="ALL" className="text-xs font-bold">Semua Status</SelectItem>
+                <SelectItem value="ACTIVE" className="text-xs font-bold">Aktif</SelectItem>
+                <SelectItem value="INACTIVE" className="text-xs font-bold">Nonaktif</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -185,7 +185,7 @@ export default function DashboardContentPage() {
         ) : filtered.length === 0 ? (
           <div className="py-24 text-center">
             <FileText className="h-8 w-8 text-slate-200 mx-auto mb-2" />
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">No content found</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Tidak ada konten ditemukan</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -210,7 +210,7 @@ export default function DashboardContentPage() {
                       "rounded-full px-2 py-0 text-[8px] font-bold uppercase border shadow-none transition-colors",
                       item.is_active ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-200"
                     )}>
-                      {item.is_active ? "Active" : "Inactive"}
+                      {item.is_active ? "Aktif" : "Nonaktif"}
                     </Badge>
                   </div>
                   <h3 className="truncate text-sm font-bold text-slate-900 tracking-tight leading-none font-heading group-hover/item:text-primary transition-colors">
@@ -231,7 +231,7 @@ export default function DashboardContentPage() {
                     )}
                   >
                     <Eye className="h-3 w-3" />
-                    {item.is_active ? "Deactivate" : "Activate"}
+                    {item.is_active ? "Nonaktifkan" : "Aktifkan"}
                   </Button>
                   <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-primary active:scale-95 transition-all border border-transparent hover:border-slate-100">
                     <Link href={`/content/${item.id}/edit`}>
