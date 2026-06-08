@@ -168,7 +168,7 @@ function RoleFormPanel({
       </div>
 
       <div>
-        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-2">Permission Matrix</label>
+        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-2">Matriks Hak Akses</label>
         <PermissionMatrix value={permissions} onChange={setPermissions} />
       </div>
 
@@ -290,14 +290,14 @@ function AdminManagementContent() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <ShieldAlert className="h-5 w-5 text-primary" />
-            Admin Management
+            Manajemen Admin
           </h1>
           <p className="text-xs font-medium text-slate-500">
             Kelola akun admin panel dan permission role mereka.
           </p>
         </div>
         <Badge variant="outline" className="h-8 px-3 rounded-md font-bold text-[10px] uppercase tracking-wider text-slate-500 border-slate-200 bg-white w-fit">
-          Master Admin Only
+          Khusus Master Admin
         </Badge>
       </div>
 
@@ -307,7 +307,7 @@ function AdminManagementContent() {
             <Users className="h-3.5 w-3.5" /> Akun Admin
           </TabsTrigger>
           <TabsTrigger value="roles" className="rounded-lg px-5 font-bold text-[11px] uppercase gap-2 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow">
-            <Key className="h-3.5 w-3.5" /> Roles & Permissions
+            <Key className="h-3.5 w-3.5" /> Peran & Hak Akses
           </TabsTrigger>
         </TabsList>
 

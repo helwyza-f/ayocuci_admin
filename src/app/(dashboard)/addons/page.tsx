@@ -44,6 +44,7 @@ export default function AddonCatalogPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAddon, setEditingAddon] = useState<Addon | null>(null);
+  const [pricePerCoin, setPricePerCoin] = useState(100);
 
   const [formData, setFormData] = useState({
     ad_id: "",
@@ -57,6 +58,11 @@ export default function AddonCatalogPage() {
   const fetchAddons = useCallback(async () => {
     setLoading(true);
     try {
+      const configRes = await economyService.getConfigs();
+      const configs = configRes.data.data || [];
+      const priceConfig = configs.find((c: any) => c.cfg_key === "price_per_coin");
+      if (priceConfig) setPricePerCoin(Number(priceConfig.cfg_value));
+
       const res = await economyService.getAddons();
       if (res.data.status) {
         setAddons(res.data.data || []);
@@ -255,11 +261,15 @@ export default function AddonCatalogPage() {
 
               <div className="space-y-2 p-3 bg-slate-50/30 rounded border border-slate-100 mb-4">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Price</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Harga Koin</span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-xl font-bold text-slate-900">{addon.ad_harga.toLocaleString()}</span>
                     <span className="text-[8px] font-bold text-slate-400 uppercase">Koin</span>
                   </div>
+                </div>
+                <div className="flex justify-between items-baseline border-t border-slate-200/50 pt-2 mt-1">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Ekuivalen Rupiah</span>
+                  <span className="text-xs font-bold text-slate-600">Rp {(addon.ad_harga * pricePerCoin).toLocaleString("id-ID")}</span>
                 </div>
               </div>
 

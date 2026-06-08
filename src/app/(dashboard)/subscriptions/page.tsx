@@ -54,7 +54,7 @@ import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { Tenant } from "@/types/tenant";
-import { Owner } from "@/types/domain";
+import { Owner, EconomyConfig } from "@/types/domain";
 import { apiFetcher } from "@/lib/fetcher";
 import useSWR from "swr";
 import { useRegionNames } from "@/hooks/use-region-names";
@@ -122,6 +122,22 @@ export default function SubscriptionsPage() {
       revalidateOnFocus: false,
     },
   );
+
+  const { data: configsResponse } = useSWR<ApiResponse<EconomyConfig[]>>(
+    "/economy/configs",
+    apiFetcher,
+    {
+      dedupingInterval: 60_000,
+      keepPreviousData: true,
+      revalidateOnFocus: false,
+    },
+  );
+
+  const pricePerCoin = useMemo(() => {
+    const configs = configsResponse?.data || [];
+    const priceConfig = configs.find((c) => c.cfg_key === "price_per_coin");
+    return priceConfig ? Number(priceConfig.cfg_value) : 100;
+  }, [configsResponse]);
 
   const { data: ownersResponse } = useSWR<ApiResponse<Owner[]>>(
     "/users",
@@ -351,7 +367,11 @@ export default function SubscriptionsPage() {
               { header: "Provinsi", key: "outlet_province", width: 18 },
               { header: "Data of Join", key: "join_date", width: 18, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
               { header: "Koin", key: "outlet_koin", width: 12 },
-              { header: "Harga", key: "ha_total", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
+              { header: "Harga", key: "ha_total", width: 15, format: (v, item) => {
+                 if (v == null) return "Rp 0";
+                 if (item.ha_metode_bayar === "KOIN") return `Rp ${(Number(v) * pricePerCoin).toLocaleString()}`;
+                 return `Rp ${Number(v).toLocaleString()}`;
+              }},
               { header: "Metode Pembayaran", key: "ha_metode_bayar", width: 20 },
               { header: "Item", key: "item_names", width: 45 },
             ]}
@@ -551,8 +571,25 @@ export default function SubscriptionsPage() {
                         </Badge>
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <div className="font-bold text-slate-900 text-xs">Rp {item.ha_total.toLocaleString("id-ID")}</div>
-                        <div className="text-[9px] font-bold uppercase text-slate-400 tracking-wide mt-0.5">{item.ha_metode_bayar || "—"}</div>
+                        {item.ha_metode_bayar === "KOIN" ? (
+                           <>
+                             <div className="font-bold text-slate-900 text-xs">
+                               Rp {(item.ha_total * pricePerCoin).toLocaleString("id-ID")}
+                             </div>
+                             <div className="text-[9px] font-bold uppercase text-slate-400 tracking-wide mt-0.5">
+                               {item.ha_total.toLocaleString("id-ID")} KOIN
+                             </div>
+                           </>
+                        ) : (
+                           <>
+                             <div className="font-bold text-slate-900 text-xs">
+                               Rp {item.ha_total.toLocaleString("id-ID")}
+                             </div>
+                             <div className="text-[9px] font-bold uppercase text-slate-400 tracking-wide mt-0.5">
+                               {item.ha_metode_bayar || "—"}
+                             </div>
+                           </>
+                        )}
                       </td>
                       <td className="px-5 py-3 text-center">
                         <Badge className={cn("rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none", status.class)}>
@@ -659,8 +696,15 @@ export default function SubscriptionsPage() {
               <div className="p-3 bg-white border border-slate-200 rounded">
                 <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Amount</p>
                 <div className="font-bold text-xs text-primary">
-                  Rp {selectedTrx?.ha_total.toLocaleString("id-ID")}
+                  Rp {selectedTrx?.ha_metode_bayar === "KOIN" 
+                        ? (selectedTrx.ha_total * pricePerCoin).toLocaleString("id-ID")
+                        : selectedTrx?.ha_total.toLocaleString("id-ID")}
                 </div>
+                {selectedTrx?.ha_metode_bayar === "KOIN" && (
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5 tracking-wider">
+                    ({selectedTrx.ha_total.toLocaleString("id-ID")} Koin)
+                  </p>
+                )}
               </div>
             </div>
           </div>

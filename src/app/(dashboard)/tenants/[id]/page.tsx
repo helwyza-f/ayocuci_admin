@@ -48,6 +48,7 @@ import {
 import { tenantService } from "@/services/tenant.service";
 import { addonService } from "@/services/addon.service";
 import { topupService } from "@/services/topup.service";
+import { economyService } from "@/services/economy.service";
 import api from "@/lib/api-client";
 import { Tenant } from "@/types/tenant";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,8 @@ export default function TenantDetailPage() {
     total_revenue: 0,
     active_staff: 0
   });
+
+  const [pricePerCoin, setPricePerCoin] = useState(100);
 
   const [regionNames, setRegionNames] = useState({ provinsi: "", kota: "", kecamatan: "" });
 
@@ -124,7 +127,15 @@ export default function TenantDetailPage() {
 
   const fetchDetail = async () => {
     try {
-      const res = await tenantService.getTenantDetail(params.id as string);
+      const [res, configRes] = await Promise.all([
+        tenantService.getTenantDetail(params.id as string),
+        economyService.getConfigs()
+      ]);
+      
+      const configs = configRes.data?.data || [];
+      const priceConfig = configs.find((c: any) => c.cfg_key === "price_per_coin");
+      if (priceConfig) setPricePerCoin(Number(priceConfig.cfg_value));
+
       if (res.status && res.data) {
         setProfile(res.data.profile);
         setKoinHistory(res.data.koin_history || []);
@@ -938,7 +949,20 @@ export default function TenantDetailPage() {
 
                        {/* Price and Statuses */}
                        <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 sm:min-w-[145px]">
-                          <p className="text-[12px] font-black text-slate-900">Rp {ha.ha_total?.toLocaleString()}</p>
+                          {ha.ha_metode_bayar === "PROMO_FREE" || ha.ha_metode_bayar === "FREE" ? (
+                            <div className="flex flex-col items-end">
+                              <p className="text-[12px] font-black text-slate-900">Rp 0</p>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-end">
+                              <p className="text-[12px] font-black text-slate-900">
+                                Rp {(ha.ha_total * pricePerCoin).toLocaleString("id-ID")}
+                              </p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                                {ha.ha_total.toLocaleString("id-ID")} Koin
+                              </p>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1.5">
                              {/* Transaction Status Badge */}
                              <Badge className={cn(

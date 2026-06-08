@@ -35,52 +35,52 @@ export interface MenuGroup {
 
 export const adminMenus: MenuGroup[] = [
   {
-    group: "Monitoring",
+    group: "Pemantauan",
     items: [
       { label: "Pusat Kontrol",     href: "/",          icon: LayoutGrid, module: "dashboard" },
-      { label: "Analytics & Laporan", href: "/analytics", icon: BarChart2,  module: "analytics" },
+      { label: "Analisis & Laporan", href: "/analytics", icon: BarChart2,  module: "analytics" },
     ],
   },
   {
-    group: "Business Ecosystem",
+    group: "Ekosistem Bisnis",
     items: [
-      { label: "Outlet / Tenant",    href: "/tenants",   icon: Store,       module: "tenants" },
-      { label: "Owner (Pemilik)",    href: "/users",     icon: UserCircle,  module: "users" },
+      { label: "Daftar Tenant",    href: "/tenants",   icon: Store,       module: "tenants" },
+      { label: "Pemilik Usaha",    href: "/users",     icon: UserCircle,  module: "users" },
       { label: "Database Pelanggan", href: "/customers", icon: Users,       module: "customers" },
     ],
   },
   {
-    group: "Finance & Revenue",
+    group: "Keuangan & Pendapatan",
     items: [
-      { label: "Riwayat Langganan",  href: "/subscriptions", icon: ShieldCheck, module: "subscriptions" },
-      { label: "Topup & Penagihan",  href: "/topups",        icon: Wallet2,     module: "topups" },
+      { label: "Riwayat Berlangganan",  href: "/subscriptions", icon: ShieldCheck, module: "subscriptions" },
+      { label: "Top Up & Penagihan",  href: "/topups",        icon: Wallet2,     module: "topups" },
       { label: "Paket Koin (SKU)",   href: "/packages",      icon: Package,     module: "packages" },
-      { label: "Katalog Fitur (Addon)", href: "/addons",      icon: Zap,         module: "packages" },
+      { label: "Katalog Addon", href: "/addons",      icon: Zap,         module: "packages" },
     ],
   },
   {
-    group: "Growth & Marketing",
+    group: "Pertumbuhan & Pemasaran",
     items: [
       { label: "Voucher & Promo",    href: "/vouchers",      icon: Ticket,    module: "vouchers" },
       { label: "Siaran Notifikasi",  href: "/notifications", icon: Megaphone, module: "notifications" },
       { label: "Konten & Banner",    href: "/content",       icon: Repeat,    module: "content" },
-      { label: "Referral Owner",     href: "/referrals",     icon: Wallet2,   module: "referrals" },
+      { label: "Program Referral",     href: "/referrals",     icon: Wallet2,   module: "referrals" },
     ],
   },
   {
-    group: "Configuration",
+    group: "Konfigurasi",
     items: [
-      { label: "Ekonomi (Global)",   href: "/economy",  icon: Coins,    module: "economy" },
-      { label: "Terms & Privacy",    href: "/legal",    icon: FileText, module: "legal" },
-      { label: "Pengaturan Global",  href: "/settings", icon: Settings, module: "settings" },
-      { label: "Sistem Fixer",       href: "/fixer",    icon: Wrench,   module: "fixer" },
+      { label: "Pengaturan Ekonomi",   href: "/economy",  icon: Coins,    module: "economy" },
+      { label: "Syarat & Privasi",    href: "/legal",    icon: FileText, module: "legal" },
+      { label: "Pengaturan Umum",  href: "/settings", icon: Settings, module: "settings" },
+      { label: "Sistem Pemulihan",       href: "/fixer",    icon: Wrench,   module: "fixer" },
     ],
   },
   {
-    group: "Access Control",
+    group: "Kontrol Akses",
     items: [
       {
-        label: "Admin Management",
+        label: "Manajemen Admin",
         href: "/admin-management",
         icon: ShieldAlert,
         module: "admin-management",

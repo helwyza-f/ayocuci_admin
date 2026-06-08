@@ -194,7 +194,7 @@ export default function DashboardPage() {
           <Link href="/analytics">
             <Button variant="outline" size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 border-slate-200 text-primary hover:bg-primary/5">
               <TrendingUp className="h-3 w-3" />
-              Lihat Analytics
+              Lihat Analisis
             </Button>
           </Link>
           <Button
@@ -204,7 +204,7 @@ export default function DashboardPage() {
             className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 border-slate-200"
           >
             <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
-            Refresh
+            Segarkan
           </Button>
         </div>
       </div>
@@ -219,14 +219,14 @@ export default function DashboardPage() {
       {/* ── PLATFORM STATS ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          label="Hari Ini GMV"
+          label="GMV Hari Ini"
           sub="Total Gross Merchandise Value hari ini"
           value={activitySummary ? `Rp ${activitySummary.today_gmv.toLocaleString("id-ID")}` : "—"}
           icon={TrendingUp}
           color="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-200"
         />
         <KpiCard
-          label="Registered Outlets"
+          label="Outlet Terdaftar"
           sub="Total outlet terdaftar di platform"
           value={isLoading ? "—" : stats.total_outlets.toLocaleString("id-ID")}
           icon={Store}
@@ -371,10 +371,10 @@ export default function DashboardPage() {
               <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bukti Pembayaran</label>
               {selectedItem?.data.tk_bukti ? (
                  <div className="group relative aspect-video rounded-xl border border-slate-200 overflow-hidden bg-slate-200">
-                    <img src={`https://api.ayocuci.id${selectedItem.data.tk_bukti}`} className="w-full h-full object-cover" alt="Proof" />
+                  <img src={`https://api.ayocuci.id${selectedItem.data.tk_bukti}`} className="w-full h-full object-cover" alt="Proof" />
                     <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                       <a href={`https://api.ayocuci.id${selectedItem.data.tk_bukti}`} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-2">
-                        <ArrowUpRight className="h-3 w-3" /> Fullscreen
+                        <ArrowUpRight className="h-3 w-3" /> Layar Penuh
                       </a>
                     </div>
                  </div>
@@ -392,7 +392,7 @@ export default function DashboardPage() {
                 <div className="font-bold text-xs text-slate-700 uppercase">{selectedItem?.data.tk_metode_bayar}</div>
               </div>
               <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-sm">
-                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Value</p>
+                <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Nominal</p>
                 <div className="font-bold text-xs text-primary">Rp {selectedItem?.data.tk_total?.toLocaleString("id-ID")}</div>
               </div>
             </div>
