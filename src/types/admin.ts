@@ -47,6 +47,7 @@ export const ADMIN_MODULES = [
   { key: "vouchers",      label: "Voucher & Promo" },
   { key: "notifications", label: "Siaran Notifikasi" },
   { key: "content",       label: "Konten & Banner" },
+  { key: "tutorials",     label: "Tutorial & Panduan" },
   { key: "referrals",     label: "Referral Owner" },
   { key: "economy",       label: "Ekonomi (Global)" },
   { key: "legal",         label: "Terms & Privacy" },
@@ -60,4 +61,3 @@ export const ADMIN_ACTIONS = [
   { key: "update", label: "Ubah" },
   { key: "delete", label: "Hapus" },
 ] as const;
-

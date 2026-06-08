@@ -17,6 +17,7 @@ import {
   BarChart2,
   Zap,
   GitBranch,
+  BookOpen,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -65,6 +66,7 @@ export const adminMenus: MenuGroup[] = [
       { label: "Voucher & Promo",    href: "/vouchers",      icon: Ticket,    module: "vouchers" },
       { label: "Siaran Notifikasi",  href: "/notifications", icon: Megaphone, module: "notifications" },
       { label: "Konten & Banner",    href: "/content",       icon: Repeat,    module: "content" },
+      { label: "Tutorial",           href: "/tutorials",     icon: BookOpen,  module: "tutorials" },
       { label: "Pencairan Referral", href: "/referrals/payouts", icon: Wallet2,   module: "referrals" },
       { label: "Komisi Referral",    href: "/referrals/rewards", icon: GitBranch, module: "referrals" },
     ],
@@ -91,4 +93,3 @@ export const adminMenus: MenuGroup[] = [
     ],
   },
 ];
-
