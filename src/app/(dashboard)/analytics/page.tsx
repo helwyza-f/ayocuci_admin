@@ -156,28 +156,64 @@ function SectionHeader({
   icon: Icon,
   title,
   desc,
+  action,
 }: {
   icon: ElementType;
   title: string;
   desc?: string;
+  action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      <div className="h-8 w-8 rounded-xl bg-slate-900 flex items-center justify-center text-white">
-        <Icon className="h-4 w-4" />
+    <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4 gap-3 w-full">
+      <div className="flex items-center gap-3">
+        <div className="h-8 w-8 rounded-xl bg-slate-900 flex items-center justify-center text-white shrink-0">
+          <Icon className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="font-bold text-sm text-slate-900">{title}</p>
+          {desc && <p className="text-[10px] text-slate-400 font-medium">{desc}</p>}
+        </div>
       </div>
-      <div>
-        <p className="font-bold text-sm text-slate-900">{title}</p>
-        {desc && <p className="text-[10px] text-slate-400 font-medium">{desc}</p>}
-      </div>
+      {action && <div>{action}</div>}
     </div>
+  );
+}
+
+function PanelExportButton({ sheets, filename }: { sheets: any[], filename: string }) {
+  const [exporting, setExporting] = useState(false);
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await new Promise(r => setTimeout(r, 100));
+      exportSheetsToExcel(sheets, filename);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  if (!sheets || sheets.length === 0 || !sheets[0]?.data?.length) return null;
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleExport}
+      disabled={exporting}
+      className="h-7 px-2.5 gap-1.5 text-[10px] font-bold uppercase tracking-wider border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50 transition-colors"
+    >
+      {exporting ? (
+        <Loader2 className="h-3 w-3 animate-spin" />
+      ) : (
+        <FileDown className="h-3 w-3" />
+      )}
+      Export
+    </Button>
   );
 }
 
 export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
   const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
-  const [exporting, setExporting] = useState(false);
   const [exportingReferralDetails, setExportingReferralDetails] = useState(false);
 
   const analyticsQuery = useMemo(
@@ -417,16 +453,6 @@ export default function AnalyticsPage() {
     revenue,
   ]);
 
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      exportSheetsToExcel(exportSheets, "analytics_report");
-    } finally {
-      setExporting(false);
-    }
-  };
-
   const handleReferralDetailExport = async () => {
     setExportingReferralDetails(true);
     try {
@@ -467,21 +493,6 @@ export default function AnalyticsPage() {
 
           <div className="flex flex-col items-stretch gap-2">
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-                disabled={exporting}
-                className="h-8 gap-1.5 text-[10px] font-bold uppercase tracking-wider border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50 transition-colors"
-              >
-                {exporting ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <FileDown className="h-3.5 w-3.5" />
-                )}
-                Export Excel
-              </Button>
-
               <div className="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
                 {PERIODS.map((period) => (
                   <button
@@ -600,7 +611,12 @@ export default function AnalyticsPage() {
       </Card>
 
       <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-        <SectionHeader icon={TrendingUp} title="Revenue Stream" desc={`Pendapatan harian pada ${periodLabel.toLowerCase()}`} />
+        <SectionHeader 
+          icon={TrendingUp} 
+          title="Revenue Stream" 
+          desc={`Pendapatan harian pada ${periodLabel.toLowerCase()}`} 
+          action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Revenue")} filename="revenue_stream" />}
+        />
         <ResponsiveContainer width="100%" height={240}>
           <AreaChart data={revenue?.series ?? []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <defs>
@@ -639,7 +655,12 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-          <SectionHeader icon={UserPlus} title="Pertumbuhan Owner Baru" desc="Organic vs referral per hari" />
+          <SectionHeader 
+            icon={UserPlus} 
+            title="Pertumbuhan Owner Baru" 
+            desc="Organic vs referral per hari" 
+            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Growth")} filename="growth_report" />}
+          />
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={growth?.series ?? []} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -666,7 +687,12 @@ export default function AnalyticsPage() {
         </Card>
 
         <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-          <SectionHeader icon={MapPin} title="Distribusi Wilayah" desc={`${geo?.total_outlets ?? 0} outlet pada periode ini`} />
+          <SectionHeader 
+            icon={MapPin} 
+            title="Distribusi Wilayah" 
+            desc={`${geo?.total_outlets ?? 0} outlet pada periode ini`} 
+            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Geo Provinsi" || s.sheetName === "Geo Kota")} filename="geo_distribution" />}
+          />
           <div className="space-y-2.5 mt-1 max-h-[240px] overflow-y-auto custom-scrollbar pr-1">
             {(geo?.top_provinsi ?? []).map((prov, index) => (
               <div key={prov.name} className="space-y-1">
@@ -698,9 +724,14 @@ export default function AnalyticsPage() {
       </div>
 
       <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-        <div className="flex items-start justify-between mb-4">
-          <SectionHeader icon={Activity} title="Platform Activity" desc="Outlet aktif, volume order, dan GMV per hari" />
-          <div className="text-right">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4 gap-4 w-full">
+          <SectionHeader 
+            icon={Activity} 
+            title="Platform Activity" 
+            desc="Outlet aktif, volume order, dan GMV per hari" 
+            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Activity")} filename="platform_activity" />}
+          />
+          <div className="text-right shrink-0 mt-2 md:mt-0">
             <p className="text-xs font-extrabold text-slate-900">{activity?.total_workforce ?? 0}</p>
             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tenaga Kerja</p>
           </div>
@@ -722,7 +753,12 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-          <SectionHeader icon={Gift} title="Referral Economy" desc={periodLabel} />
+          <SectionHeader 
+            icon={Gift} 
+            title="Referral Economy" 
+            desc={periodLabel} 
+            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Referral Summary" || s.sheetName === "Top Referrers")} filename="referral_economy" />}
+          />
           <div className="grid grid-cols-2 gap-3 mt-1">
             {[
               { label: "Total Komisi Topup", value: fmtCurrency(referral?.total_reward_distributed ?? 0), color: "bg-amber-50 text-amber-700" },
@@ -768,9 +804,14 @@ export default function AnalyticsPage() {
       </div>
 
       <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <SectionHeader icon={AlertTriangle} title="Churn Risk: Inactive Owners" desc="Owner tanpa transaksi sepanjang rentang terpilih" />
-          <div className="text-right">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4 gap-4 w-full">
+          <SectionHeader 
+            icon={AlertTriangle} 
+            title="Churn Risk: Inactive Owners" 
+            desc="Owner tanpa transaksi sepanjang rentang terpilih" 
+            action={<PanelExportButton sheets={exportSheets.filter(s => s.sheetName === "Inactive Owners")} filename="churn_risk" />}
+          />
+          <div className="text-right shrink-0 mt-2 md:mt-0">
             <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100">
               {inactiveOwners?.total ?? 0} Owner Inaktif
             </span>

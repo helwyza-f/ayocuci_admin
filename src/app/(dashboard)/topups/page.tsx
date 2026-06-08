@@ -278,19 +278,19 @@ export default function TopupsManagementPage() {
     const method = item.tk_metode_bayar;
     const hasBukti = !!item.tk_bukti;
 
-    if (status === "success" || status === "completed") {
-      return { label: "Completed", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
+    if (status === "success" || status === "completed" || status === "accepted") {
+      return { label: "Success / Accepted", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
     }
-    if (status === "failed") {
-      return { label: "Failed", class: "bg-rose-50 text-rose-600 border-rose-100" };
+    if (status === "failed" || status === "rejected") {
+      return { label: "Rejected", class: "bg-rose-50 text-rose-600 border-rose-100" };
+    }
+    if (status === "expired") {
+      return { label: "Expired", class: "bg-slate-100 text-slate-500 border-slate-200" };
     }
     if (status === "pending" || status === "verification") {
-      if (method === "transfer" && hasBukti) {
-        return { label: "Verification", class: "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" };
-      }
-      return { label: "Pending", class: "bg-blue-50 text-blue-600 border-blue-100" };
+      return { label: "Pending Verification", class: "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" };
     }
-    return { label: status, class: "bg-slate-50 text-slate-400 border-slate-100" };
+    return { label: status || "-", class: "bg-slate-50 text-slate-400 border-slate-100" };
   };
 
   return (
@@ -656,7 +656,7 @@ export default function TopupsManagementPage() {
           </div>
 
           <div className="p-4 bg-white border-t border-slate-100 flex flex-col gap-2">
-            {selectedTopup?.tk_status === "pending" ? (
+            {selectedTopup && (!selectedTopup.tk_status || ["pending", "verification"].includes(selectedTopup.tk_status.toLowerCase())) ? (
               <div className="flex flex-col gap-2">
                 {selectedTopup.tk_metode_bayar === 'transfer' ? (
                    <div className="grid grid-cols-2 gap-2">

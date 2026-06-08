@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -103,6 +104,7 @@ function ReferralAdminPageContent() {
   const [rewardDateRange, setRewardDateRange] = useState<DateRange>({ start: "", end: "" });
   const searchParams = useSearchParams();
   const [rewardSearch, setRewardSearch] = useState(searchParams.get("search") || "");
+  const [activeTab, setActiveTab] = useState(searchParams.get("search") ? "rewards" : "payouts");
 
   useEffect(() => {
     if (searchParams.get("search")) {
@@ -257,8 +259,17 @@ function ReferralAdminPageContent() {
         />
       </div>
 
-      {/* PAYOUT QUEUE — full width */}
-      <div className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="flex justify-start">
+          <TabsList className="bg-slate-100/50 p-1 border border-slate-100">
+            <TabsTrigger value="payouts" className="text-xs font-bold px-6">Riwayat Pencairan / Payout</TabsTrigger>
+            <TabsTrigger value="rewards" className="text-xs font-bold px-6">Riwayat Komisi Masuk</TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="payouts" className="m-0 space-y-4 outline-none">
+          {/* PAYOUT QUEUE — full width */}
+          <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
              <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                 <History className="h-3.5 w-3.5" />
@@ -428,7 +439,9 @@ function ReferralAdminPageContent() {
             onPageChange={setPage}
           />
         </div>
+        </TabsContent>
 
+        <TabsContent value="rewards" className="m-0 space-y-4 outline-none">
         {/* REWARD HISTORY — Riwayat mutasi reward masuk */}
         <div className="space-y-4" id="rewards-section">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
@@ -592,6 +605,8 @@ function ReferralAdminPageContent() {
             </div>
           </Card>
         </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

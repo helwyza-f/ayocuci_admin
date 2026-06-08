@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   User,
   Mail,
+  Gift,
   Calendar,
   Coins,
   ShieldCheck,
@@ -273,20 +274,17 @@ export default function TenantDetailPage() {
 
   const getTopupStatusConfig = (status?: string, method?: string, hasProof?: boolean) => {
     const normalized = (status || "").toLowerCase();
-    if (normalized === "success" || normalized === "completed") {
-      return { label: "Success", className: "bg-emerald-50 text-emerald-600 border-emerald-100" };
+    if (normalized === "success" || normalized === "completed" || normalized === "accepted") {
+      return { label: "Success / Accepted", className: "bg-emerald-50 text-emerald-600 border-emerald-100" };
     }
-    if (normalized === "failed") {
-      return { label: "Failed", className: "bg-rose-50 text-rose-600 border-rose-100" };
+    if (normalized === "failed" || normalized === "rejected") {
+      return { label: "Rejected", className: "bg-rose-50 text-rose-600 border-rose-100" };
     }
     if (normalized === "expired") {
       return { label: "Expired", className: "bg-slate-100 text-slate-500 border-slate-200" };
     }
     if (normalized === "pending" || normalized === "verification") {
-      if (method === "transfer" && hasProof) {
-        return { label: "Verification", className: "bg-amber-50 text-amber-600 border-amber-100" };
-      }
-      return { label: "Pending", className: "bg-blue-50 text-blue-600 border-blue-100" };
+      return { label: "Pending Verification", className: "bg-amber-50 text-amber-600 border-amber-100" };
     }
     return { label: normalized || "-", className: "bg-slate-50 text-slate-400 border-slate-100" };
   };
@@ -602,37 +600,83 @@ export default function TenantDetailPage() {
                                 {
                                   label: "Usia Bisnis",
                                   value: (() => {
-                                    // Usia bisnis = sejak bergabung di app (ot_created)
-                                    const baseDateStr = profile?.ot_created;
-                                    if (!baseDateStr) return "BELUM DIATUR";
+                                    // Usia bisnis = berdasarkan input tanggal berjalan dari nasabah
+                                    const rawDate = profile?.ot_tanggal_berjalan;
+                                    if (!rawDate) return "BELUM DIATUR";
+
                                     try {
-                                      const baseDate = new Date(baseDateStr);
-                                      const now = new Date();
+                                      let baseDate;
                                       
+                                      // Coba parse format "MM-YYYY", "YYYY-MM", "MM/YYYY", "YYYY/MM"
+                                      const matchDash = rawDate.match(/^(\d{1,4})[-/](\d{1,4})$/);
+                                      if (matchDash) {
+                                        let p1 = parseInt(matchDash[1]);
+                                        let p2 = parseInt(matchDash[2]);
+                                        let year = p1 > 1000 ? p1 : (p2 > 1000 ? p2 : null);
+                                        let month = p1 <= 12 ? p1 : (p2 <= 12 ? p2 : null);
+                                        
+                                        if (year !== null && month !== null) {
+                                           baseDate = new Date(year, month - 1, 1);
+                                        }
+                                      } 
+                                      
+                                      // Coba parse format "Bulan Tahun" e.g. "Maret 2023"
+                                      if (!baseDate) {
+                                        const indonesianMonths: Record<string, number> = {
+                                          "januari": 0, "februari": 1, "maret": 2, "april": 3, "mei": 4, "juni": 5,
+                                          "juli": 6, "agustus": 7, "september": 8, "oktober": 9, "november": 10, "desember": 11,
+                                          "january": 0, "february": 1, "march": 2, "may": 4, "june": 5, "july": 6, "august": 7, "october": 9, "december": 11
+                                        };
+                                        const parts = rawDate.toLowerCase().trim().split(/\s+/);
+                                        if (parts.length >= 2) {
+                                           let m = indonesianMonths[parts[0]];
+                                           let y = parseInt(parts[1]);
+                                           if (m !== undefined && !isNaN(y)) {
+                                              baseDate = new Date(y, m, 1);
+                                           } else {
+                                              // reverse check "2023 Maret"
+                                              m = indonesianMonths[parts[1]];
+                                              y = parseInt(parts[0]);
+                                              if (m !== undefined && !isNaN(y)) {
+                                                 baseDate = new Date(y, m, 1);
+                                              }
+                                           }
+                                        }
+                                      }
+
+                                      // Fallback ke native Date parsing
+                                      if (!baseDate || isNaN(baseDate.getTime())) {
+                                        baseDate = new Date(rawDate);
+                                      }
+
+                                      if (isNaN(baseDate.getTime())) {
+                                        // Fallback ke ot_created jika seluruh parsing gagal
+                                        if (profile?.ot_created) {
+                                           baseDate = new Date(profile.ot_created);
+                                        } else {
+                                           return "BELUM DIATUR";
+                                        }
+                                      }
+
+                                      const now = new Date();
                                       let years = now.getFullYear() - baseDate.getFullYear();
                                       let months = now.getMonth() - baseDate.getMonth();
                                       let days = now.getDate() - baseDate.getDate();
-                                      
+
                                       if (days < 0) {
                                         months -= 1;
-                                        // Dapatkan jumlah hari di bulan sebelumnya
-                                        const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-                                        days += prevMonth.getDate();
                                       }
-                                      
+
                                       if (months < 0) {
                                         years -= 1;
                                         months += 12;
                                       }
+
+                                      const partsText = [];
+                                      if (years > 0) partsText.push(`${years} TAHUN`);
+                                      if (months > 0) partsText.push(`${months} BULAN`);
                                       
-                                      const parts = [];
-                                      if (years > 0) parts.push(`${years} Tahun`);
-                                      if (months > 0) parts.push(`${months} Bulan`);
-                                      if (years === 0 && months === 0) {
-                                        parts.push(`${days} Hari`);
-                                      }
-                                      
-                                      return parts.length > 0 ? parts.join(" ") : "Baru Buka";
+                                      return partsText.length > 0 ? partsText.join(" ") : "KURANG DARI 1 BULAN";
                                     } catch (e) {
                                       return "BELUM DIATUR";
                                     }
@@ -1126,9 +1170,25 @@ export default function TenantDetailPage() {
                                    </div>
                                 </td>
                                 <td className="px-6 py-4">
-                                   <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-100 text-[8px] font-bold uppercase">
-                                      {topup.tk_metode_bayar || "-"}
-                                   </Badge>
+                                   {topup.tk_metode_bayar === 'bonus' ? (
+                                      <div className="flex flex-col gap-1">
+                                         <div className="flex items-center gap-1.5 bg-purple-50 px-2.5 py-1.5 rounded-lg border border-purple-100 w-fit group-hover:bg-white group-hover:shadow-sm transition-all dark:bg-purple-950/20 dark:border-purple-900/30">
+                                            <Gift className="h-3 w-3 text-purple-500 group-hover:scale-110 transition-transform" />
+                                            <span className="font-bold uppercase text-purple-600 tracking-widest text-[8px] dark:text-purple-400">
+                                               BONUS
+                                            </span>
+                                         </div>
+                                         {topup.keterangan && (
+                                            <span className="text-[8px] font-semibold text-slate-500 italic ml-1 max-w-[120px] truncate" title={topup.keterangan}>
+                                               ({topup.keterangan})
+                                            </span>
+                                         )}
+                                      </div>
+                                   ) : (
+                                      <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-100 text-[8px] font-bold uppercase">
+                                         {topup.tk_metode_bayar || "-"}
+                                      </Badge>
+                                   )}
                                 </td>
                                 <td className="px-6 py-4">
                                    {proofUrl ? (
@@ -1148,11 +1208,12 @@ export default function TenantDetailPage() {
                                    <button
                                       type="button"
                                       onClick={() => { setSelectedKoin(topup); setIsKoinModalOpen(true); }}
-                                      className="inline-flex items-center justify-end"
+                                      className="inline-flex items-center justify-end gap-1.5 group"
                                    >
-                                      <Badge variant="outline" className={cn("text-[8px] px-2 py-0.5 font-bold uppercase border", statusConfig.className)}>
+                                      <Badge variant="outline" className={cn("text-[8px] px-2 py-0.5 font-bold uppercase border transition-colors group-hover:brightness-95", statusConfig.className)}>
                                          {statusConfig.label}
                                       </Badge>
+                                      <ArrowUpRight className="h-3 w-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
                                    </button>
                                 </td>
                              </tr>
@@ -1182,7 +1243,11 @@ export default function TenantDetailPage() {
                 <Badge variant="outline" className="font-bold text-[9px] uppercase tracking-wider text-slate-400 border-slate-200">
                    {selectedKoin?.tk_id}
                 </Badge>
-                <Badge className="bg-amber-50 text-amber-600 border-amber-100 text-[8px] font-bold uppercase">Pending Verification</Badge>
+                {selectedKoin && (
+                  <Badge className={cn("text-[8px] font-bold uppercase", getTopupStatusConfig(selectedKoin.tk_status, selectedKoin.tk_metode_bayar, !!selectedKoin.tk_bukti).className)}>
+                    {getTopupStatusConfig(selectedKoin.tk_status, selectedKoin.tk_metode_bayar, !!selectedKoin.tk_bukti).label}
+                  </Badge>
+                )}
              </div>
              <h3 className="text-lg font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading uppercase">
                 Topup {selectedKoin?.tk_jumlah?.toLocaleString()} Koin
@@ -1191,26 +1256,38 @@ export default function TenantDetailPage() {
           </div>
 
           <div className="p-5 space-y-5 bg-slate-50/30">
-             <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bukti Transfer</label>
-                   {selectedKoin?.tk_bukti && (
-                      <a href={`${API_BASE_URL}${selectedKoin.tk_bukti}`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline">
-                         Lihat Fullscreen <ExternalLink className="h-3 w-3" />
-                      </a>
+             {selectedKoin?.tk_metode_bayar === 'bonus' ? (
+                <div className="space-y-2">
+                   <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bonus Allocation Detail</label>
+                   <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-lg dark:bg-purple-950/10 dark:border-purple-900/30">
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-start gap-2">
+                         <Gift className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                         <span>{selectedKoin.keterangan || "Alokasi bonus sistem otomatis."}</span>
+                      </p>
+                   </div>
+                </div>
+             ) : (
+                <div className="space-y-2">
+                   <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bukti Transfer</label>
+                      {selectedKoin?.tk_bukti && (
+                         <a href={`${API_BASE_URL}${selectedKoin.tk_bukti}`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline">
+                            Lihat Fullscreen <ExternalLink className="h-3 w-3" />
+                         </a>
+                      )}
+                   </div>
+                   {selectedKoin?.tk_bukti ? (
+                      <div className="aspect-video rounded-xl border border-slate-200 overflow-hidden bg-slate-200 shadow-inner">
+                         <img src={`${API_BASE_URL}${selectedKoin.tk_bukti}`} className="w-full h-full object-cover" alt="Proof" />
+                      </div>
+                   ) : (
+                      <div className="aspect-video rounded-xl bg-slate-100 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">
+                         <AlertCircle className="h-8 w-8 mb-2 opacity-20" />
+                         <p className="text-[10px] font-bold uppercase tracking-widest">Bukti Belum Diunggah</p>
+                      </div>
                    )}
                 </div>
-                {selectedKoin?.tk_bukti ? (
-                   <div className="aspect-video rounded-xl border border-slate-200 overflow-hidden bg-slate-200 shadow-inner">
-                      <img src={`${API_BASE_URL}${selectedKoin.tk_bukti}`} className="w-full h-full object-cover" alt="Proof" />
-                   </div>
-                ) : (
-                   <div className="aspect-video rounded-xl bg-slate-100 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">
-                      <AlertCircle className="h-8 w-8 mb-2 opacity-20" />
-                      <p className="text-[10px] font-bold uppercase tracking-widest">Bukti Belum Diunggah</p>
-                   </div>
-                )}
-             </div>
+             )}
 
              <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
@@ -1224,26 +1301,28 @@ export default function TenantDetailPage() {
              </div>
           </div>
 
-          <div className="p-5 bg-white border-t border-slate-100 flex gap-3">
-             <Button 
-                disabled={confirming} 
-                onClick={() => {
-                   setConfirmTarget({ type: 'koin', id: selectedKoin.tk_id, status: 'confirm' });
-                   setIsConfirmModalOpen(true);
-                }}
-                className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 shadow-md"
-              >
-                {confirming ? <LoaderIcon className="h-4 w-4 animate-spin" /> : "Konfirmasi Pembayaran"}
-              </Button>
-              <Button 
-                variant="outline" 
-                disabled={confirming} 
-                onClick={() => handleValidateKoin(selectedKoin.tk_id, "failed")}
-                className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider text-rose-500 border-slate-200 hover:bg-rose-50"
-              >
-                Batalkan
-              </Button>
-           </div>
+          {selectedKoin && (!selectedKoin.tk_status || ["pending", "verification"].includes(selectedKoin.tk_status.toLowerCase())) && (
+             <div className="p-5 bg-white border-t border-slate-100 flex gap-3">
+                <Button 
+                   disabled={confirming} 
+                   onClick={() => {
+                      setConfirmTarget({ type: 'koin', id: selectedKoin.tk_id, status: 'confirm' });
+                      setIsConfirmModalOpen(true);
+                   }}
+                   className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 shadow-md"
+                 >
+                   {confirming ? <LoaderIcon className="h-4 w-4 animate-spin" /> : "Konfirmasi Pembayaran"}
+                 </Button>
+                 <Button 
+                   variant="outline" 
+                   disabled={confirming} 
+                   onClick={() => handleValidateKoin(selectedKoin.tk_id, "failed")}
+                   className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider text-rose-500 border-slate-200 hover:bg-rose-50"
+                 >
+                   Batalkan
+                 </Button>
+              </div>
+          )}
         </DialogContent>
       </Dialog>
 

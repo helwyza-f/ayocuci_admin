@@ -1,4 +1,4 @@
-export type TopupStatus = "pending" | "success" | "failed" | "completed" | "verification";
+export type TopupStatus = "pending" | "success" | "failed" | "completed" | "verification" | "accepted" | "rejected" | "expired";
 export type TopupMethod = "transfer" | "midtrans" | "bonus" | "manual";
 
 export interface Topup {
