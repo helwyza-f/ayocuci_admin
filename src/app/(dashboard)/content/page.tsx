@@ -27,12 +27,7 @@ import {
 } from "@/components/ui/select";
 import { ContentBanner, contentService } from "@/services/content.service";
 import { cn } from "@/lib/utils";
-
-const API_ROOT =
-  (process.env.NEXT_PUBLIC_API_URL || "https://api.ayocuci.id/api/v1").replace(
-    /\/api\/v1$/,
-    "",
-  );
+import { resolveUploadUrl } from "@/lib/upload-url";
 
 export default function DashboardContentPage() {
   const [items, setItems] = useState<ContentBanner[]>([]);
@@ -196,7 +191,7 @@ export default function DashboardContentPage() {
               >
                 <div className="overflow-hidden rounded-md border border-slate-100 shadow-sm">
                   <img
-                    src={`${API_ROOT}${item.image_url}`}
+                    src={resolveUploadUrl(item.image_url)}
                     alt={item.title}
                     className="aspect-[16/9] w-full object-cover md:w-[140px] group-hover/item:scale-110 transition-transform duration-500"
                   />

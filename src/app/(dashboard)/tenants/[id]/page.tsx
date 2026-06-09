@@ -58,6 +58,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, differenceInDays } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { resolveUploadUrl } from "@/lib/upload-url";
 import StatCard from "@/components/modules/dashboard/stat-card";
 import { toast } from "sonner";
 import {
@@ -279,8 +280,7 @@ export default function TenantDetailPage() {
 
   const imageUrl = useMemo(() => {
     if (!profile?.ot_gambar) return null;
-    if (profile.ot_gambar?.startsWith("http")) return profile.ot_gambar;
-    return `${API_BASE_URL}${profile.ot_gambar}`;
+    return resolveUploadUrl(profile.ot_gambar);
   }, [profile]);
 
   const getTopupStatusConfig = (status?: string, method?: string, hasProof?: boolean) => {
@@ -1174,7 +1174,7 @@ export default function TenantDetailPage() {
                        {topupHistory.length > 0 ? topupHistory.slice((pages.topups - 1) * itemsPerPage, pages.topups * itemsPerPage).map((topup, i) => {
                           const statusConfig = getTopupStatusConfig(topup.tk_status, topup.tk_metode_bayar, !!topup.tk_bukti);
                           const proofUrl = topup.tk_bukti
-                             ? `${topup.tk_bukti.startsWith("http") ? "" : API_BASE_URL}${topup.tk_bukti}`
+                             ? resolveUploadUrl(topup.tk_bukti)
                              : "";
 
                           return (
@@ -1307,14 +1307,14 @@ export default function TenantDetailPage() {
                    <div className="flex items-center justify-between">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bukti Transfer</label>
                       {selectedKoin?.tk_bukti && (
-                         <a href={`${API_BASE_URL}${selectedKoin.tk_bukti}`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline">
+                         <a href={resolveUploadUrl(selectedKoin.tk_bukti)} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline">
                             Lihat Fullscreen <ExternalLink className="h-3 w-3" />
                          </a>
                       )}
                    </div>
                    {selectedKoin?.tk_bukti ? (
                       <div className="aspect-video rounded-xl border border-slate-200 overflow-hidden bg-slate-200 shadow-inner">
-                         <img src={`${API_BASE_URL}${selectedKoin.tk_bukti}`} className="w-full h-full object-cover" alt="Proof" />
+                         <img src={resolveUploadUrl(selectedKoin.tk_bukti)} className="w-full h-full object-cover" alt="Proof" />
                       </div>
                    ) : (
                       <div className="aspect-video rounded-xl bg-slate-100 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">
@@ -1385,14 +1385,14 @@ export default function TenantDetailPage() {
                 <div className="flex items-center justify-between">
                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bukti Pembayaran</label>
                    {selectedAddon?.ha_bukti && (
-                      <a href={`${API_BASE_URL}${selectedAddon.ha_bukti}`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline">
+                      <a href={resolveUploadUrl(selectedAddon.ha_bukti)} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline">
                          Lihat Fullscreen <ExternalLink className="h-3 w-3" />
                       </a>
                    )}
                 </div>
                 {selectedAddon?.ha_bukti ? (
                    <div className="aspect-video rounded-xl border border-slate-200 overflow-hidden bg-slate-200 shadow-inner">
-                      <img src={`${API_BASE_URL}${selectedAddon.ha_bukti}`} className="w-full h-full object-cover" alt="Proof" />
+                      <img src={resolveUploadUrl(selectedAddon.ha_bukti)} className="w-full h-full object-cover" alt="Proof" />
                    </div>
                 ) : (
                    <div className="aspect-video rounded-xl bg-slate-100 border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">

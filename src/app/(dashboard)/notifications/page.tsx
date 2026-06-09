@@ -27,6 +27,7 @@ import {
 import { format, isSameDay } from "date-fns";
 import { id } from "date-fns/locale";
 import { toast } from "sonner";
+import { resolveUploadUrl } from "@/lib/upload-url";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -412,10 +413,10 @@ export default function NotificationsPage() {
                     <div className="space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Media Lampiran</p>
                         <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-2">
-                           <img 
-                            src={selectedLog.image_url.startsWith('http') ? selectedLog.image_url : `https://api.ayocuci.id${selectedLog.image_url}`} 
-                            alt="Notification" 
-                            className="w-full h-auto object-contain rounded-lg shadow-inner" 
+                           <img
+                            src={resolveUploadUrl(selectedLog.image_url)}
+                            alt="Notification"
+                            className="w-full h-auto object-contain rounded-lg shadow-inner"
                            />
                         </div>
                     </div>

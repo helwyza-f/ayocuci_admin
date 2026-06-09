@@ -18,6 +18,7 @@ import Link from "next/link";
 import ActivityFeed from "@/components/modules/dashboard/activity-feed";
 import { Topup } from "@/types/topup";
 import { cn } from "@/lib/utils";
+import { resolveUploadUrl } from "@/lib/upload-url";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { analyticsService, GrowthSummary, ActivitySummary } from "@/services/analytics.service";
@@ -371,9 +372,9 @@ export default function DashboardPage() {
               <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bukti Pembayaran</label>
               {selectedItem?.data.tk_bukti ? (
                  <div className="group relative aspect-video rounded-xl border border-slate-200 overflow-hidden bg-slate-200">
-                  <img src={`https://api.ayocuci.id${selectedItem.data.tk_bukti}`} className="w-full h-full object-cover" alt="Proof" />
+                  <img src={resolveUploadUrl(selectedItem.data.tk_bukti)} className="w-full h-full object-cover" alt="Proof" />
                     <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                      <a href={`https://api.ayocuci.id${selectedItem.data.tk_bukti}`} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-2">
+                      <a href={resolveUploadUrl(selectedItem.data.tk_bukti)} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-2">
                         <ArrowUpRight className="h-3 w-3" /> Layar Penuh
                       </a>
                     </div>

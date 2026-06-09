@@ -56,12 +56,11 @@ import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { Tenant } from "@/types/tenant";
 import { Owner, EconomyConfig } from "@/types/domain";
 import { apiFetcher } from "@/lib/fetcher";
+import { resolveUploadUrl } from "@/lib/upload-url";
 import useSWR from "swr";
 import { useRegionNames } from "@/hooks/use-region-names";
 
 const PAGE_SIZE = 25;
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.ayocuci.id";
 
 // ─── KPI Card (gaya analytics) ────────────────────────────
 function KpiCard({
@@ -668,9 +667,9 @@ export default function SubscriptionsPage() {
                 {selectedTrx.ha_bukti ? (
                    <div className="group relative aspect-video rounded border border-slate-200 overflow-hidden bg-slate-200">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`${API_URL}${selectedTrx.ha_bukti}`} className="w-full h-full object-cover" alt="Proof" />
+                      <img src={resolveUploadUrl(selectedTrx.ha_bukti)} className="w-full h-full object-cover" alt="Proof" />
                       <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                        <a href={`${API_URL}${selectedTrx.ha_bukti}`} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded font-bold text-[10px] flex items-center gap-2">
+                        <a href={resolveUploadUrl(selectedTrx.ha_bukti)} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded font-bold text-[10px] flex items-center gap-2">
                           <ExternalLink className="h-3 w-3" /> Fullscreen
                         </a>
                       </div>
