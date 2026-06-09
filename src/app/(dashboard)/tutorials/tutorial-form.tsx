@@ -111,6 +111,9 @@ export function TutorialForm({ initial }: { initial?: TutorialItem }) {
     try {
       const payload: TutorialPayload = {
         ...form,
+        title: form.title.slice(0, 255),
+        summary: form.summary.slice(0, 255),
+        body: form.body.slice(0, 255), // DB constraint
         sort_order: Number(form.sort_order) || 0,
       };
       const res = initial
@@ -199,7 +202,8 @@ export function TutorialForm({ initial }: { initial?: TutorialItem }) {
               value={form.title}
               onChange={(value) => setForm({ ...form, title: value })}
               placeholder="Contoh: Cara membuat transaksi baru"
-              helper="Tampil sebagai judul utama kartu tutorial."
+              helper="Tampil sebagai judul utama kartu tutorial. Maksimal 250 karakter."
+              maxLength={250}
             />
 
             <Field
@@ -207,7 +211,8 @@ export function TutorialForm({ initial }: { initial?: TutorialItem }) {
               value={form.summary}
               onChange={(value) => setForm({ ...form, summary: value })}
               placeholder="Deskripsi singkat yang tampil di kartu tutorial"
-              helper="Tampil di kartu list sebelum user membuka detail."
+              helper="Tampil di kartu list sebelum user membuka detail. Maksimal 250 karakter."
+              maxLength={250}
             />
 
             {form.type === "VIDEO" && (
@@ -272,8 +277,12 @@ export function TutorialForm({ initial }: { initial?: TutorialItem }) {
                 value={form.body}
                 onChange={(e) => setForm({ ...form, body: e.target.value })}
                 placeholder={bodyPlaceholder}
+                maxLength={250}
                 className="min-h-72 rounded-2xl bg-slate-50 p-5 leading-relaxed"
               />
+              <p className="text-[10px] text-right font-medium text-slate-400">
+                {form.body.length}/250 karakter
+              </p>
             </div>
           </div>
         </Card>
@@ -325,6 +334,7 @@ function Field({
   placeholder,
   helper,
   type = "text",
+  maxLength,
 }: {
   label: string;
   value: string;
@@ -332,6 +342,7 @@ function Field({
   placeholder: string;
   helper?: string;
   type?: string;
+  maxLength?: number;
 }) {
   return (
     <div className="space-y-2">
@@ -343,6 +354,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        maxLength={maxLength}
         className="h-12 rounded-xl bg-slate-50 font-bold"
       />
       {helper && (
