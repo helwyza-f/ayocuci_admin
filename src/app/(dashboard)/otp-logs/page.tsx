@@ -38,6 +38,8 @@ import type { ApiResponse } from "@/types/api";
 import type { OtpLog } from "@/types/domain";
 
 const PAGE_SIZE = 25;
+const LEDGER_TERKIRIM_EVENT = new Set(["sent"]);
+const LEDGER_GAGAL_EVENT = new Set(["send_failed", "verify_failed"]);
 
 const FLOW_LABELS: Record<string, string> = {
   register: "Registrasi",
@@ -84,6 +86,35 @@ function normalizeWhatsapp(phone?: string | null) {
   return `https://wa.me/${digits}`;
 }
 
+type OtpLedger = {
+  ledger_key: string;
+  latest: OtpLog;
+  phone: string | null;
+  email: string | null;
+  flow: string;
+  provider: string;
+  event: string;
+  message: string | null;
+  otp_code: string | null;
+  created_at: string;
+  attempt_count: number;
+};
+
+function getLedgerStatus(logs: OtpLog[]) {
+  const sorted = [...logs].sort((a, b) => {
+    const timeDiff = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (timeDiff !== 0) return timeDiff;
+    return b.id - a.id;
+  });
+  const latest = sorted[0];
+  const lastSentWithCode = sorted.find((item) => item.event === "sent" && item.otp_code);
+
+  return {
+    latest,
+    otpCode: lastSentWithCode?.otp_code ?? null,
+  };
+}
+
 export default function OTPLogsPage() {
   const [search, setSearch] = useState("");
   const [flow, setFlow] = useState("all");
@@ -103,9 +134,44 @@ export default function OTPLogsPage() {
 
   const logs = useMemo(() => data?.data || [], [data]);
 
+  const ledgers = useMemo<OtpLedger[]>(() => {
+    const grouped = new Map<string, OtpLog[]>();
+
+    for (const item of logs) {
+      const phoneKey = item.phone?.replace(/\D/g, "") || item.email?.toLowerCase() || `log-${item.id}`;
+      const ledgerKey = `${phoneKey}::${item.flow}`;
+      const existing = grouped.get(ledgerKey) || [];
+      existing.push(item);
+      grouped.set(ledgerKey, existing);
+    }
+
+    return Array.from(grouped.entries())
+      .map(([ledgerKey, group]) => {
+        const { latest, otpCode } = getLedgerStatus(group);
+        return {
+          ledger_key: ledgerKey,
+          latest,
+          phone: latest.phone ?? group.find((item) => item.phone)?.phone ?? null,
+          email: latest.email ?? group.find((item) => item.email)?.email ?? null,
+          flow: latest.flow,
+          provider: latest.provider,
+          event: latest.event,
+          message: latest.message,
+          otp_code: otpCode,
+          created_at: latest.created_at,
+          attempt_count: group.length,
+        };
+      })
+      .sort((a, b) => {
+        const timeDiff = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (timeDiff !== 0) return timeDiff;
+        return b.latest.id - a.latest.id;
+      });
+  }, [logs]);
+
   const filteredLogs = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const byFilters = logs.filter((item) => {
+    const byFilters = ledgers.filter((item) => {
       const matchesSearch =
         !query ||
         item.phone?.toLowerCase().includes(query) ||
@@ -120,16 +186,16 @@ export default function OTPLogsPage() {
     });
 
     return filterByDateRange(byFilters, (item) => item.created_at, dateRange);
-  }, [dateRange, event, flow, logs, search]);
+  }, [dateRange, event, flow, ledgers, search]);
 
   const stats = useMemo(
     () => ({
-      total: logs.length,
-      sent: logs.filter((item) => item.event === "sent").length,
-      failed: logs.filter((item) => item.event === "send_failed").length,
-      verified: logs.filter((item) => item.event === "verify_success").length,
+      total: ledgers.length,
+      sent: ledgers.filter((item) => LEDGER_TERKIRIM_EVENT.has(item.event)).length,
+      failed: ledgers.filter((item) => LEDGER_GAGAL_EVENT.has(item.event)).length,
+      verified: ledgers.filter((item) => item.event === "verify_success").length,
     }),
-    [logs],
+    [ledgers],
   );
 
   const totalPages = Math.ceil(filteredLogs.length / PAGE_SIZE);
@@ -291,7 +357,7 @@ export default function OTPLogsPage() {
                 paginatedLogs.map((item) => {
                   const waHref = normalizeWhatsapp(item.phone);
                   return (
-                    <tr key={item.id} className="hover:bg-primary/[0.02] transition-colors group">
+                    <tr key={item.ledger_key} className="hover:bg-primary/[0.02] transition-colors group">
                       <td className="px-5 py-3 align-top">
                         <div className="space-y-1.5">
                           <div className="flex items-center gap-2">
@@ -303,6 +369,9 @@ export default function OTPLogsPage() {
                           ) : (
                             <p className="text-[10px] font-medium text-slate-300">Tanpa email</p>
                           )}
+                          <p className="text-[10px] font-medium text-slate-400">
+                            {item.attempt_count} log
+                          </p>
                           {waHref ? (
                             <a
                               href={waHref}
@@ -349,7 +418,7 @@ export default function OTPLogsPage() {
                           </span>
                           <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400">
                             <Calendar className="h-3 w-3" />
-                            Log #{item.id}
+                            Ledger terbaru #{item.latest.id}
                           </span>
                         </div>
                       </td>
