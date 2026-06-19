@@ -77,6 +77,14 @@ function eventBadgeClass(event: string) {
   }
 }
 
+function summarizeMessage(message?: string | null) {
+  if (!message) return "-";
+
+  const compact = message.replace(/\s+/g, " ").trim();
+  const withoutRaw = compact.replace(/\s*\|\s*response=.*$/i, "").trim();
+  return withoutRaw || compact || "-";
+}
+
 function normalizeWhatsapp(phone?: string | null) {
   if (!phone) return null;
   const digits = String(phone).replace(/\D/g, "");
@@ -407,9 +415,16 @@ export default function OTPLogsPage() {
                         )}
                       </td>
                       <td className="px-5 py-3 align-top">
-                        <p className="text-xs font-medium text-slate-600 leading-5 max-w-[380px]">
-                          {item.message || "-"}
-                        </p>
+                        <div className="max-w-[380px] space-y-1">
+                          <p className="text-xs font-medium text-slate-600 leading-5">
+                            {summarizeMessage(item.message)}
+                          </p>
+                          {item.message && item.message !== summarizeMessage(item.message) ? (
+                            <p className="text-[10px] font-medium text-slate-400 break-all leading-4">
+                              {item.message}
+                            </p>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="px-5 py-3 align-top text-right">
                         <div className="inline-flex flex-col items-end gap-1">
