@@ -48,7 +48,7 @@ import { id } from "date-fns/locale";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { AxiosError } from "axios";
 import { ApiErrorResponse, ApiResponse } from "@/types/api";
-import { Topup, TopupStatus } from "@/types/topup";
+import { Topup } from "@/types/topup";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
@@ -56,6 +56,7 @@ import { Tenant } from "@/types/tenant";
 import { Owner } from "@/types/domain";
 import { apiFetcher } from "@/lib/fetcher";
 import { resolveUploadUrl } from "@/lib/upload-url";
+import { getTopupStatusUi, isTopupActionable } from "@/lib/topup-status";
 import useSWR from "swr";
 import { useRegionNames } from "@/hooks/use-region-names";
 
@@ -272,26 +273,6 @@ export default function TopupsManagementPage() {
     }
   };
 
-  const getStatusConfig = (item: Topup) => {
-    const status = item.tk_status;
-    const method = item.tk_metode_bayar;
-    const hasBukti = !!item.tk_bukti;
-
-    if (status === "success" || status === "completed" || status === "accepted") {
-      return { label: "Sukses / Diterima", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
-    }
-    if (status === "failed" || status === "rejected") {
-      return { label: "Ditolak", class: "bg-rose-50 text-rose-600 border-rose-100" };
-    }
-    if (status === "expired") {
-      return { label: "Kedaluwarsa", class: "bg-slate-100 text-slate-500 border-slate-200" };
-    }
-    if (status === "pending" || status === "verification") {
-      return { label: "Menunggu Verifikasi", class: "bg-amber-50 text-amber-600 border-amber-100 animate-pulse" };
-    }
-    return { label: status || "-", class: "bg-slate-50 text-slate-400 border-slate-100" };
-  };
-
   return (
     <div className="space-y-6">
       {/* COMMAND BAR HEADER */}
@@ -467,7 +448,8 @@ export default function TopupsManagementPage() {
                 </tr>
               ) : (
               paginatedData.map((item) => {
-                  const status = getStatusConfig(item);
+                  const status = getTopupStatusUi(item.tk_status);
+                  const isActionable = isTopupActionable(item.tk_status);
                   const dt = formatDateTime(item.tk_created);
                   return (
                     <tr key={item.tk_id} className="hover:bg-slate-50/80 hover:shadow-sm transition-all duration-300 group border-l-[3px] border-transparent hover:border-primary">
@@ -530,7 +512,7 @@ export default function TopupsManagementPage() {
                         )}
                       </td>
                       <td className="px-5 py-3 text-center">
-                        <Badge className={cn("rounded-full px-2 py-0.5 text-[8px] font-bold uppercase border shadow-none transition-all group-hover:shadow-sm", status.class)}>
+                        <Badge className={cn("rounded-full px-2 py-0.5 text-[8px] font-bold uppercase border shadow-none transition-all group-hover:shadow-sm", status.className, isActionable && "animate-pulse")}>
                           {status.label}
                         </Badge>
                       </td>
@@ -541,12 +523,12 @@ export default function TopupsManagementPage() {
                           onClick={() => { setSelectedTopup(item); setIsPreviewOpen(true); }}
                           className={cn(
                             "h-8 px-3 font-bold text-[9px] uppercase active:scale-95 transition-all rounded-lg opacity-80 group-hover:opacity-100 border border-transparent",
-                            (item.tk_status === "pending" || item.tk_status === "verification") && item.tk_metode_bayar !== "bonus"
+                            isActionable && item.tk_metode_bayar !== "bonus"
                               ? "text-amber-600 hover:bg-amber-50 group-hover:border-amber-200"
                               : "text-primary hover:bg-primary/10 group-hover:border-primary/20"
                           )}
                         >
-                          {(item.tk_status === "pending" || item.tk_status === "verification") && item.tk_metode_bayar !== "bonus"
+                          {isActionable && item.tk_metode_bayar !== "bonus"
                             ? <>Verifikasi <ShieldCheck className="h-3 w-3 ml-1" /></>
                             : <>Detail <ChevronRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" /></>
                           }
@@ -655,7 +637,7 @@ export default function TopupsManagementPage() {
           </div>
 
           <div className="p-4 bg-white border-t border-slate-100 flex flex-col gap-2">
-            {selectedTopup && (!selectedTopup.tk_status || ["pending", "verification"].includes(selectedTopup.tk_status.toLowerCase())) ? (
+            {selectedTopup && isTopupActionable(selectedTopup.tk_status) ? (
               <div className="flex flex-col gap-2">
                 {selectedTopup.tk_metode_bayar === 'transfer' ? (
                    <div className="grid grid-cols-2 gap-2">
@@ -689,7 +671,7 @@ export default function TopupsManagementPage() {
             ) : (
               <div className="p-2.5 bg-slate-50 rounded border border-slate-100 text-center">
                  <p className="text-[9px] font-bold uppercase text-slate-400 tracking-widest italic">
-                   Pembukuan Final: {selectedTopup?.tk_status}
+                   Locked: {getTopupStatusUi(selectedTopup?.tk_status).label}
                  </p>
               </div>
             )}

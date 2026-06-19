@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { ContentBanner, contentService } from "@/services/content.service";
 import { cn } from "@/lib/utils";
-import { resolveUploadUrl } from "@/lib/upload-url";
+import { resolveImageVariantUrl } from "@/lib/upload-url";
 
 export default function DashboardContentPage() {
   const [items, setItems] = useState<ContentBanner[]>([]);
@@ -191,7 +191,7 @@ export default function DashboardContentPage() {
               >
                 <div className="overflow-hidden rounded-md border border-slate-100 shadow-sm">
                   <img
-                    src={resolveUploadUrl(item.image_url)}
+                    src={resolveImageVariantUrl(item.image_url, { width: 420 })}
                     alt={item.title}
                     className="aspect-[16/9] w-full object-cover md:w-[140px] group-hover/item:scale-110 transition-transform duration-500"
                   />

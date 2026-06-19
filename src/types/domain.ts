@@ -95,9 +95,12 @@ export interface ReferralAdminReward {
   rr_reference_id: string;
   rr_status: string;        // 'credited' | 'paid'
   rr_created: string;
+  rr_coin_amount?: number;
+  rr_coin_status?: string | null;
+  topup_coin_amount?: number;
+  topup_amount_rp?: number;
   rr_referred_outlet: string;
   referred_outlet_name: string | null;
-  topup_amount: number;
   referrer_id: number;
   referrer_nama: string;
   referrer_email: string;
@@ -114,4 +117,15 @@ export interface Addon {
   ad_keterangan: string;
   ad_status: number;
   ad_created?: string;
+}
+
+export interface OtpLog {
+  id: number;
+  phone: string;
+  email?: string | null;
+  flow: string;
+  event: string;
+  provider: string;
+  message: string;
+  created_at: string;
 }

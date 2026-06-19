@@ -1,16 +1,16 @@
 "use client";
 
-import { Activity, ArrowRight, CheckCircle2, Clock, XCircle, ArrowUpRight, Coins, Zap } from "lucide-react";
+import { Activity, CheckCircle2, Clock, XCircle, Coins, Zap } from "lucide-react";
 import { Topup } from "@/types/topup";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { getTopupStatusUi, isTopupActionable, normalizeTopupStatus } from "@/lib/topup-status";
 
 interface ActivityFeedProps {
   activities: (Topup & { type: 'koin' | 'addon', item_names?: string })[];
   isLoading: boolean;
-  onVerify?: (item: any) => void;
+  onVerify?: (item: Topup & { type: 'koin' | 'addon', item_names?: string }) => void;
 }
 
 export default function ActivityFeed({ activities, isLoading, onVerify }: ActivityFeedProps) {
@@ -37,7 +37,11 @@ export default function ActivityFeed({ activities, isLoading, onVerify }: Activi
 
   return (
     <div className="divide-y divide-slate-100 overflow-hidden">
-      {activities.map((item) => (
+      {activities.map((item) => {
+        const isActionable = isTopupActionable(item.tk_status);
+        const statusUi = getTopupStatusUi(item.tk_status);
+
+        return (
         <div
           key={item.tk_id}
           className="flex items-center justify-between p-3 hover:bg-slate-50/80 transition-all duration-300 group rounded-xl border border-transparent hover:border-slate-100 hover:shadow-sm hover:translate-x-1"
@@ -45,7 +49,7 @@ export default function ActivityFeed({ activities, isLoading, onVerify }: Activi
           <div className="flex items-center gap-3">
             <div className={cn(
               "h-10 w-10 rounded-xl flex items-center justify-center border transition-all duration-300 group-hover:scale-110",
-              getStatusColors(item.tk_status)
+              statusUi.className
             )}>
               {item.type === 'addon' ? <Zap className="h-4 w-4" /> : getStatusIcon(item.tk_status)}
             </div>
@@ -87,36 +91,30 @@ export default function ActivityFeed({ activities, isLoading, onVerify }: Activi
                 variant="ghost" 
                 size="sm" 
                 onClick={() => onVerify(item)}
-                className="h-8 px-3 font-bold text-[10px] uppercase text-primary bg-primary/5 hover:bg-primary/10 border border-primary/10 shadow-sm"
+               className="h-8 px-3 font-bold text-[10px] uppercase text-primary bg-primary/5 hover:bg-primary/10 border border-primary/10 shadow-sm"
                >
-                 {item.tk_status === 'pending' ? "Verify" : "Detail"}
+                 {isActionable ? "Process" : "Detail"}
                </Button>
              )}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
 function getStatusIcon(status: string) {
-  switch (status) {
+  switch (normalizeTopupStatus(status)) {
     case "success":
+    case "completed":
+    case "accepted":
       return <CheckCircle2 className="h-3.5 w-3.5" />;
     case "failed":
+    case "rejected":
+    case "expired":
       return <XCircle className="h-3.5 w-3.5" />;
     default:
       return <Clock className="h-3.5 w-3.5" />;
-  }
-}
-
-function getStatusColors(status: string) {
-  switch (status) {
-    case "success":
-      return "bg-emerald-50 text-emerald-600 border-emerald-100";
-    case "failed":
-      return "bg-rose-50 text-rose-600 border-rose-100";
-    default:
-      return "bg-amber-50 text-amber-600 border-amber-100";
   }
 }

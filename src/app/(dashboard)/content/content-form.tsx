@@ -22,7 +22,7 @@ import {
   ContentCategory,
   contentService,
 } from "@/services/content.service";
-import { resolveUploadUrl } from "@/lib/upload-url";
+import { resolveImageVariantUrl } from "@/lib/upload-url";
 
 type FormState = {
   category: ContentCategory;
@@ -201,7 +201,13 @@ export function ContentForm({ initial }: { initial?: ContentBanner }) {
             {imagePreview || initial?.image_url ? (
               <div className="overflow-hidden rounded-2xl border bg-slate-50">
                 <img
-                  src={imagePreview || resolveUploadUrl(initial?.image_url)}
+                  src={
+                    imagePreview ||
+                    resolveImageVariantUrl(initial?.image_url, {
+                      width: 960,
+                      quality: 82,
+                    })
+                  }
                   alt="Preview banner"
                   className="aspect-[16/9] w-full object-cover"
                 />

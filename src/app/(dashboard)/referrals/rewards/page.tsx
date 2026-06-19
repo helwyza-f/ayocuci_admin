@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ReferralAdminReward, ReferralAdminSummary } from "@/types/domain";
 import { referralAdminService } from "@/services/referral-admin.service";
-import { economyService } from "@/services/economy.service";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { format } from "date-fns";
@@ -23,6 +22,14 @@ const currency = (value: number | string) =>
     currency: "IDR",
     minimumFractionDigits: 0,
   }).format(Number(value || 0));
+
+const getPayoutMethod = (reward: Pick<ReferralAdminReward, "rr_coin_amount" | "rr_coin_status">) =>
+  reward.rr_coin_status === "claimed" || Number(reward.rr_coin_amount || 0) > 0
+    ? "Koin"
+    : "Cash";
+
+const formatCoin = (value: number | string | null | undefined) =>
+  `${Number(value || 0).toLocaleString("id-ID")} Koin`;
 
 // ─── KPI Card ──────────────────────────────────────────────
 function KpiCard({
@@ -55,15 +62,13 @@ function ReferralRewardsContent() {
   const [rewardDateRange, setRewardDateRange] = useState<DateRange>({ start: "", end: "" });
   const searchParams = useSearchParams();
   const [rewardSearch, setRewardSearch] = useState(searchParams.get("search") || "");
-  const [pricePerCoin, setPricePerCoin] = useState(0);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [summaryRes, rewardsRes, configsRes] = await Promise.all([
+      const [summaryRes, rewardsRes] = await Promise.all([
         referralAdminService.getDashboard(),
-        referralAdminService.getRewards(),
-        economyService.getConfigs()
+        referralAdminService.getRewards()
       ]);
 
       if (summaryRes.data.status) {
@@ -71,10 +76,6 @@ function ReferralRewardsContent() {
       }
       if (rewardsRes.data.status) {
         setRewards(rewardsRes.data.data || []);
-      }
-      if (configsRes.data.status) {
-        const priceConf = configsRes.data.data?.find((c) => c.cfg_key === "price_per_coin");
-        if (priceConf) setPricePerCoin(Number(priceConf.cfg_value));
       }
     } catch {
       toast.error("Gagal memuat data komisi");
@@ -210,9 +211,10 @@ function ReferralRewardsContent() {
                 { header: "Nama Outlet", key: "referred_outlet_name", width: 25 },
                 { header: "Tipe", key: "rr_type", width: 12 },
                 { header: "Persen Terkunci", key: "rr_percent", width: 15, format: (v) => `${v}%` },
-                { header: "Nominal Top Up (Koin)", key: "topup_amount", width: 18, format: (v) => v != null ? `${Number(v).toLocaleString()} Koin` : "0 Koin" },
-                { header: "Nominal Top Up (Rp)", key: "topup_amount_rp", width: 18, format: (_, r) => r.topup_amount != null ? `Rp ${(Number(r.topup_amount) * pricePerCoin).toLocaleString()}` : "Rp 0" },
+                { header: "Nominal Top Up (Koin)", key: "topup_coin_amount", width: 18, format: (v) => formatCoin(v as number | string) },
+                { header: "Nominal Top Up (Rp)", key: "topup_amount_rp", width: 18, format: (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}` },
                 { header: "Komisi", key: "rr_reward_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
+                { header: "Metode Pencairan", key: "payout_method", width: 16, format: (_, r) => getPayoutMethod(r as ReferralAdminReward) },
                 { header: "Status", key: "rr_status", width: 15 },
               ]}
             />
@@ -240,16 +242,17 @@ function ReferralRewardsContent() {
                   <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Tipe Komisi</th>
                   <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Nominal Top Up</th>
                   <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Komisi</th>
+                  <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Metode Pencairan</th>
                   <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Status Pencairan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
-                  <tr><td colSpan={6} className="py-12 text-center">
+                  <tr><td colSpan={9} className="py-12 text-center">
                     <Loader2 className="h-5 w-5 animate-spin text-slate-300 mx-auto" />
                   </td></tr>
                 ) : filteredRewards.length === 0 ? (
-                  <tr><td colSpan={6} className="py-16 text-center">
+                  <tr><td colSpan={9} className="py-16 text-center">
                     <GitBranch className="h-7 w-7 text-slate-200 mx-auto mb-2" />
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Belum ada riwayat komisi</p>
                   </td></tr>
@@ -293,15 +296,28 @@ function ReferralRewardsContent() {
                         )}
                       </td>
                       <td className="px-5 py-3 text-right">
-                        {r.topup_amount > 0 ? (
+                        {Number(r.topup_coin_amount || 0) > 0 ? (
                            <div className="flex flex-col items-end">
-                              <span className="text-[10px] font-bold text-slate-700 tracking-tight">{Number(r.topup_amount).toLocaleString("id-ID")} Koin</span>
-                              <span className="text-[9px] font-medium text-slate-400">≈ {currency(r.topup_amount * pricePerCoin)}</span>
+                              <span className="text-[10px] font-bold text-primary tracking-tight">{currency(r.topup_amount_rp)}</span>
+                              <span className="text-[9px] font-medium text-slate-400">{formatCoin(r.topup_coin_amount)}</span>
                            </div>
                         ) : "—"}
                       </td>
                       <td className="px-5 py-3 text-right">
                         <span className="text-sm font-extrabold text-primary tracking-tight">{currency(r.rr_reward_amount)}</span>
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "rounded px-1.5 py-0 text-[8px] font-bold uppercase shadow-none",
+                            getPayoutMethod(r) === "Koin"
+                              ? "border-sky-100 bg-sky-50 text-sky-600"
+                              : "border-emerald-100 bg-emerald-50 text-emerald-600",
+                          )}
+                        >
+                          {getPayoutMethod(r)}
+                        </Badge>
                       </td>
                       <td className="px-5 py-3 text-right">
                         {(r.rr_status === "paid" || r.rr_status === "done") ? (

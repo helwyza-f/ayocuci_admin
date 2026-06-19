@@ -27,6 +27,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       referrals: "Referral Owner",
       vouchers: "Voucher & Promo",
       notifications: "Siaran Notifikasi",
+      "otp-logs": "Log OTP",
       packages: "Paket Layanan",
       subscriptions: "Riwayat Langganan",
     };

@@ -19,6 +19,7 @@ import ActivityFeed from "@/components/modules/dashboard/activity-feed";
 import { Topup } from "@/types/topup";
 import { cn } from "@/lib/utils";
 import { resolveUploadUrl } from "@/lib/upload-url";
+import { getTopupStatusUi, isTopupActionable } from "@/lib/topup-status";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { analyticsService, GrowthSummary, ActivitySummary } from "@/services/analytics.service";
@@ -354,7 +355,9 @@ export default function DashboardPage() {
               </Badge>
               <Badge className={cn(
                 "text-[8px] font-bold uppercase",
-                selectedItem?.data.tk_status === 'pending' ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"
+                selectedItem?.type === "koin"
+                  ? getTopupStatusUi(selectedItem?.data.tk_status).className
+                  : "bg-orange-50 text-orange-600 border-orange-100"
               )}>
                 {selectedItem?.type === 'koin' ? 'Topup Koin' : 'Aktivasi Addon'}
               </Badge>
@@ -400,7 +403,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="p-5 bg-white border-t border-slate-100">
-            {selectedItem?.data.tk_status === "pending" ? (
+            {isTopupActionable(selectedItem?.data.tk_status) ? (
               <div className="flex gap-3">
                 <Button
                   disabled={confirming || !selectedItem.data.tk_bukti}
@@ -423,7 +426,9 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
-                 <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest italic">Sudah Diproses: {selectedItem?.data.tk_status}</p>
+                 <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest italic">
+                   Locked: {getTopupStatusUi(selectedItem?.data.tk_status).label}
+                 </p>
               </div>
             )}
           </div>

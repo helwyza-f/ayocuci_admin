@@ -18,6 +18,7 @@ import {
   Zap,
   GitBranch,
   BookOpen,
+  MessageSquareWarning,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -65,6 +66,7 @@ export const adminMenus: MenuGroup[] = [
     items: [
       { label: "Voucher & Promo",    href: "/vouchers",      icon: Ticket,    module: "vouchers" },
       { label: "Siaran Notifikasi",  href: "/notifications", icon: Megaphone, module: "notifications" },
+      { label: "Log OTP",            href: "/otp-logs",      icon: MessageSquareWarning, module: "notifications" },
       { label: "Konten & Banner",    href: "/content",       icon: Repeat,    module: "content" },
       { label: "Tutorial",           href: "/tutorials",     icon: BookOpen,  module: "tutorials" },
       { label: "Pencairan Referral", href: "/referrals/payouts", icon: Wallet2,   module: "referrals" },

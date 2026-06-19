@@ -58,7 +58,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, differenceInDays } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { resolveUploadUrl } from "@/lib/upload-url";
+import { getTopupStatusUi, isTopupActionable } from "@/lib/topup-status";
+import { resolveImageVariantUrl, resolveUploadUrl } from "@/lib/upload-url";
 import StatCard from "@/components/modules/dashboard/stat-card";
 import { toast } from "sonner";
 import {
@@ -280,25 +281,8 @@ export default function TenantDetailPage() {
 
   const imageUrl = useMemo(() => {
     if (!profile?.ot_gambar) return null;
-    return resolveUploadUrl(profile.ot_gambar);
+    return resolveImageVariantUrl(profile.ot_gambar, { width: 640 });
   }, [profile]);
-
-  const getTopupStatusConfig = (status?: string, method?: string, hasProof?: boolean) => {
-    const normalized = (status || "").toLowerCase();
-    if (normalized === "success" || normalized === "completed" || normalized === "accepted") {
-      return { label: "Success / Accepted", className: "bg-emerald-50 text-emerald-600 border-emerald-100" };
-    }
-    if (normalized === "failed" || normalized === "rejected") {
-      return { label: "Rejected", className: "bg-rose-50 text-rose-600 border-rose-100" };
-    }
-    if (normalized === "expired") {
-      return { label: "Expired", className: "bg-slate-100 text-slate-500 border-slate-200" };
-    }
-    if (normalized === "pending" || normalized === "verification") {
-      return { label: "Pending Verification", className: "bg-amber-50 text-amber-600 border-amber-100" };
-    }
-    return { label: normalized || "-", className: "bg-slate-50 text-slate-400 border-slate-100" };
-  };
 
   if (loading)
     return (
@@ -419,7 +403,7 @@ export default function TenantDetailPage() {
            <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
               <div className="space-y-6">
                  {/* 1. TOPUP VALIDATION HUB (Only if pending) */}
-                 {topupHistory.filter(t => t.tk_status === 'pending').length > 0 && (
+                 {topupHistory.filter(t => isTopupActionable(t.tk_status)).length > 0 && (
                     <Card className="border-2 border-amber-200 bg-amber-50/20 shadow-sm overflow-hidden">
                        <div className="p-4 border-b border-amber-100 bg-amber-100/30 flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -429,7 +413,7 @@ export default function TenantDetailPage() {
                           <Badge className="bg-amber-500 text-white border-none text-[8px] font-bold">PENDING</Badge>
                        </div>
                        <div className="divide-y divide-amber-100">
-                          {topupHistory.filter(t => t.tk_status === 'pending').map((tk, i) => (
+                          {topupHistory.filter(t => isTopupActionable(t.tk_status)).map((tk, i) => (
                              <div key={i} className="p-4 flex items-center justify-between bg-white/50">
                                 <div>
                                    <p className="text-xs font-bold text-slate-900 uppercase">{tk.tk_jumlah} Koin • Rp {tk.tk_total?.toLocaleString()}</p>
@@ -440,7 +424,7 @@ export default function TenantDetailPage() {
                                   className="h-8 px-4 text-[10px] font-bold uppercase bg-amber-500 hover:bg-amber-600"
                                   onClick={() => { setSelectedKoin(tk); setIsKoinModalOpen(true); }}
                                 >
-                                   Review Bukti
+                                   Process
                                 </Button>
                              </div>
                           ))}
@@ -1172,7 +1156,8 @@ export default function TenantDetailPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                        {topupHistory.length > 0 ? topupHistory.slice((pages.topups - 1) * itemsPerPage, pages.topups * itemsPerPage).map((topup, i) => {
-                          const statusConfig = getTopupStatusConfig(topup.tk_status, topup.tk_metode_bayar, !!topup.tk_bukti);
+                          const statusConfig = getTopupStatusUi(topup.tk_status);
+                          const isActionable = isTopupActionable(topup.tk_status);
                           const proofUrl = topup.tk_bukti
                              ? resolveUploadUrl(topup.tk_bukti)
                              : "";
@@ -1239,7 +1224,7 @@ export default function TenantDetailPage() {
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-2">
-                                       <Badge variant="outline" className={cn("text-[8px] px-2 py-0.5 font-bold uppercase border transition-colors", statusConfig.className)}>
+                                       <Badge variant="outline" className={cn("text-[8px] px-2 py-0.5 font-bold uppercase border transition-colors", statusConfig.className, isActionable && "animate-pulse")}>
                                           {statusConfig.label}
                                        </Badge>
                                        <Button
@@ -1248,7 +1233,7 @@ export default function TenantDetailPage() {
                                           onClick={() => { setSelectedKoin(topup); setIsKoinModalOpen(true); }}
                                           className="h-7 px-2 font-bold text-[9px] uppercase tracking-wider text-primary hover:bg-primary/10 transition-colors"
                                        >
-                                          Detail <ArrowUpRight className="h-3 w-3 ml-1" />
+                                          {isActionable ? "Process" : "Detail"} <ArrowUpRight className="h-3 w-3 ml-1" />
                                        </Button>
                                     </div>
                                  </td>
@@ -1280,8 +1265,8 @@ export default function TenantDetailPage() {
                    {selectedKoin?.tk_id}
                 </Badge>
                 {selectedKoin && (
-                  <Badge className={cn("text-[8px] font-bold uppercase", getTopupStatusConfig(selectedKoin.tk_status, selectedKoin.tk_metode_bayar, !!selectedKoin.tk_bukti).className)}>
-                    {getTopupStatusConfig(selectedKoin.tk_status, selectedKoin.tk_metode_bayar, !!selectedKoin.tk_bukti).label}
+                  <Badge className={cn("text-[8px] font-bold uppercase", getTopupStatusUi(selectedKoin.tk_status).className)}>
+                    {getTopupStatusUi(selectedKoin.tk_status).label}
                   </Badge>
                 )}
              </div>
@@ -1337,7 +1322,7 @@ export default function TenantDetailPage() {
              </div>
           </div>
 
-          {selectedKoin && (!selectedKoin.tk_status || ["pending", "verification"].includes(selectedKoin.tk_status.toLowerCase())) && (
+          {selectedKoin && isTopupActionable(selectedKoin.tk_status) && (
              <div className="p-5 bg-white border-t border-slate-100 flex gap-3">
                 <Button 
                    disabled={confirming} 
@@ -1358,6 +1343,13 @@ export default function TenantDetailPage() {
                    Batalkan
                  </Button>
               </div>
+          )}
+          {selectedKoin && !isTopupActionable(selectedKoin.tk_status) && (
+             <div className="p-4 bg-white border-t border-slate-100 text-center">
+                <p className="text-[9px] font-bold uppercase text-slate-400 tracking-widest italic">
+                  Locked: {getTopupStatusUi(selectedKoin.tk_status).label}
+                </p>
+             </div>
           )}
         </DialogContent>
       </Dialog>
