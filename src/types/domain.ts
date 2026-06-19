@@ -126,6 +126,7 @@ export interface OtpLog {
   flow: string;
   event: string;
   provider: string;
+  otp_code?: string | null;
   message: string;
   created_at: string;
 }

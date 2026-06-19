@@ -279,13 +279,14 @@ export default function OTPLogsPage() {
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Kontak</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Flow</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Status</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Kode OTP</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Pesan Sistem</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Waktu</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <TableSkeleton columns={5} rows={10} />
+                <TableSkeleton columns={6} rows={10} />
               ) : paginatedLogs.length > 0 ? (
                 paginatedLogs.map((item) => {
                   const waHref = normalizeWhatsapp(item.phone);
@@ -326,6 +327,17 @@ export default function OTPLogsPage() {
                         </Badge>
                       </td>
                       <td className="px-5 py-3 align-top">
+                        {item.otp_code ? (
+                          <div className="inline-flex items-center rounded-md border border-orange-200 bg-orange-50 px-2.5 py-1.5">
+                            <span className="font-mono text-xs font-bold tracking-[0.2em] text-primary">
+                              {item.otp_code}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-medium text-slate-300">-</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 align-top">
                         <p className="text-xs font-medium text-slate-600 leading-5 max-w-[380px]">
                           {item.message || "-"}
                         </p>
@@ -346,7 +358,7 @@ export default function OTPLogsPage() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-24 text-center">
+                  <td colSpan={6} className="py-24 text-center">
                     <MessageSquareWarning className="h-8 w-8 text-slate-200 mx-auto mb-2" />
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">
                       Belum ada log OTP
