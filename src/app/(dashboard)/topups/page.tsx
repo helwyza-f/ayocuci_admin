@@ -48,7 +48,7 @@ import { id } from "date-fns/locale";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { AxiosError } from "axios";
 import { ApiErrorResponse, ApiResponse } from "@/types/api";
-import { Topup } from "@/types/topup";
+import { Topup, TopupStatus } from "@/types/topup";
 import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";

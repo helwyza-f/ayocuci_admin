@@ -403,7 +403,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="p-5 bg-white border-t border-slate-100">
-            {isTopupActionable(selectedItem?.data.tk_status) ? (
+            {selectedItem && isTopupActionable(selectedItem.data.tk_status) ? (
               <div className="flex gap-3">
                 <Button
                   disabled={confirming || !selectedItem.data.tk_bukti}

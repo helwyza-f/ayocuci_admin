@@ -16,7 +16,7 @@ import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shar
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { format } from "date-fns";
 
-const currency = (value: number | string) =>
+const currency = (value: number | string | null | undefined) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
@@ -27,6 +27,12 @@ const getPayoutMethod = (reward: Pick<ReferralAdminReward, "rr_coin_amount" | "r
   reward.rr_coin_status === "claimed" || Number(reward.rr_coin_amount || 0) > 0
     ? "Koin"
     : "Cash";
+
+const getPayoutMethodFromRow = (row: Record<string, unknown> | undefined) =>
+  getPayoutMethod({
+    rr_coin_amount: Number(row?.rr_coin_amount || 0),
+    rr_coin_status: String(row?.rr_coin_status || ""),
+  });
 
 const formatCoin = (value: number | string | null | undefined) =>
   `${Number(value || 0).toLocaleString("id-ID")} Koin`;
@@ -214,7 +220,7 @@ function ReferralRewardsContent() {
                 { header: "Nominal Top Up (Koin)", key: "topup_coin_amount", width: 18, format: (v) => formatCoin(v as number | string) },
                 { header: "Nominal Top Up (Rp)", key: "topup_amount_rp", width: 18, format: (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}` },
                 { header: "Komisi", key: "rr_reward_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
-                { header: "Metode Pencairan", key: "payout_method", width: 16, format: (_, r) => getPayoutMethod(r as ReferralAdminReward) },
+                { header: "Metode Pencairan", key: "payout_method", width: 16, format: (_, r) => getPayoutMethodFromRow(r) },
                 { header: "Status", key: "rr_status", width: 15 },
               ]}
             />
