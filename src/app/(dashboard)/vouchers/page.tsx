@@ -15,6 +15,7 @@ import {
   CalendarDays,
   Info,
   Edit3,
+  Trash2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -150,6 +151,19 @@ export default function VoucherManagementPage() {
       }
     } catch {
       toast.error("Failed to toggle status");
+    }
+  };
+
+  const handleDeleteVoucher = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus voucher ini?")) return;
+    try {
+      const res = await api.delete(`/vouchers/${id}`);
+      if (res.data.status) {
+        toast.success("Voucher berhasil dihapus");
+        fetchVouchers();
+      }
+    } catch {
+      toast.error("Gagal menghapus voucher");
     }
   };
 
@@ -395,6 +409,14 @@ export default function VoucherManagementPage() {
                         v.vc_status === 1 ? "text-emerald-500" : "text-slate-300",
                       )}
                     />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-slate-400 hover:text-red-500 hover:bg-red-50"
+                    onClick={() => handleDeleteVoucher(v.vc_id)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
