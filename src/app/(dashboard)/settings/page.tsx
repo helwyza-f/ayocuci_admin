@@ -22,6 +22,7 @@ export default function SettingsPage() {
     website_url: "",
     playstore_url: "",
     app_version: "",
+    minimum_supported_version: "",
   });
 
   useEffect(() => {
@@ -42,9 +43,11 @@ export default function SettingsPage() {
           website_url: res.data.data.website_url || "",
           playstore_url: res.data.data.playstore_url || "",
           app_version: res.data.data.app_version || "",
+          minimum_supported_version:
+            res.data.data.minimum_supported_version || "",
         });
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to load application registry");
     } finally {
       setLoading(false);
@@ -60,7 +63,7 @@ export default function SettingsPage() {
       } else {
         toast.error("Failed to persist changes");
       }
-    } catch (error) {
+    } catch {
       toast.error("Network synchronization error");
     } finally {
       setSaving(false);
@@ -240,13 +243,30 @@ export default function SettingsPage() {
                       <Badge variant="secondary" className="h-9 px-2 rounded bg-emerald-50 text-emerald-600 border-emerald-100 font-bold text-[8px] uppercase">Stable</Badge>
                   </div>
                 </div>
+
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="minimum_supported_version"
+                    className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1"
+                  >
+                    Minimum Supported Version
+                  </Label>
+                  <Input
+                    id="minimum_supported_version"
+                    name="minimum_supported_version"
+                    placeholder="e.g. 1.0.1+8"
+                    value={formData.minimum_supported_version}
+                    onChange={handleChange}
+                    className="h-9 rounded border-slate-200 font-bold text-xs shadow-none"
+                  />
+                </div>
               </div>
            </Card>
 
            <div className="p-4 rounded-lg bg-slate-900 text-white space-y-3">
               <h4 className="text-[9px] font-bold uppercase tracking-widest opacity-60">System Information</h4>
               <p className="text-[11px] font-medium leading-relaxed opacity-80">
-                These settings control the "About Us" and contact information displayed in the mobile ecosystem. Changes update all client instances immediately.
+                These settings control the &quot;About Us&quot; and contact information displayed in the mobile ecosystem. Changes update all client instances immediately.
               </p>
            </div>
         </div>
