@@ -218,8 +218,9 @@ function AdminManagementContent() {
   const admins = adminsData?.data || [];
   const roles = rolesData?.data || [];
 
-  // Create Admin state
+  // Create/Edit Admin state
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
+  const [editingAdminId, setEditingAdminId] = useState<string | null>(null);
   const [newAdmin, setNewAdmin] = useState({ nama: "", email: "", password: "", role_id: "" });
   const [creatingAdmin, setCreatingAdmin] = useState(false);
 
@@ -227,25 +228,51 @@ function AdminManagementContent() {
   const [showRoleForm, setShowRoleForm] = useState(false);
   const [editingRole, setEditingRole] = useState<AdminRole | undefined>();
 
-  const handleCreateAdmin = async () => {
-    if (!newAdmin.nama || !newAdmin.email || !newAdmin.password) {
-      toast.error("Nama, email, dan password harus diisi");
+  const handleEditAdminClick = (admin: Admin) => {
+    setEditingAdminId(admin.adm_id);
+    setNewAdmin({
+      nama: admin.adm_nama,
+      email: admin.adm_email,
+      password: "", // Kosongkan, hanya diisi jika ingin mereset password
+      role_id: admin.adm_role || "",
+    });
+    setShowCreateAdmin(true);
+  };
+
+  const handleSaveAdmin = async () => {
+    if (!newAdmin.nama || !newAdmin.email) {
+      toast.error("Nama dan email harus diisi");
+      return;
+    }
+    if (!editingAdminId && !newAdmin.password) {
+      toast.error("Password harus diisi untuk akun baru");
       return;
     }
     setCreatingAdmin(true);
     try {
-      await api.post("/accounts", {
-        nama: newAdmin.nama,
-        email: newAdmin.email,
-        password: newAdmin.password,
-        role_id: newAdmin.role_id || null,
-      });
-      toast.success("Akun admin berhasil dibuat");
+      if (editingAdminId) {
+        await api.put(`/accounts/${editingAdminId}`, {
+          nama: newAdmin.nama,
+          email: newAdmin.email,
+          password: newAdmin.password || undefined,
+          role_id: newAdmin.role_id || null,
+        });
+        toast.success("Akun admin berhasil diperbarui");
+      } else {
+        await api.post("/accounts", {
+          nama: newAdmin.nama,
+          email: newAdmin.email,
+          password: newAdmin.password,
+          role_id: newAdmin.role_id || null,
+        });
+        toast.success("Akun admin berhasil dibuat");
+      }
       setNewAdmin({ nama: "", email: "", password: "", role_id: "" });
+      setEditingAdminId(null);
       setShowCreateAdmin(false);
       mutateAdmins();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Gagal membuat akun admin");
+      toast.error(err?.response?.data?.message || "Gagal menyimpan akun admin");
     } finally {
       setCreatingAdmin(false);
     }
@@ -313,7 +340,7 @@ function AdminManagementContent() {
 
         {/* ---- TAB: AKUN ADMIN ---- */}
         <TabsContent value="accounts" className="mt-5 space-y-4">
-          {/* Create Admin Form */}
+          {/* Create/Edit Admin Form */}
           {showCreateAdmin && (
             <Card className="border border-primary/20 bg-white rounded-xl p-6 space-y-4 shadow-lg shadow-primary/5 animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="flex items-center justify-between">
@@ -321,9 +348,9 @@ function AdminManagementContent() {
                   <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <UserPlus className="h-4 w-4" />
                   </div>
-                  <p className="text-xs font-bold text-slate-900">Buat Akun Admin Baru</p>
+                  <p className="text-xs font-bold text-slate-900">{editingAdminId ? "Edit Akun Admin" : "Buat Akun Admin Baru"}</p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowCreateAdmin(false)} className="h-8 w-8">
+                <Button variant="ghost" size="icon" onClick={() => { setShowCreateAdmin(false); setEditingAdminId(null); setNewAdmin({ nama: "", email: "", password: "", role_id: "" }); }} className="h-8 w-8">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -338,7 +365,7 @@ function AdminManagementContent() {
                 </div>
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1">Password</label>
-                  <Input type="password" placeholder="Min. 6 karakter" value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })} className="h-9 text-sm" />
+                  <Input type="password" placeholder={editingAdminId ? "Kosongkan jika tidak diubah" : "Min. 6 karakter"} value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })} className="h-9 text-sm" />
                 </div>
               </div>
               <div>
@@ -355,9 +382,9 @@ function AdminManagementContent() {
                 </select>
               </div>
               <div className="flex gap-2 justify-end pt-1">
-                <Button variant="outline" size="sm" onClick={() => setShowCreateAdmin(false)}>Batal</Button>
-                <Button size="sm" disabled={creatingAdmin} onClick={handleCreateAdmin} className="bg-primary hover:bg-primary/90 text-white font-bold">
-                  {creatingAdmin ? "Membuat..." : "Buat Akun Admin"}
+                <Button variant="outline" size="sm" onClick={() => { setShowCreateAdmin(false); setEditingAdminId(null); setNewAdmin({ nama: "", email: "", password: "", role_id: "" }); }}>Batal</Button>
+                <Button size="sm" disabled={creatingAdmin} onClick={handleSaveAdmin} className="bg-primary hover:bg-primary/90 text-white font-bold">
+                  {creatingAdmin ? "Menyimpan..." : editingAdminId ? "Perbarui Akun Admin" : "Buat Akun Admin"}
                 </Button>
               </div>
             </Card>
@@ -425,14 +452,24 @@ function AdminManagementContent() {
                           </p>
                         </td>
                         <td className="px-5 py-3 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteAdmin(admin.adm_id)}
-                            className="h-7 w-7 text-rose-400 hover:bg-rose-50 hover:text-rose-600"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          <div className="flex justify-end gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditAdminClick(admin)}
+                              className="h-7 w-7 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteAdmin(admin.adm_id)}
+                              className="h-7 w-7 text-rose-400 hover:bg-rose-50 hover:text-rose-600"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))
