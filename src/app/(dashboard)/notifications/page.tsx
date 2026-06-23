@@ -1,31 +1,27 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Bell,
-  Calendar as CalendarIcon,
   Eye,
   FileText,
   Loader2,
   MailOpen,
   Megaphone,
-  Plus,
   Search,
   ShieldAlert,
   Store,
   Users,
   X,
   Send,
-  ExternalLink,
   ChevronRight,
   FilterX,
   Sparkles,
   Trash2,
 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
-import { id } from "date-fns/locale";
 import { toast } from "sonner";
 import { resolveImageVariantUrl } from "@/lib/upload-url";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +70,19 @@ type Receiver = {
   read_at?: string | null;
 };
 
+type PushTokenTrace = {
+  outlet_id: string;
+  outlet_name: string;
+  token?: string | null;
+  platform?: string | null;
+  app_version?: string | null;
+  actor_id?: string | null;
+  actor_type?: string | null;
+  is_active?: boolean | null;
+  last_seen_at?: string | null;
+  created_at?: string | null;
+};
+
 export default function NotificationsPage() {
   const [logs, setLogs] = useState<NotificationLog[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -85,6 +94,7 @@ export default function NotificationsPage() {
   const [source, setSource] = useState<"ALL" | "ADMIN" | "SYSTEM">("ADMIN");
 
   const [receivers, setReceivers] = useState<Receiver[]>([]);
+  const [pushTokens, setPushTokens] = useState<PushTokenTrace[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [selectedLog, setSelectedLog] = useState<NotificationLog | null>(null);
   const [receiverPage, setReceiverPage] = useState(1);
@@ -141,17 +151,33 @@ export default function NotificationsPage() {
   const fetchDetail = async (log: NotificationLog) => {
     setSelectedLog(log);
     setReceivers([]);
+    setPushTokens([]);
     setLoadingDetail(true);
     setReceiverPage(1);
     try {
-      const res = await api.get(`/notifications/logs/${log.id}`);
-      if (res.data.status) setReceivers(res.data.data || []);
+      const [receiverRes, tokenRes] = await Promise.all([
+        api.get(`/notifications/logs/${log.id}`),
+        api.get(`/notifications/logs/${log.id}/push-tokens`),
+      ]);
+      if (receiverRes.data.status) setReceivers(receiverRes.data.data || []);
+      if (tokenRes.data.status) setPushTokens(tokenRes.data.data || []);
     } catch {
       toast.error("Gagal memuat detail pengiriman");
     } finally {
       setLoadingDetail(false);
     }
   };
+
+  const tokenStats = useMemo(() => {
+    const activeTokens = pushTokens.filter((item) => item.token);
+    const outletWithoutTokens = new Set(
+      pushTokens.filter((item) => !item.token).map((item) => item.outlet_id),
+    );
+    return {
+      total: activeTokens.length,
+      missingOutletCount: outletWithoutTokens.size,
+    };
+  }, [pushTokens]);
 
   const resetFilters = () => {
     setSearch("");
@@ -413,12 +439,15 @@ export default function NotificationsPage() {
                     <div className="space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Media Lampiran</p>
                         <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-2">
-                           <img
+                           <Image
                             src={resolveImageVariantUrl(selectedLog.image_url, {
                               width: 960,
                             })}
                             alt="Notification"
-                            className="w-full h-auto object-contain rounded-lg shadow-inner"
+                            width={960}
+                            height={540}
+                            unoptimized
+                            className="h-auto w-full rounded-lg object-contain shadow-inner"
                            />
                         </div>
                     </div>
@@ -431,10 +460,12 @@ export default function NotificationsPage() {
                     <div className="flex items-center gap-2">
                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status Pengiriman</p>
                        <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-slate-100 text-slate-600 border-none">{receivers.length} Target</Badge>
+                       <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-emerald-50 text-emerald-700 border-none">{tokenStats.total} Token Aktif</Badge>
+                       <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-amber-50 text-amber-700 border-none">{tokenStats.missingOutletCount} Outlet Tanpa Token</Badge>
                     </div>
                  </div>
                  
-                 <div className="flex-1 overflow-y-auto p-6 space-y-2 custom-scrollbar">
+                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                     {loadingDetail ? (
                       <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400 py-20">
                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -445,40 +476,88 @@ export default function NotificationsPage() {
                          <p className="text-[10px] font-bold text-slate-300 uppercase">Tidak ada data pengiriman</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
-                        {receivers.slice((receiverPage - 1) * receiversPerPage, receiverPage * receiversPerPage).map(r => (
-                          <div key={r.outlet_id} className="group p-4 rounded-xl border border-slate-100 bg-white flex items-center justify-between text-xs transition-all hover:border-primary/20 hover:shadow-md hover:-translate-y-0.5">
-                             <div className="flex items-center gap-3">
-                                <div className={cn(
-                                   "h-10 w-10 rounded-lg flex items-center justify-center transition-colors",
-                                   r.status === 1 ? "bg-emerald-50 text-emerald-500" : "bg-slate-50 text-slate-300"
-                                )}>
-                                   <Store className="h-5 w-5" />
-                                </div>
-                                <div className="space-y-0.5">
-                                   <p className="font-bold text-slate-800 text-[13px] group-hover:text-primary transition-colors">{r.outlet_name}</p>
-                                   <div className="flex items-center gap-1.5">
+                      <>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status Penerima</p>
+                          </div>
+                          <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3">
+                            {receivers.slice((receiverPage - 1) * receiversPerPage, receiverPage * receiversPerPage).map(r => (
+                              <div key={r.outlet_id} className="group p-4 rounded-xl border border-slate-100 bg-white flex items-center justify-between text-xs transition-all hover:border-primary/20 hover:shadow-md hover:-translate-y-0.5">
+                                <div className="flex items-center gap-3">
+                                  <div className={cn(
+                                    "h-10 w-10 rounded-lg flex items-center justify-center transition-colors",
+                                    r.status === 1 ? "bg-emerald-50 text-emerald-500" : "bg-slate-50 text-slate-300"
+                                  )}>
+                                    <Store className="h-5 w-5" />
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    <p className="font-bold text-slate-800 text-[13px] group-hover:text-primary transition-colors">{r.outlet_name}</p>
+                                    <div className="flex items-center gap-1.5">
                                       <p className="text-[10px] font-medium text-slate-400">
-                                         {r.read_at ? format(new Date(r.read_at), "dd MMM, HH:mm") : "Menunggu penerimaan"}
+                                        {r.read_at ? format(new Date(r.read_at), "dd MMM, HH:mm") : "Menunggu penerimaan"}
                                       </p>
                                       {r.status === 1 && <span className="h-1 w-1 rounded-full bg-slate-200" />}
                                       {r.status === 1 && (
-                                         <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter flex items-center gap-1">
-                                            <Eye className="h-2.5 w-2.5" /> Dilihat
-                                         </p>
+                                        <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter flex items-center gap-1">
+                                          <Eye className="h-2.5 w-2.5" /> Dilihat
+                                        </p>
                                       )}
-                                   </div>
+                                    </div>
+                                  </div>
                                 </div>
-                             </div>
-                             <Badge variant="outline" className={cn(
-                                "rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase border shadow-none transition-all",
-                                r.status === 1 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-200"
-                             )}>
-                                {r.status === 1 ? "Dibuka" : "Terkirim"}
-                             </Badge>
+                                <Badge variant="outline" className={cn(
+                                  "rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase border shadow-none transition-all",
+                                  r.status === 1 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-200"
+                                )}>
+                                  {r.status === 1 ? "Dibuka" : "Terkirim"}
+                                </Badge>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Trace Token Push Aktif</p>
+                          </div>
+                          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                            {pushTokens.map((item, index) => (
+                              <div
+                                key={`${item.outlet_id}-${item.token ?? "missing"}-${index}`}
+                                className="rounded-xl border border-slate-100 bg-slate-50 p-4"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="space-y-1">
+                                    <p className="text-[13px] font-bold text-slate-900">{item.outlet_name}</p>
+                                    <p className="text-[10px] font-medium text-slate-500">
+                                      {item.platform || "platform ?"} • {item.app_version || "versi ?"}
+                                    </p>
+                                  </div>
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      "rounded-lg px-2 py-1 text-[9px] font-bold uppercase border-none shadow-none",
+                                      item.token ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700",
+                                    )}
+                                  >
+                                    {item.token ? "Aktif" : "Tidak Ada Token"}
+                                  </Badge>
+                                </div>
+                                <div className="mt-3 space-y-1.5">
+                                  <p className="break-all rounded-lg bg-white px-3 py-2 text-[10px] font-mono text-slate-600 border border-slate-200">
+                                    {item.token || "Outlet ini belum punya token push aktif."}
+                                  </p>
+                                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-500">
+                                    <span>Actor: {item.actor_type || "-"} {item.actor_id || "-"}</span>
+                                    <span>Last seen: {item.last_seen_at ? format(new Date(item.last_seen_at), "dd MMM yyyy, HH:mm") : "-"}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
                     )}
                  </div>
 
