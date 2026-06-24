@@ -587,6 +587,7 @@ export default function TenantDetailPage() {
                                 { label: "Nomor Kontak", value: profile?.ot_nohp || "-", icon: Phone, isPhone: true },
                                 { label: "Kode Owner", value: `#${profile?.owner_id}`, icon: User, isMono: true },
                                 { label: "Nama Owner", value: profile?.owner_name, icon: User, isLink: true, href: `/users/${profile?.owner_id}` },
+                                { label: "Email Owner", value: profile?.owner_email || "-", icon: Mail, isLink: !!profile?.owner_email, href: profile?.owner_email ? `mailto:${profile.owner_email}` : undefined },
                                 { label: "Tipe Lokasi", value: profile?.ot_tipe_lokasi_usaha, icon: MapPin },
                                 { label: "Skala Modal", value: profile?.ot_modal_usaha, icon: Coins },
                                 { label: "Jumlah Pegawai", value: `${String(profile?.ot_jumlah_karyawan || "0").replace(/orang/i, "").trim()} Orang`, icon: Users },

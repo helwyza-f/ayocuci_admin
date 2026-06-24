@@ -28,12 +28,21 @@ import {
 import { userService } from "@/services/user.service";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 // ── Compact KPI ────────────────────────────────────────────────────────────────
@@ -71,8 +80,26 @@ export default function UserDetailPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    nohp: "",
+    password: "",
+  });
 
   useEffect(() => { fetchDetail(); }, [params.id]);
+
+  useEffect(() => {
+    if (!data?.profile) return;
+    setEditForm({
+      name: data.profile.name || "",
+      email: data.profile.email || "",
+      nohp: data.profile.nohp || "",
+      password: "",
+    });
+  }, [data]);
 
   const fetchDetail = async () => {
     try {
@@ -104,6 +131,42 @@ export default function UserDetailPage() {
 
   const { profile, stats, recruits = [], outlets = [], payouts = [], koin_ledger = [], referral_rewards = [] } = data;
   const waHref = profile.nohp ? `https://wa.me/62${String(profile.nohp).replace(/^0/, "")}` : null;
+
+  const openEdit = () => {
+    setEditForm({
+      name: profile.name || "",
+      email: profile.email || "",
+      nohp: profile.nohp || "",
+      password: "",
+    });
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    try {
+      setSaving(true);
+      const res = await userService.updateOwnerProfile(params.id as string, {
+        name: editForm.name.trim(),
+        email: editForm.email.trim(),
+        nohp: editForm.nohp.trim(),
+        password: editForm.password.trim() || undefined,
+      });
+      if (res.status) {
+        toast.success(res.message || "Profil owner berhasil diperbarui");
+        setEditOpen(false);
+        await fetchDetail();
+      } else {
+        toast.error(res.message || "Gagal memperbarui profil owner");
+      }
+    } catch (err) {
+      const message = typeof err === "object" && err && "response" in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : null;
+      toast.error(message || "Gagal memperbarui profil owner");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-5 pb-16">
@@ -137,6 +200,14 @@ export default function UserDetailPage() {
             <span className="font-mono text-slate-500">#{params.id}</span>
           </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={openEdit}
+          className="h-8 rounded text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white text-slate-600 hover:text-primary hover:bg-primary/5"
+        >
+          Atur Profil
+        </Button>
         {profile.referral_code && (
           <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-100 rounded-lg">
             <p className="text-[9px] font-bold uppercase text-orange-400 tracking-widest">Kode Referral</p>
@@ -501,6 +572,63 @@ export default function UserDetailPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Atur Profil Owner</DialogTitle>
+            <DialogDescription>
+              Ubah nama, email, nomor HP, atau password owner tanpa OTP.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Nama</label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="Nama owner"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Email</label>
+              <Input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="owner@email.com"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">No HP</label>
+              <Input
+                value={editForm.nohp}
+                onChange={(e) => setEditForm({ ...editForm, nohp: e.target.value })}
+                placeholder="08xxxxxxxxxx"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Password Baru</label>
+              <Input
+                type="password"
+                value={editForm.password}
+                onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                placeholder="Kosongkan jika tidak diubah"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>
+              Batal
+            </Button>
+            <Button onClick={saveEdit} disabled={saving}>
+              {saving ? "Menyimpan..." : "Simpan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

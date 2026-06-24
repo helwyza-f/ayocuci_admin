@@ -11,5 +11,13 @@ export const userService = {
   updateUserStatus: async (id: string, status: number) => {
     const response = await api.patch(`/users/${id}/status`, { status });
     return response.data;
+  },
+
+  updateOwnerProfile: async (
+    id: string,
+    payload: { name?: string; email?: string; nohp?: string; password?: string }
+  ) => {
+    const response = await api.patch(`/users/${id}`, payload);
+    return response.data;
   }
 };
