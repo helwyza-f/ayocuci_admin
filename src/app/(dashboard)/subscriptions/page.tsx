@@ -561,7 +561,9 @@ export default function SubscriptionsPage() {
                           <div className="font-bold text-slate-800 text-xs">{item.outlet_name}</div>
                         )}
                         <div className="text-[10px] font-medium text-slate-500">{item.owner_name}</div>
-                        <div className="text-[9px] font-mono text-slate-400">Kode: {item.owner_code || "—"}</div>
+                        {item.owner_code && (
+                          <div className="text-[9px] font-mono text-slate-400">Kode Owner: {item.owner_code}</div>
+                        )}
                       </td>
                       <td className="px-5 py-3 max-w-[220px]">
                         <Badge

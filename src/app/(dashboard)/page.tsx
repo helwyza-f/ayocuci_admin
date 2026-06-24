@@ -54,7 +54,9 @@ function RecentOwnerRow({ owner }: { owner: Owner }) {
         <div>
           <p className="text-xs font-bold text-slate-800">{displayName}</p>
           <p className="text-[9px] text-slate-400">{owner.email}</p>
-          <p className="text-[9px] text-slate-500 font-mono">{owner.owner_code || "—"}</p>
+          {owner.owner_code && (
+            <p className="text-[9px] text-slate-500 font-mono">Kode Referral: {owner.owner_code}</p>
+          )}
         </div>
       </div>
       <div className="text-right">
