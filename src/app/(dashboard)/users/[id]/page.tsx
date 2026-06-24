@@ -549,6 +549,7 @@ export default function UserDetailPage() {
                   { label: "ID Owner", value: `#${params.id}`, mono: true },
                   { label: "Status", value: profile.status === 1 ? "Aktif" : "Suspended" },
                   { label: "Diajak oleh", value: profile.inviter_name || "Registrasi Mandiri" },
+                  { label: "Sumber Informasi", value: profile.lead_source || "—" },
                   { label: "Telepon", value: profile.nohp || "—" },
                   { label: "Bergabung", value: format(new Date(profile.created_at), "dd MMM yyyy", { locale: localeId }) },
                 ].map(({ label, value, mono }) => (

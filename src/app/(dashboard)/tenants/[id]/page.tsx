@@ -511,6 +511,7 @@ export default function TenantDetailPage() {
                           <div className="min-w-0">
                              <p className="text-xs font-bold text-slate-900 truncate">{profile.owner_name}</p>
                              <p className="text-[10px] text-slate-500 truncate">{profile.owner_email}</p>
+                             <p className="text-[10px] text-slate-400 truncate">{profile.owner_lead_source || "Sumber informasi tidak tersedia"}</p>
                           </div>
                        </div>
                        <div className="grid grid-cols-2 gap-2">
@@ -588,6 +589,7 @@ export default function TenantDetailPage() {
                                 { label: "Kode Owner", value: `#${profile?.owner_id}`, icon: User, isMono: true },
                                 { label: "Nama Owner", value: profile?.owner_name, icon: User, isLink: true, href: `/users/${profile?.owner_id}` },
                                 { label: "Email Owner", value: profile?.owner_email || "-", icon: Mail, isLink: !!profile?.owner_email, href: profile?.owner_email ? `mailto:${profile.owner_email}` : undefined },
+                                { label: "Sumber Informasi", value: profile?.owner_lead_source || "-", icon: Target },
                                 { label: "Tipe Lokasi", value: profile?.ot_tipe_lokasi_usaha, icon: MapPin },
                                 { label: "Skala Modal", value: profile?.ot_modal_usaha, icon: Coins },
                                 { label: "Jumlah Pegawai", value: `${String(profile?.ot_jumlah_karyawan || "0").replace(/orang/i, "").trim()} Orang`, icon: Users },

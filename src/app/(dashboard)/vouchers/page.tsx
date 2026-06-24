@@ -96,7 +96,7 @@ export default function VoucherManagementPage() {
   };
 
   const handleSubmitVoucher = async () => {
-    if (!formData.vc_voucher || !formData.vc_nilai_potongan || !formData.vc_tanggalberakhir) {
+    if (!formData.vc_voucher || !formData.vc_nilai_potongan || !formData.vc_tanggalberakhir || !formData.vc_jumlah_voucher) {
       return toast.error("Please complete voucher information");
     }
 
