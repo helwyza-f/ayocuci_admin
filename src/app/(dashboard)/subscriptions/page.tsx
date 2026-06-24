@@ -254,6 +254,7 @@ export default function SubscriptionsPage() {
           ha_id: item.ha_id ?? "",
           owner_id: tenant?.owner_id ?? owner?.id ?? "",
           owner_name: item.owner_name ?? tenant?.owner_name ?? owner?.name ?? "",
+          owner_code: tenant?.owner_code ?? owner?.owner_code ?? "",
           owner_email: tenant?.owner_email ?? owner?.email ?? "",
           owner_nohp: tenant?.owner_nohp ?? owner?.nohp ?? "",
           ha_outlet: item.ha_outlet ?? "",
@@ -358,6 +359,7 @@ export default function SubscriptionsPage() {
               { header: "ID", key: "ha_id", width: 22 },
               { header: "ID Owner", key: "owner_id", width: 12 },
               { header: "Nama Owner", key: "owner_name", width: 25 },
+              { header: "Kode Owner", key: "owner_code", width: 14 },
               { header: "Email", key: "owner_email", width: 30 },
               { header: "No HP Owner", key: "owner_nohp", width: 18 },
               { header: "ID Outlet", key: "ha_outlet", width: 14 },
@@ -559,6 +561,7 @@ export default function SubscriptionsPage() {
                           <div className="font-bold text-slate-800 text-xs">{item.outlet_name}</div>
                         )}
                         <div className="text-[10px] font-medium text-slate-500">{item.owner_name}</div>
+                        <div className="text-[9px] font-mono text-slate-400">Kode: {item.owner_code || "—"}</div>
                       </td>
                       <td className="px-5 py-3 max-w-[220px]">
                         <Badge

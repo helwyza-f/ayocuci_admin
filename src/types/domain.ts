@@ -13,6 +13,7 @@ export interface Owner {
   name: string;
   email: string;
   nohp?: string;
+  owner_code?: string;
   created_at?: string;
   total_outlets?: number;
 }

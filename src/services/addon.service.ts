@@ -8,6 +8,7 @@ export interface AddonTransaction {
   ha_outlet: string;
   outlet_name: string;
   owner_name: string;
+  owner_code?: string;
   ha_total: number;
   ha_metode_bayar: string;
   ha_status: AddonStatus;

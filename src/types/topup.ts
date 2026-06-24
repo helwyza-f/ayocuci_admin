@@ -11,6 +11,7 @@ export interface Topup {
   tk_bukti?: string;
   outlet_name?: string;
   owner_name?: string;
+  owner_code?: string;
   tk_outlet?: string;
   keterangan?: string;
   bonus_type?: string;

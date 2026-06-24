@@ -210,6 +210,7 @@ export default function TopupsManagementPage() {
           tk_id: item.tk_id ?? "",
           owner_id: tenant?.owner_id ?? owner?.id ?? "",
           owner_name: item.owner_name ?? tenant?.owner_name ?? owner?.name ?? "",
+          owner_code: tenant?.owner_code ?? owner?.owner_code ?? "",
           owner_nohp: tenant?.owner_nohp ?? owner?.nohp ?? "",
           tk_outlet: item.tk_outlet ?? "",
           outlet_name: item.outlet_name ?? tenant?.ot_nama ?? "",
@@ -298,6 +299,7 @@ export default function TopupsManagementPage() {
               { header: "ID Top Up", key: "tk_id", width: 22 },
               { header: "ID Owner", key: "owner_id", width: 12 },
               { header: "Nama Owner", key: "owner_name", width: 25 },
+              { header: "Kode Owner", key: "owner_code", width: 14 },
               { header: "No. Hp Owner", key: "owner_nohp", width: 18 },
               { header: "ID Outlet", key: "tk_outlet", width: 14 },
               { header: "Nama Outlet", key: "outlet_name", width: 25 },
@@ -473,6 +475,7 @@ export default function TopupsManagementPage() {
                           <div className="font-bold text-slate-800 text-xs">{item.outlet_name}</div>
                         )}
                         <div className="text-[10px] font-medium text-slate-500">{item.owner_name}</div>
+                        <div className="text-[9px] font-mono text-slate-400">Kode: {item.owner_code || "—"}</div>
                       </td>
                       <td className="px-5 py-3 text-center">
                         <div className="inline-flex flex-col items-center">

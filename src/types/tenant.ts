@@ -24,6 +24,7 @@ export interface Tenant {
   owner_name: string;
   owner_email: string;
   owner_nohp?: string;
+  owner_code?: string;
   owner_lead_source?: string;
   subscription_status: string;
   expiry_date: string;
