@@ -37,6 +37,9 @@ interface DashboardSummary {
   total_outlets: number;
   total_koin: number;
   active_tenant: number;
+  trial_outlets?: number;
+  pro_outlets?: number;
+  expired_outlets?: number;
 }
 
 // ─── Recent Owner Card ─────────────────────────────────────
@@ -229,15 +232,15 @@ export default function DashboardPage() {
           color="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-200"
         />
         <KpiCard
-          label="Outlet Terdaftar"
+          label="Outlet Total"
           sub="Total outlet terdaftar di platform"
           value={isLoading ? "—" : stats.total_outlets.toLocaleString("id-ID")}
           icon={Store}
           color="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 shadow-slate-100"
         />
         <KpiCard
-          label="Koin Beredar"
-          sub="Total koin aktif seluruh outlet"
+          label="Saldo Koin Aktif"
+          sub="Saldo koin dari outlet aktif"
           value={isLoading ? "—" : stats.total_koin.toLocaleString("id-ID")}
           icon={Coins}
           color="bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-orange-200"
@@ -245,9 +248,16 @@ export default function DashboardPage() {
         <KpiCard
           label="Outlet PRO Aktif"
           sub="Outlet dengan lisensi PRO aktif"
-          value={isLoading ? "—" : stats.active_tenant.toLocaleString("id-ID")}
+          value={isLoading ? "—" : (stats.pro_outlets ?? 0).toLocaleString("id-ID")}
           icon={Zap}
           color="bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-emerald-200"
+        />
+        <KpiCard
+          label="Outlet Trial Aktif"
+          sub="Outlet masih dalam masa trial"
+          value={isLoading ? "—" : (stats.trial_outlets ?? 0).toLocaleString("id-ID")}
+          icon={Clock}
+          color="bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-amber-200"
         />
       </div>
 
