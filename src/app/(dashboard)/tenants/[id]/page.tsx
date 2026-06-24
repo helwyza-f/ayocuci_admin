@@ -28,6 +28,7 @@ import {
   Building2,
   Briefcase,
   Layers,
+  Target,
   Smartphone,
   TrendingUp,
   History,
