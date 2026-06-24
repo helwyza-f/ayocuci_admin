@@ -259,6 +259,13 @@ export default function DashboardPage() {
           icon={Clock}
           color="bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-amber-200"
         />
+        <KpiCard
+          label="Outlet Aktif"
+          sub="Total PRO + trial aktif"
+          value={isLoading ? "—" : stats.active_tenant.toLocaleString("id-ID")}
+          icon={Activity}
+          color="bg-gradient-to-br from-cyan-400 to-cyan-500 text-white shadow-cyan-200"
+        />
       </div>
 
       {/* ── RECENT REGISTRATIONS + ACTIVITY FEED ── */}
