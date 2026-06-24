@@ -276,9 +276,9 @@ export default function TenantsPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                       <Link href={`/users/${tenant.owner_id}`} className="group inline-block">
+                          <Link href={`/users/${tenant.owner_id}`} className="group inline-block">
                           <div className="font-bold text-slate-800 text-xs group-hover:text-primary transition-colors">{tenant.owner_name}</div>
-                          <div className="text-[9px] font-mono text-slate-400">Kode: {tenant.owner_code || "—"}</div>
+                          <div className="text-[9px] font-mono text-slate-400">Kode: #{tenant.owner_id}</div>
                           <div className="text-[10px] font-medium text-slate-500">{tenant.owner_email}</div>
                        </Link>
                     </td>
