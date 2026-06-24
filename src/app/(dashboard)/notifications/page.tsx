@@ -168,6 +168,30 @@ export default function NotificationsPage() {
     }
   };
 
+  const deactivateToken = async (item: PushTokenTrace) => {
+    if (!item.token || !item.outlet_id) return;
+    if (!confirm(`Nonaktifkan token push untuk outlet ${item.outlet_name}?`)) return;
+
+    try {
+      const res = await api.patch("/notifications/push-tokens/deactivate", {
+        outlet_id: item.outlet_id,
+        token: item.token,
+      });
+      if (res.data.status) {
+        toast.success("Token push dinonaktifkan");
+        setPushTokens((prev) =>
+          prev.map((row) =>
+            row.outlet_id === item.outlet_id && row.token === item.token
+              ? { ...row, is_active: false }
+              : row,
+          ),
+        );
+      }
+    } catch {
+      toast.error("Gagal menonaktifkan token");
+    }
+  };
+
   const tokenStats = useMemo(() => {
     const activeTokens = pushTokens.filter((item) => item.token);
     const outletWithoutTokens = new Set(
@@ -541,7 +565,7 @@ export default function NotificationsPage() {
                                       item.token ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700",
                                     )}
                                   >
-                                    {item.token ? "Aktif" : "Tidak Ada Token"}
+                                    {item.token ? (item.is_active ? "Aktif" : "Nonaktif") : "Tidak Ada Token"}
                                   </Badge>
                                 </div>
                                 <div className="mt-3 space-y-1.5">
@@ -552,6 +576,15 @@ export default function NotificationsPage() {
                                     <span>Actor: {item.actor_type || "-"} {item.actor_id || "-"}</span>
                                     <span>Last seen: {item.last_seen_at ? format(new Date(item.last_seen_at), "dd MMM yyyy, HH:mm") : "-"}</span>
                                   </div>
+                                  {item.token && item.is_active && (
+                                    <button
+                                      onClick={() => deactivateToken(item)}
+                                      className="mt-2 inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-600 hover:bg-rose-100"
+                                    >
+                                      <X className="h-3 w-3" />
+                                      Nonaktifkan
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             ))}
