@@ -22,7 +22,8 @@ const RESET_TYPE_OPTIONS = [
   {
     value: 'full' as const,
     label: 'Full Reset',
-    description: 'Delete orders, customers, expenses, and all operational data',
+    description:
+      'Reset outlet ke state awal: transaksi, pelanggan, koin, addon, pegawai, dan master data default',
   },
   {
     value: 'transactions_only' as const,
