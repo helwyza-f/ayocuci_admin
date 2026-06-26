@@ -18,45 +18,57 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
+function getErrorMessage(err: unknown, fallback: string) {
+  if (typeof err === 'object' && err !== null) {
+    const maybeAxiosError = err as {
+      response?: { data?: { message?: string } };
+      message?: string;
+    };
+    return maybeAxiosError.response?.data?.message || maybeAxiosError.message || fallback;
+  }
+
+  return fallback;
+}
+
 const RESET_TYPE_OPTIONS = [
   {
     value: 'full' as const,
-    label: 'Full Reset',
+    label: 'Reset Penuh',
     description:
-      'Reset outlet ke state awal: transaksi, pelanggan, koin, addon, pegawai, dan master data default',
+      'Kembalikan outlet ke kondisi awal: transaksi, pelanggan, koin, addon, pegawai, dan data master default',
   },
   {
     value: 'transactions_only' as const,
-    label: 'Transactions Only',
-    description: 'Delete orders but keep customer profiles',
+    label: 'Hanya Transaksi',
+    description: 'Hapus transaksi, tetapi profil pelanggan tetap disimpan',
   },
   {
     value: 'customers_only' as const,
-    label: 'Customers Only',
-    description: 'Delete customer profiles but keep order history',
+    label: 'Hanya Pelanggan',
+    description: 'Hapus profil pelanggan, tetapi riwayat transaksi tetap ada',
   },
 ];
 
 const REASON_OPTIONS = [
   {
     value: 'trial_to_production' as const,
-    label: 'Trial to Production',
-    description: 'Customer transitioning from trial to paid plan',
+    label: 'Trial ke Produksi',
+    description: 'Outlet berpindah dari masa trial ke penggunaan aktif',
   },
   {
     value: 'data_cleanup' as const,
-    label: 'Data Cleanup',
-    description: 'Removing test/dummy data',
+    label: 'Bersihkan Data',
+    description: 'Menghapus data percobaan atau data dummy',
   },
   {
     value: 'customer_request' as const,
-    label: 'Customer Request',
-    description: 'Customer requested data reset',
+    label: 'Permintaan Pelanggan',
+    description: 'Reset diminta langsung oleh pelanggan',
   },
   {
     value: 'other' as const,
-    label: 'Other',
-    description: 'Other reason',
+    label: 'Lainnya',
+    description: 'Alasan lainnya',
   },
 ];
 
@@ -82,13 +94,13 @@ export function ResetDataForm({
 
   const handleReset = async () => {
     if (outletNameInput !== outletName) {
-      toast.error('Outlet name does not match');
-      setError('Outlet name does not match');
+      toast.error('Nama outlet tidak cocok');
+      setError('Nama outlet tidak cocok');
       return;
     }
 
     if (!confirmed) {
-      toast.error('Please confirm that you understand this action is permanent');
+      toast.error('Silakan konfirmasi bahwa tindakan ini permanen');
       return;
     }
 
@@ -106,15 +118,15 @@ export function ResetDataForm({
       if (response.data) {
         setSuccess(true);
         setDeletedStats(response.data.deleted_records);
-        toast.success(`Data reset successful! ${response.data.deleted_records.orders} orders deleted`);
+        toast.success(`Reset data berhasil! ${response.data.deleted_records.orders} transaksi dihapus`);
 
         if (onSuccess) {
           // Delay callback to let user see success message
           setTimeout(onSuccess, 2000);
         }
       }
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Failed to reset data';
+    } catch (err: unknown) {
+      const errorMsg = getErrorMessage(err, 'Gagal mereset data');
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -129,26 +141,26 @@ export function ResetDataForm({
           <CheckCircle2 className="mt-1 h-6 w-6 flex-shrink-0 text-green-600" />
           <div className="flex-1">
             <h3 className="mb-3 text-lg font-semibold text-green-900">
-              Data Reset Completed Successfully
+              Reset Data Berhasil
             </h3>
             <div className="space-y-2 text-sm text-green-800">
               <p>
-                <strong>Orders deleted:</strong> {deletedStats.orders}
+                <strong>Transaksi dihapus:</strong> {deletedStats.orders}
               </p>
               <p>
-                <strong>Customers deleted:</strong> {deletedStats.customers}
+                <strong>Pelanggan dihapus:</strong> {deletedStats.customers}
               </p>
               <p>
-                <strong>Expenses deleted:</strong> {deletedStats.expenses}
+                <strong>Pengeluaran dihapus:</strong> {deletedStats.expenses}
               </p>
               {deletedStats.detail_transaksi > 0 && (
                 <p>
-                  <strong>Transaction details:</strong> {deletedStats.detail_transaksi}
+                  <strong>Detail transaksi:</strong> {deletedStats.detail_transaksi}
                 </p>
               )}
             </div>
             <p className="mt-4 text-xs text-green-700">
-              A backup of the deleted data has been saved for recovery purposes.
+              Cadangan data yang dihapus sudah disimpan untuk kebutuhan pemulihan.
             </p>
           </div>
         </div>
@@ -163,10 +175,11 @@ export function ResetDataForm({
         <div className="flex items-start gap-3">
           <AlertCircle className="mt-1 h-5 w-5 flex-shrink-0 text-red-600" />
           <div>
-            <h3 className="font-semibold text-red-900">⚠️ Permanent Action</h3>
+            <h3 className="font-semibold text-red-900">⚠️ Penghapusan Permanen</h3>
             <p className="mt-1 text-sm text-red-800">
-              This action will permanently delete operational data from this outlet. A backup
-              will be created, but deleted data cannot be easily restored. Proceed with caution.
+              Tindakan ini akan menghapus data operasional outlet secara permanen. Cadangan akan
+              dibuat, tetapi data yang terhapus tidak bisa dipulihkan dengan mudah. Lanjutkan
+              dengan hati-hati.
             </p>
           </div>
         </div>
@@ -174,7 +187,7 @@ export function ResetDataForm({
 
       {/* Reset Type Selection */}
       <div className="space-y-3">
-        <Label className="text-base font-semibold">Reset Type</Label>
+        <Label className="text-base font-semibold">Jenis Reset</Label>
         <div className="space-y-2">
           {RESET_TYPE_OPTIONS.map((option) => (
             <label key={option.value} className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 hover:bg-gray-50">
@@ -198,7 +211,7 @@ export function ResetDataForm({
       {/* Reason Selection */}
       <div className="space-y-3">
         <Label htmlFor="reason" className="text-base font-semibold">
-          Reason for Reset
+          Alasan Reset
         </Label>
         <Select value={reason} onValueChange={(value) => setReason(value as ResetReason)}>
           <SelectTrigger id="reason">
@@ -219,7 +232,7 @@ export function ResetDataForm({
         <div className="space-y-4">
           <div>
             <Label htmlFor="outlet-name" className="block text-sm font-medium text-gray-700">
-              Type outlet name to confirm
+              Ketik nama outlet untuk konfirmasi
             </Label>
             <Input
               id="outlet-name"
@@ -230,7 +243,9 @@ export function ResetDataForm({
               className="mt-2 border-red-300 focus:border-red-500"
               autoComplete="off"
             />
-            <p className="mt-1 text-xs text-gray-500">Must match: "{outletName}"</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Harus sesuai: &quot;{outletName}&quot;
+            </p>
           </div>
 
           <div className="flex items-start gap-2">
@@ -240,7 +255,7 @@ export function ResetDataForm({
               onCheckedChange={(checked) => setConfirmed(checked === true)}
             />
             <Label htmlFor="confirm" className="text-sm font-medium text-gray-700">
-              I understand this action is permanent and cannot be undone
+              Saya memahami bahwa tindakan ini permanen dan tidak dapat dibatalkan
             </Label>
           </div>
         </div>
@@ -264,15 +279,15 @@ export function ResetDataForm({
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Resetting data...
+            Memproses reset...
           </>
         ) : (
-          'Confirm Reset'
+          'Konfirmasi Reset'
         )}
       </Button>
 
       <p className="text-center text-xs text-gray-500">
-        This operation will be logged for audit purposes
+        Tindakan ini akan dicatat untuk kebutuhan audit
       </p>
     </div>
   );

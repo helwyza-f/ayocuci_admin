@@ -65,6 +65,7 @@ import { resolveImageVariantUrl, resolveUploadUrl } from "@/lib/upload-url";
 import StatCard from "@/components/modules/dashboard/stat-card";
 import { ResetDataForm } from "@/components/modules/ResetDataForm";
 import { ResetHistoryTable } from "@/components/modules/ResetHistoryTable";
+import { DeleteTenantAction } from "@/components/modules/DeleteTenantAction";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -1267,14 +1268,14 @@ export default function TenantDetailPage() {
           <div>
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <Trash2 className="w-6 h-6 text-red-500" />
-              Reset Operational Data
+              Reset Data Operasional
             </h2>
             {profile && (
               <ResetDataForm 
                 outletId={profile.ot_id} 
                 outletName={profile.ot_nama}
                 onSuccess={() => {
-                  toast.success("Data reset successful! Page will refresh.");
+                  toast.success("Reset data berhasil. Halaman akan dimuat ulang.");
                   setTimeout(() => window.location.reload(), 1500);
                 }}
               />
@@ -1285,9 +1286,27 @@ export default function TenantDetailPage() {
           <div>
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <History className="w-6 h-6" />
-              Reset History
+              Riwayat Reset
             </h2>
             {profile && <ResetHistoryTable outletId={profile.ot_id} />}
+          </div>
+
+          {/* Delete Outlet Section */}
+          <div>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Trash2 className="w-6 h-6 text-rose-500" />
+              Hapus Outlet
+            </h2>
+            {profile && (
+              <DeleteTenantAction
+                outletId={profile.ot_id}
+                outletName={profile.ot_nama}
+                onDeleted={() => {
+                  toast.success("Outlet berhasil dihapus. Anda akan diarahkan ke daftar outlet.");
+                  setTimeout(() => router.push("/tenants"), 1200);
+                }}
+              />
+            )}
           </div>
         </TabsContent>
 

@@ -18,4 +18,10 @@ export const tenantService = {
     const response = await api.patch(`/tenants/${id}/status`, { status });
     return response.data;
   },
+
+  // Hapus outlet beserta data operasionalnya
+  deleteTenant: async (id: string) => {
+    const response = await api.delete(`/tenants/${id}`);
+    return response.data;
+  },
 };

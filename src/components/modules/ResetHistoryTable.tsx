@@ -16,21 +16,33 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
+function getErrorMessage(err: unknown, fallback: string) {
+  if (typeof err === 'object' && err !== null) {
+    const maybeAxiosError = err as {
+      response?: { data?: { message?: string } };
+      message?: string;
+    };
+    return maybeAxiosError.response?.data?.message || maybeAxiosError.message || fallback;
+  }
+
+  return fallback;
+}
+
 interface ResetHistoryTableProps {
   outletId: string;
 }
 
 const RESET_TYPE_LABELS: Record<string, string> = {
-  full: 'Full Reset',
-  transactions_only: 'Transactions Only',
-  customers_only: 'Customers Only',
+  full: 'Reset Penuh',
+  transactions_only: 'Hanya Transaksi',
+  customers_only: 'Hanya Pelanggan',
 };
 
 const REASON_LABELS: Record<string, string> = {
-  trial_to_production: 'Trial → Production',
-  data_cleanup: 'Data Cleanup',
-  customer_request: 'Customer Request',
-  other: 'Other',
+  trial_to_production: 'Trial → Produksi',
+  data_cleanup: 'Bersihkan Data',
+  customer_request: 'Permintaan Pelanggan',
+  other: 'Lainnya',
 };
 
 export function ResetHistoryTable({ outletId }: ResetHistoryTableProps) {
@@ -44,8 +56,8 @@ export function ResetHistoryTable({ outletId }: ResetHistoryTableProps) {
         setLoading(true);
         const data = await resetDataService.getResetHistory(outletId, 10);
         setHistory(data);
-      } catch (err: any) {
-        setError('Failed to load reset history');
+      } catch (err: unknown) {
+        setError(getErrorMessage(err, 'Gagal memuat riwayat reset'));
         console.error(err);
       } finally {
         setLoading(false);
@@ -78,7 +90,7 @@ export function ResetHistoryTable({ outletId }: ResetHistoryTableProps) {
   if (history.length === 0) {
     return (
       <Card className="p-6">
-        <p className="text-center text-sm text-gray-500">No reset history found</p>
+        <p className="text-center text-sm text-gray-500">Belum ada riwayat reset</p>
       </Card>
     );
   }
@@ -88,11 +100,11 @@ export function ResetHistoryTable({ outletId }: ResetHistoryTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date & Time</TableHead>
-            <TableHead>Reset Type</TableHead>
-            <TableHead>Reason</TableHead>
-            <TableHead className="text-right">Records Deleted</TableHead>
-            <TableHead className="text-right">By</TableHead>
+            <TableHead>Tanggal & Waktu</TableHead>
+            <TableHead>Jenis Reset</TableHead>
+            <TableHead>Alasan</TableHead>
+            <TableHead className="text-right">Data Dihapus</TableHead>
+            <TableHead className="text-right">Oleh</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -113,9 +125,9 @@ export function ResetHistoryTable({ outletId }: ResetHistoryTableProps) {
               </TableCell>
               <TableCell className="text-right">
                 <div className="space-y-1 text-xs">
-                  <p>Orders: <strong>{reset.deleted_stats.orders}</strong></p>
-                  <p>Customers: <strong>{reset.deleted_stats.customers}</strong></p>
-                  <p>Expenses: <strong>{reset.deleted_stats.expenses}</strong></p>
+                  <p>Transaksi: <strong>{reset.deleted_stats.orders}</strong></p>
+                  <p>Pelanggan: <strong>{reset.deleted_stats.customers}</strong></p>
+                  <p>Pengeluaran: <strong>{reset.deleted_stats.expenses}</strong></p>
                 </div>
               </TableCell>
               <TableCell className="text-right text-sm text-gray-600">
