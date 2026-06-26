@@ -27,10 +27,10 @@ export const resetDataService = {
     return response.data.data?.data || [];
   },
 
-  // Get reset detail
-  async getResetDetail(resetId: string): Promise<ResetBackup> {
+  // Get reset detail (requires outlet ID)
+  async getResetDetail(outletId: string, resetId: string): Promise<ResetBackup> {
     const response = await axios.get(
-      `${API_BASE_URL}/admin/tenants/:outlet_id/data/reset-history/${resetId}`
+      `${API_BASE_URL}/admin/tenants/${outletId}/data/reset-history/${resetId}`
     );
     return response.data.data;
   },
