@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
 const RESET_TYPE_OPTIONS = [
@@ -233,10 +232,12 @@ export function ResetDataForm({
           </div>
 
           <div className="flex items-start gap-2">
-            <Checkbox
+            <input
               id="confirm"
+              type="checkbox"
               checked={confirmed}
-              onCheckedChange={(checked) => setConfirmed(checked === true)}
+              onChange={(e) => setConfirmed(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-gray-300"
             />
             <Label htmlFor="confirm" className="text-sm font-medium text-gray-700">
               I understand this action is permanent and cannot be undone
