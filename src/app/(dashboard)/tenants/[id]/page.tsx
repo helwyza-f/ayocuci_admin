@@ -400,6 +400,9 @@ export default function TenantDetailPage() {
           <TabsTrigger value="topups" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Receipt className="h-3 w-3" /> Riwayat Top Up
           </TabsTrigger>
+          <TabsTrigger value="data-management" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+            <Trash2 className="h-3 w-3" /> Reset Data
+          </TabsTrigger>
         </TabsList>
 
         {/* TAB: DASHBOARD */}
