@@ -44,7 +44,8 @@ import {
   X,
   Eye,
   ExternalLink,
-  Loader2 as LoaderIcon
+  Loader2 as LoaderIcon,
+  Trash2
 } from "lucide-react";
 import { tenantService } from "@/services/tenant.service";
 import { addonService } from "@/services/addon.service";
@@ -62,6 +63,8 @@ import { cn } from "@/lib/utils";
 import { getTopupStatusUi, isTopupActionable } from "@/lib/topup-status";
 import { resolveImageVariantUrl, resolveUploadUrl } from "@/lib/upload-url";
 import StatCard from "@/components/modules/dashboard/stat-card";
+import { ResetDataForm } from "@/components/modules/ResetDataForm";
+import { ResetHistoryTable } from "@/components/modules/ResetHistoryTable";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -1255,6 +1258,36 @@ export default function TenantDetailPage() {
               </div>
            </Card>
         </TabsContent>
+        {/* TAB: DATA MANAGEMENT */}
+        <TabsContent value="data-management" className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-8">
+          {/* Reset Form Section */}
+          <div>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Trash2 className="w-6 h-6 text-red-500" />
+              Reset Operational Data
+            </h2>
+            {profile && (
+              <ResetDataForm 
+                outletId={profile.ot_id} 
+                outletName={profile.ot_nama}
+                onSuccess={() => {
+                  toast.success("Data reset successful! Page will refresh.");
+                  setTimeout(() => window.location.reload(), 1500);
+                }}
+              />
+            )}
+          </div>
+
+          {/* Reset History Section */}
+          <div>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <History className="w-6 h-6" />
+              Reset History
+            </h2>
+            {profile && <ResetHistoryTable outletId={profile.ot_id} />}
+          </div>
+        </TabsContent>
+
       </Tabs>
     
 
