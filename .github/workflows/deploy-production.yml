@@ -87,17 +87,4 @@ jobs:
       - name: Rebuild and restart admin web
         run: |
           set -euxo pipefail
-          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" <<EOF
-            set -euxo pipefail
-            mkdir -p '$DEPLOY_PATH'
-            docker network inspect admin-network >/dev/null 2>&1 || docker network create admin-network
-            cat > '$DEPLOY_PATH/.env' <<'ENVEOF'
-            DOMAIN=$DOMAIN
-            NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-            CONTAINER_NAME=$CONTAINER_NAME
-ENVEOF
-            cd '$DEPLOY_PATH'
-            docker compose -p ayocuci_admin_web build --no-cache
-            docker compose -p ayocuci_admin_web up -d --remove-orphans
-            docker compose -p ayocuci_admin_web ps
-EOF
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -lc "set -euxo pipefail; mkdir -p '$DEPLOY_PATH'; docker network inspect admin-network >/dev/null 2>&1 || docker network create admin-network; printf 'DOMAIN=%s\\nNEXT_PUBLIC_API_URL=%s\\nCONTAINER_NAME=%s\\n' '$DOMAIN' '$NEXT_PUBLIC_API_URL' '$CONTAINER_NAME' > '$DEPLOY_PATH/.env'; cd '$DEPLOY_PATH'; docker compose -p ayocuci_admin_web build; docker compose -p ayocuci_admin_web up -d --remove-orphans; docker compose -p ayocuci_admin_web ps"
