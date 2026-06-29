@@ -1,16 +1,28 @@
 "use client";
 
 import { Activity, CheckCircle2, Clock, XCircle, Coins, Zap } from "lucide-react";
-import { Topup } from "@/types/topup";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { getTopupStatusUi, isTopupActionable, normalizeTopupStatus } from "@/lib/topup-status";
 
+export interface ActivityFeedItem {
+  tk_id: string;
+  tk_created: string;
+  tk_jumlah?: number;
+  tk_total?: number;
+  tk_status: string;
+  tk_metode_bayar: string;
+  tk_bukti?: string | null;
+  outlet_name?: string;
+  type: "koin" | "addon";
+  item_names?: string;
+}
+
 interface ActivityFeedProps {
-  activities: (Topup & { type: 'koin' | 'addon', item_names?: string })[];
+  activities: ActivityFeedItem[];
   isLoading: boolean;
-  onVerify?: (item: Topup & { type: 'koin' | 'addon', item_names?: string }) => void;
+  onVerify?: (item: ActivityFeedItem) => void;
 }
 
 export default function ActivityFeed({ activities, isLoading, onVerify }: ActivityFeedProps) {
