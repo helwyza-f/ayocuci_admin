@@ -98,7 +98,6 @@ export const adminMenus: MenuGroup[] = [
         href: "/account-deletions",
         icon: Trash2,
         module: "users",
-        masterOnly: true,
       },
     ],
   },
