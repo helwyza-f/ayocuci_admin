@@ -18,7 +18,7 @@ import { id as localeId } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DateRangeFilter, { DateRange } from "@/components/shared/date-range-filter";
-import { exportSheetsToExcel } from "@/lib/export-excel";
+import { exportSheetsToExcel, type ExcelSheet } from "@/lib/export-excel";
 import {
   analyticsService,
   type AnalyticsQuery,
@@ -179,12 +179,12 @@ function SectionHeader({
   );
 }
 
-function PanelExportButton({ sheets, filename }: { sheets: any[], filename: string }) {
+function PanelExportButton({ sheets, filename }: { sheets: ExcelSheet<object>[], filename: string }) {
   const [exporting, setExporting] = useState(false);
   const handleExport = async () => {
     setExporting(true);
     try {
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       exportSheetsToExcel(sheets, filename);
     } finally {
       setExporting(false);

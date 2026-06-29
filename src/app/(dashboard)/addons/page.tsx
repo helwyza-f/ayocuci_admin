@@ -5,18 +5,13 @@ import {
   Zap,
   PlusCircle,
   RefreshCcw,
-  Search,
   Trash2,
   Edit,
-  Power,
   Box,
-  Layers,
   Database,
-  Info,
   Loader2 as LoaderIcon,
   X,
   ShieldCheck,
-  CreditCard,
   Settings,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -26,16 +21,12 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { economyService } from "@/services/economy.service";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Addon } from "@/types/domain";
-import { ApiResponse } from "@/types/api";
+import { Addon, EconomyConfig } from "@/types/domain";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 export default function AddonCatalogPage() {
@@ -59,15 +50,15 @@ export default function AddonCatalogPage() {
     setLoading(true);
     try {
       const configRes = await economyService.getConfigs();
-      const configs = configRes.data.data || [];
-      const priceConfig = configs.find((c: any) => c.cfg_key === "price_per_coin");
+      const configs: EconomyConfig[] = configRes.data.data || [];
+      const priceConfig = configs.find((c) => c.cfg_key === "price_per_coin");
       if (priceConfig) setPricePerCoin(Number(priceConfig.cfg_value));
 
       const res = await economyService.getAddons();
       if (res.data.status) {
         setAddons(res.data.data || []);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to fetch addon catalog");
     } finally {
       setLoading(false);
@@ -131,7 +122,7 @@ export default function AddonCatalogPage() {
           fetchAddons();
         }
       }
-    } catch (err) {
+    } catch {
       toast.error("Operation failed");
     } finally {
       setIsSubmitting(false);

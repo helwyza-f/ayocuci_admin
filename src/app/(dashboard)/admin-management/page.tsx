@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import useSWR, { mutate } from "swr";
-import { ShieldAlert, UserPlus, Shield, Trash2, Edit3, Check, X, Plus, Key, Users, ChevronRight } from "lucide-react";
+import useSWR from "swr";
+import { ShieldAlert, UserPlus, Shield, Check, X, Key, Users, Plus, Edit3, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,14 @@ import api from "@/lib/api-client";
 import TableSkeleton from "@/components/shared/table-skeleton";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+
+function getErrorMessage(error: unknown) {
+  if (typeof error === "object" && error && "response" in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    return response?.data?.message;
+  }
+  return undefined;
+}
 
 // ============================================================
 // PERMISSION MATRIX EDITOR
@@ -194,9 +202,9 @@ export default function AdminManagementPage() {
     if (_hasHydrated) {
       if (!isMaster()) {
         router.replace("/");
-      } else {
-        setAuthorized(true);
+        return;
       }
+      setAuthorized(true);
     }
   }, [_hasHydrated, isMaster, router]);
 
@@ -271,8 +279,8 @@ function AdminManagementContent() {
       setEditingAdminId(null);
       setShowCreateAdmin(false);
       mutateAdmins();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Gagal menyimpan akun admin");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error) || "Gagal menyimpan akun admin");
     } finally {
       setCreatingAdmin(false);
     }
@@ -305,8 +313,8 @@ function AdminManagementContent() {
       await api.delete(`/admin-roles/${id}`);
       toast.success("Role dihapus");
       mutateRoles();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Gagal menghapus role");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error) || "Gagal menghapus role");
     }
   };
 
