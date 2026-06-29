@@ -671,7 +671,6 @@ export default function SubscriptionsPage() {
 
                 {selectedTrx.ha_bukti ? (
                    <div className="group relative aspect-video rounded border border-slate-200 overflow-hidden bg-slate-200">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={resolveUploadUrl(selectedTrx.ha_bukti)} className="w-full h-full object-cover" alt="Proof" />
                       <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                         <a href={resolveUploadUrl(selectedTrx.ha_bukti)} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded font-bold text-[10px] flex items-center gap-2">

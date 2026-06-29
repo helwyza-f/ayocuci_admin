@@ -26,7 +26,7 @@ import { analyticsService, GrowthSummary, ActivitySummary } from "@/services/ana
 import { topupService } from "@/services/topup.service";
 import { addonService, AddonTransaction } from "@/services/addon.service";
 import { toast } from "sonner";
-import { 
+import {
   Dialog, DialogContent, DialogTitle,
 } from "@/components/ui/dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
@@ -41,6 +41,12 @@ interface DashboardSummary {
   pro_outlets?: number;
   expired_outlets?: number;
 }
+
+type DashboardFeedItem = Topup & {
+  type: "koin" | "addon";
+  item_names?: string;
+  date: Date;
+};
 
 // ─── Recent Owner Card ─────────────────────────────────────
 function RecentOwnerRow({ owner }: { owner: Owner }) {
@@ -128,13 +134,12 @@ export default function DashboardPage() {
 
 
   // Modal & Verification States
-  const [selectedItem, setSelectedItem] = useState<{ type: 'koin' | 'addon', data: any } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<DashboardFeedItem | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  
+
   // Double Confirmation
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<{ id: string, status: 'success' | 'failed' } | null>(null);
 
   // Filter owner yang daftar dalam 3 hari terakhir
   const threeDaysAgo = new Date();
@@ -146,11 +151,19 @@ export default function DashboardPage() {
   const stats = data?.data || { total_outlets: 0, total_koin: 0, active_tenant: 0 };
   
   // MERGE & SORT ACTIVITIES
-  const activities = useMemo(() => {
-    const koinTrx = (activityData?.data || []).map(t => ({ ...t, type: 'koin' as const, date: new Date(t.tk_created) }));
-    const addonTrx = (addonData?.data || []).map(a => ({ 
+  const activities = useMemo<DashboardFeedItem[]>(() => {
+    const koinTrx: DashboardFeedItem[] = (activityData?.data || []).map((t) => ({
+      ...t,
+      type: "koin",
+      date: new Date(t.tk_created),
+    }));
+    const addonTrx: DashboardFeedItem[] = (addonData?.data || []).map((a) => ({
       tk_id: a.ha_id,
-      tk_status: (a.ha_status === 'PENDING' || a.ha_status === 'PENDING_VALIDATION') ? 'pending' : (a.ha_status === 'SUCCESS' ? 'success' : 'failed'),
+      tk_status: a.ha_status === "PENDING" || a.ha_status === "PENDING_VALIDATION"
+        ? "pending"
+        : a.ha_status === "SUCCESS"
+          ? "success"
+          : "failed",
       tk_total: a.ha_total,
       tk_jumlah: 0,
       tk_metode_bayar: a.ha_metode_bayar,
@@ -158,10 +171,10 @@ export default function DashboardPage() {
       tk_bukti: a.ha_bukti,
       outlet_name: a.outlet_name,
       item_names: a.item_names,
-      type: 'addon' as const,
-      date: new Date(a.ha_created)
+      type: "addon",
+      date: new Date(a.ha_created),
     }));
-    
+
     return [...koinTrx, ...addonTrx].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 12);
   }, [activityData, addonData]);
 
@@ -178,7 +191,7 @@ export default function DashboardPage() {
       toast.success("Verifikasi berhasil diproses");
       setIsPreviewOpen(false);
       mutateActivity();
-    } catch (err) {
+    } catch {
       toast.error("Gagal memproses verifikasi");
     } finally {
       setConfirming(false);
@@ -288,7 +301,7 @@ export default function DashboardPage() {
           </div>
           <div className="min-h-[400px] rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
             <ActivityFeed 
-              activities={activities as any} 
+              activities={activities}
               isLoading={isActivityLoading || isAddonLoading} 
               onVerify={(item) => {
                 setSelectedItem({ type: item.type, data: item });
@@ -383,7 +396,9 @@ export default function DashboardPage() {
               </Badge>
             </div>
             <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading uppercase">
-              {selectedItem?.type === 'koin' ? `Topup ${selectedItem.data.tk_jumlah} Koin` : selectedItem?.data.item_names}
+              {selectedItem?.type === "koin"
+                ? `Topup ${selectedItem?.data.tk_jumlah ?? 0} Koin`
+                : selectedItem?.data.item_names}
             </h3>
             <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
               <Store className="h-3 w-3" /> {selectedItem?.data.outlet_name}
@@ -427,10 +442,7 @@ export default function DashboardPage() {
               <div className="flex gap-3">
                 <Button
                   disabled={confirming || !selectedItem.data.tk_bukti}
-                  onClick={() => {
-                    setConfirmTarget({ id: selectedItem.data.tk_id, status: 'success' });
-                    setIsConfirmModalOpen(true);
-                  }}
+                  onClick={() => setIsConfirmModalOpen(true)}
                   className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 shadow-md"
                 >
                   {confirming ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Setujui"}
@@ -471,7 +483,7 @@ export default function DashboardPage() {
              </div>
              <div className="grid grid-cols-2 gap-3 pt-2">
                 <Button variant="outline" className="h-10 rounded-xl font-bold text-[10px] uppercase border-slate-200" onClick={() => setIsConfirmModalOpen(false)}>Batal</Button>
-                <Button className="h-10 rounded-xl font-bold text-[10px] uppercase bg-emerald-500 hover:bg-emerald-600" onClick={() => { setIsConfirmModalOpen(false); handleAction('success'); }}>Ya, Lanjutkan</Button>
+                <Button className="h-10 rounded-xl font-bold text-[10px] uppercase bg-emerald-500 hover:bg-emerald-600" onClick={() => { setIsConfirmModalOpen(false); handleAction("success"); }}>Ya, Lanjutkan</Button>
              </div>
           </div>
         </DialogContent>

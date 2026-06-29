@@ -1,23 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
-  User,
   Mail,
-  Phone,
   Activity,
-  CreditCard,
   Users,
   ArrowUpRight,
   ShieldAlert,
-  History,
   Receipt,
   Store,
-  DollarSign,
-  UserPlus,
   GitBranch,
   Layers,
   Target,
@@ -75,11 +69,82 @@ function SectionHeader({ label, action }: { label: string; action?: React.ReactN
   );
 }
 
+interface OwnerProfileDetail {
+  name: string;
+  email: string;
+  nohp?: string;
+  status: number;
+  created_at: string;
+  referral_code?: string;
+  lead_source?: string;
+}
+
+interface OwnerStatsDetail {
+  total_spend_topup: number;
+  total_spend_addon: number;
+  referral_earnings: number;
+  referral_balance: number;
+}
+
+interface OwnerOutletDetailRow {
+  id: string;
+  name: string;
+  koin: number;
+  total_trx: number;
+  total_revenue: number;
+}
+
+interface OwnerRecruitDetailRow {
+  id: string;
+  name: string;
+  created_at?: string;
+  status: number;
+}
+
+interface OwnerRewardDetailRow {
+  rr_id: string | number;
+  referred_nama: string;
+  referred_email: string;
+  rr_referred_outlet: string | null;
+  rr_type: string;
+  rr_reward_amount: number;
+  rr_created: string;
+}
+
+interface OwnerLedgerDetailRow {
+  hk_id: string | number;
+  outlet_nama: string;
+  hk_jenis_transaksi: string;
+  hk_jumlah: number;
+  hk_keterangan: string;
+  hk_created: string;
+}
+
+interface OwnerPayoutDetailRow {
+  rp_id: string;
+  rp_amount: number;
+  rp_status: string;
+  rp_bank_name: string;
+  rp_account_number: string;
+  rp_account_name: string;
+  rp_created: string;
+}
+
+interface OwnerDetailData {
+  profile: OwnerProfileDetail;
+  stats: OwnerStatsDetail;
+  recruits: OwnerRecruitDetailRow[];
+  outlets: OwnerOutletDetailRow[];
+  payouts: OwnerPayoutDetailRow[];
+  koin_ledger: OwnerLedgerDetailRow[];
+  referral_rewards: OwnerRewardDetailRow[];
+}
+
 export default function UserDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<OwnerDetailData | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -89,7 +154,20 @@ export default function UserDetailPage() {
     password: "",
   });
 
-  useEffect(() => { fetchDetail(); }, [params.id]);
+  const fetchDetail = useCallback(async () => {
+    try {
+      const res = await userService.getOwnerDetail(params.id as string);
+      if (res.status) setData(res.data as OwnerDetailData);
+    } catch {
+      toast.error("Gagal memuat detail owner");
+    } finally {
+      setLoading(false);
+    }
+  }, [params.id]);
+
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
 
   useEffect(() => {
     if (!data?.profile) return;
@@ -100,17 +178,6 @@ export default function UserDetailPage() {
       password: "",
     });
   }, [data]);
-
-  const fetchDetail = async () => {
-    try {
-      const res = await userService.getOwnerDetail(params.id as string);
-      if (res.status) setData(res.data);
-    } catch {
-      toast.error("Gagal memuat detail owner");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading)
     return (
@@ -158,9 +225,9 @@ export default function UserDetailPage() {
       } else {
         toast.error(res.message || "Gagal memperbarui profil owner");
       }
-    } catch (err) {
-      const message = typeof err === "object" && err && "response" in err
-        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+    } catch (error: unknown) {
+      const message = typeof error === "object" && error && "response" in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
         : null;
       toast.error(message || "Gagal memperbarui profil owner");
     } finally {
@@ -268,7 +335,7 @@ export default function UserDetailPage() {
                     <tbody className="divide-y divide-slate-100">
                       {outlets.length === 0 ? (
                         <tr><td colSpan={5}><Empty icon={Store} text="Belum ada outlet terdaftar" /></td></tr>
-                      ) : outlets.map((outlet: any) => (
+                      ) : outlets.map((outlet) => (
                         <tr key={outlet.id} className="hover:bg-slate-50/30 transition-colors">
                           <td className="px-5 py-3">
                             <Link href={`/tenants/${outlet.id}`} className="font-bold text-slate-900 text-xs hover:text-primary hover:underline transition-colors">
@@ -327,7 +394,7 @@ export default function UserDetailPage() {
                   <tbody className="divide-y divide-slate-100">
                     {recruits.length === 0 ? (
                       <tr><td colSpan={3}><Empty icon={Users} text="Belum ada rekrutan" /></td></tr>
-                    ) : recruits.map((recruit: any) => (
+                    ) : recruits.map((recruit) => (
                       <tr key={recruit.id} className="hover:bg-slate-50/30 transition-colors">
                         <td className="px-5 py-3">
                           <p className="font-bold text-slate-900 text-xs">{recruit.name}</p>
@@ -384,7 +451,7 @@ export default function UserDetailPage() {
                     <tbody className="divide-y divide-slate-100">
                       {referral_rewards.length === 0 ? (
                         <tr><td colSpan={5}><Empty icon={GitBranch} text="Belum ada komisi masuk" /></td></tr>
-                      ) : referral_rewards.map((r: any, i: number) => (
+                      ) : referral_rewards.map((r, i: number) => (
                         <tr key={`rr-${r.rr_id || i}`} className="hover:bg-slate-50/30 transition-colors">
                           <td className="px-5 py-3">
                             <p className="font-bold text-slate-900 text-xs">{r.referred_nama}</p>
@@ -444,7 +511,7 @@ export default function UserDetailPage() {
                   <tbody className="divide-y divide-slate-100">
                     {koin_ledger.length === 0 ? (
                       <tr><td colSpan={3}><Empty icon={Activity} text="Tidak ada aktivitas koin" /></td></tr>
-                    ) : koin_ledger.map((hk: any, i: number) => (
+                      ) : koin_ledger.map((hk, i: number) => (
                       <tr key={i} className="hover:bg-slate-50/30 transition-colors">
                         <td className="px-5 py-3">
                           <p className="font-bold text-slate-900 text-xs">{hk.outlet_nama}</p>
@@ -505,7 +572,7 @@ export default function UserDetailPage() {
                     <tbody className="divide-y divide-slate-100">
                       {payouts.length === 0 ? (
                         <tr><td colSpan={4}><Empty icon={Receipt} text="Belum ada pencairan" /></td></tr>
-                      ) : payouts.map((rp: any) => (
+                      ) : payouts.map((rp) => (
                         <tr key={rp.rp_id} className="hover:bg-slate-50/30 transition-colors">
                           <td className="px-5 py-3">
                             <p className="font-bold text-slate-900 text-xs">{rp.rp_id}</p>

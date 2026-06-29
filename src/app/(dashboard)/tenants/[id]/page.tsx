@@ -128,10 +128,6 @@ export default function TenantDetailPage() {
 
   const API_BASE_URL = "https://api.ayocuci.id";
 
-  useEffect(() => {
-    fetchDetail();
-  }, [params.id]);
-
   const fetchDetail = async () => {
     try {
       const [res, configRes] = await Promise.all([
@@ -157,6 +153,10 @@ export default function TenantDetailPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDetail();
+  }, [params.id]);
 
   useEffect(() => {
     const resolveRegions = async () => {
