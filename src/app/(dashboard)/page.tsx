@@ -16,7 +16,6 @@ import useSWR from "swr";
 import { apiFetcher } from "@/lib/fetcher";
 import Link from "next/link";
 import ActivityFeed from "@/components/modules/dashboard/activity-feed";
-import { Topup } from "@/types/topup";
 import { cn } from "@/lib/utils";
 import { resolveUploadUrl } from "@/lib/upload-url";
 import { getTopupStatusUi, isTopupActionable } from "@/lib/topup-status";
@@ -31,6 +30,8 @@ import {
 } from "@/components/ui/dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { Badge } from "@/components/ui/badge";
+import { type ActivityFeedItem } from "@/components/modules/dashboard/activity-feed";
+import { Topup } from "@/types/topup";
 
 // ─── Tipe data summary platform ───────────────────────────
 interface DashboardSummary {
@@ -42,9 +43,15 @@ interface DashboardSummary {
   expired_outlets?: number;
 }
 
-type DashboardFeedItem = Topup & {
-  type: "koin" | "addon";
-  item_names?: string;
+type KoinFeedItem = ActivityFeedItem & {
+  tk_metode_bayar: "transfer" | "midtrans" | "bonus" | "manual";
+  type: "koin";
+  date: Date;
+};
+
+type AddonFeedItem = ActivityFeedItem & {
+  tk_metode_bayar: string;
+  type: "addon";
   date: Date;
 };
 
@@ -134,7 +141,7 @@ export default function DashboardPage() {
 
 
   // Modal & Verification States
-  const [selectedItem, setSelectedItem] = useState<DashboardFeedItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ActivityFeedItem | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
@@ -151,13 +158,13 @@ export default function DashboardPage() {
   const stats = data?.data || { total_outlets: 0, total_koin: 0, active_tenant: 0 };
   
   // MERGE & SORT ACTIVITIES
-  const activities = useMemo<DashboardFeedItem[]>(() => {
-    const koinTrx: DashboardFeedItem[] = (activityData?.data || []).map((t) => ({
+  const activities = useMemo<ActivityFeedItem[]>(() => {
+    const koinTrx: KoinFeedItem[] = (activityData?.data || []).map((t) => ({
       ...t,
       type: "koin",
       date: new Date(t.tk_created),
     }));
-    const addonTrx: DashboardFeedItem[] = (addonData?.data || []).map((a) => ({
+    const addonTrx: AddonFeedItem[] = (addonData?.data || []).map((a) => ({
       tk_id: a.ha_id,
       tk_status: a.ha_status === "PENDING" || a.ha_status === "PENDING_VALIDATION"
         ? "pending"
@@ -182,11 +189,11 @@ export default function DashboardPage() {
     if (!selectedItem) return;
     setConfirming(true);
     try {
-      if (selectedItem.type === 'koin') {
-        await topupService.confirm(selectedItem.data.tk_id, status);
+      if (selectedItem.type === "koin") {
+        await topupService.confirm(selectedItem.tk_id, status);
       } else {
-        if (status === 'success') await addonService.approve(selectedItem.data.tk_id);
-        else await addonService.reject(selectedItem.data.tk_id);
+        if (status === "success") await addonService.approve(selectedItem.tk_id);
+        else await addonService.reject(selectedItem.tk_id);
       }
       toast.success("Verifikasi berhasil diproses");
       setIsPreviewOpen(false);
@@ -304,7 +311,7 @@ export default function DashboardPage() {
               activities={activities}
               isLoading={isActivityLoading || isAddonLoading} 
               onVerify={(item) => {
-                setSelectedItem({ type: item.type, data: item });
+                setSelectedItem(item);
                 setIsPreviewOpen(true);
               }}
             />
@@ -384,35 +391,35 @@ export default function DashboardPage() {
           <div className="p-5 border-b border-slate-100 bg-white">
             <div className="flex items-center justify-between mb-3">
               <Badge variant="outline" className="font-bold text-[9px] uppercase tracking-wider text-slate-400 border-slate-200">
-                {selectedItem?.data.tk_id}
+                {selectedItem?.tk_id}
               </Badge>
               <Badge className={cn(
                 "text-[8px] font-bold uppercase",
                 selectedItem?.type === "koin"
-                  ? getTopupStatusUi(selectedItem?.data.tk_status).className
+                  ? getTopupStatusUi(selectedItem?.tk_status).className
                   : "bg-orange-50 text-orange-600 border-orange-100"
               )}>
-                {selectedItem?.type === 'koin' ? 'Topup Koin' : 'Aktivasi Addon'}
+                {selectedItem?.type === "koin" ? "Topup Koin" : "Aktivasi Addon"}
               </Badge>
             </div>
             <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading uppercase">
               {selectedItem?.type === "koin"
-                ? `Topup ${selectedItem?.data.tk_jumlah ?? 0} Koin`
-                : selectedItem?.data.item_names}
+                ? `Topup ${selectedItem.tk_jumlah ?? 0} Koin`
+                : selectedItem?.item_names}
             </h3>
             <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
-              <Store className="h-3 w-3" /> {selectedItem?.data.outlet_name}
+              <Store className="h-3 w-3" /> {selectedItem?.outlet_name}
             </p>
           </div>
 
           <div className="p-5 space-y-4 bg-slate-50/30">
             <div className="space-y-2">
               <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Bukti Pembayaran</label>
-              {selectedItem?.data.tk_bukti ? (
+              {selectedItem?.tk_bukti ? (
                  <div className="group relative aspect-video rounded-xl border border-slate-200 overflow-hidden bg-slate-200">
-                  <img src={resolveUploadUrl(selectedItem.data.tk_bukti)} className="w-full h-full object-cover" alt="Proof" />
+                  <img src={resolveUploadUrl(selectedItem.tk_bukti)} className="w-full h-full object-cover" alt="Proof" />
                     <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                      <a href={resolveUploadUrl(selectedItem.data.tk_bukti)} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-2">
+                      <a href={resolveUploadUrl(selectedItem.tk_bukti)} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-2">
                         <ArrowUpRight className="h-3 w-3" /> Layar Penuh
                       </a>
                     </div>
@@ -428,20 +435,20 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-sm">
                 <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Metode</p>
-                <div className="font-bold text-xs text-slate-700 uppercase">{selectedItem?.data.tk_metode_bayar}</div>
+                <div className="font-bold text-xs text-slate-700 uppercase">{selectedItem?.tk_metode_bayar}</div>
               </div>
               <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-sm">
                 <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Nominal</p>
-                <div className="font-bold text-xs text-primary">Rp {selectedItem?.data.tk_total?.toLocaleString("id-ID")}</div>
+                <div className="font-bold text-xs text-primary">Rp {selectedItem?.tk_total?.toLocaleString("id-ID")}</div>
               </div>
             </div>
           </div>
 
           <div className="p-5 bg-white border-t border-slate-100">
-            {selectedItem && isTopupActionable(selectedItem.data.tk_status) ? (
+            {selectedItem && isTopupActionable(selectedItem.tk_status) ? (
               <div className="flex gap-3">
                 <Button
-                  disabled={confirming || !selectedItem.data.tk_bukti}
+                  disabled={confirming || !selectedItem.tk_bukti}
                   onClick={() => setIsConfirmModalOpen(true)}
                   className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 shadow-md"
                 >
@@ -459,7 +466,7 @@ export default function DashboardPage() {
             ) : (
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
                  <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest italic">
-                   Locked: {getTopupStatusUi(selectedItem?.data.tk_status).label}
+                   Locked: {getTopupStatusUi(selectedItem?.tk_status).label}
                  </p>
               </div>
             )}
@@ -477,7 +484,7 @@ export default function DashboardPage() {
              <div className="space-y-1">
                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Konfirmasi Ganda</h3>
                 <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
-                   Anda akan menyetujui transaksi senilai <b>Rp {selectedItem?.data.tk_total?.toLocaleString()}</b>. 
+                   Anda akan menyetujui transaksi senilai <b>Rp {selectedItem?.tk_total?.toLocaleString()}</b>. 
                    Lanjutkan proses?
                 </p>
              </div>

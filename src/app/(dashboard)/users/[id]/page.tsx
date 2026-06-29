@@ -77,6 +77,7 @@ interface OwnerProfileDetail {
   created_at: string;
   referral_code?: string;
   lead_source?: string;
+  inviter_name?: string;
 }
 
 interface OwnerStatsDetail {
