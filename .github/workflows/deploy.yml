@@ -63,8 +63,12 @@ jobs:
           : "${NEXT_PUBLIC_API_URL:?Set GitHub Environment variable NEXT_PUBLIC_API_URL}"
           : "${CONTAINER_NAME:?Set GitHub Environment variable CONTAINER_NAME}"
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+          if ! grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/id_ed25519 && ! grep -q "BEGIN RSA PRIVATE KEY" ~/.ssh/id_ed25519; then
+            echo "SSH_PRIVATE_KEY is not a valid OpenSSH/RSA private key"
+            exit 1
+          fi
           ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null
           ssh-keygen -lf ~/.ssh/id_ed25519
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
