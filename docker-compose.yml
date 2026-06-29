@@ -1,0 +1,40 @@
+name: ayocuci-admin-web
+
+services:
+  admin-web:
+    image: ayocuci-admin-web
+    container_name: ${CONTAINER_NAME:-AyoCuci-Admin-Web}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    networks:
+      - traefik-network
+      - admin-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-network"
+      - "traefik.http.routers.admin-web.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.admin-web.entrypoints=websecure"
+      - "traefik.http.routers.admin-web.tls=true"
+      - "traefik.http.routers.admin-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.admin-web.loadbalancer.server.port=3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  traefik-network:
+    external: true
+  admin-network:
+    external: true
