@@ -1,8 +1,9 @@
-name: Deploy Admin Development
+name: Deploy Admin Web
 
 on:
   push:
     branches:
+      - main
       - development
   workflow_dispatch:
 
@@ -10,22 +11,23 @@ permissions:
   contents: read
 
 concurrency:
-  group: admin-deploy-development
+  group: admin-deploy-${{ github.ref_name }}
   cancel-in-progress: true
-
-env:
-  DEPLOY_HOST: 76.13.19.62
-  DEPLOY_PORT: 22
-  DEPLOY_USER: root
-  DEPLOY_PATH: /home/admin_ayocuci/app
-  DOMAIN: admin-dev.ayocuci.id
-  NEXT_PUBLIC_API_URL: https://api-dev.ayocuci.id/api/v1
-  CONTAINER_NAME: AyoCuci-Admin-Web-Dev
 
 jobs:
   deploy:
+    environment: ${{ github.ref_name == 'main' && 'Production' || 'development' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    env:
+      DEPLOY_PORT: 22
+      DEPLOY_USER: root
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      DOMAIN: ${{ vars.DOMAIN }}
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+      CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
 
     steps:
       - name: Checkout repository
@@ -41,7 +43,6 @@ jobs:
         run: npm ci
 
       - name: Run lint
-        continue-on-error: true
         run: npm run lint
 
       - name: Run build
@@ -56,6 +57,11 @@ jobs:
             echo "SSH_PRIVATE_KEY secret is empty"
             exit 1
           fi
+          : "${DEPLOY_HOST:?Set GitHub Environment variable DEPLOY_HOST}"
+          : "${DEPLOY_PATH:?Set GitHub Environment variable DEPLOY_PATH}"
+          : "${DOMAIN:?Set GitHub Environment variable DOMAIN}"
+          : "${NEXT_PUBLIC_API_URL:?Set GitHub Environment variable NEXT_PUBLIC_API_URL}"
+          : "${CONTAINER_NAME:?Set GitHub Environment variable CONTAINER_NAME}"
           install -d -m 700 ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
@@ -87,4 +93,4 @@ jobs:
       - name: Rebuild and restart admin web
         run: |
           set -euxo pipefail
-          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -lc "set -euxo pipefail; mkdir -p '$DEPLOY_PATH'; docker network inspect admin-network >/dev/null 2>&1 || docker network create admin-network; printf 'DOMAIN=%s\\nNEXT_PUBLIC_API_URL=%s\\nCONTAINER_NAME=%s\\n' '$DOMAIN' '$NEXT_PUBLIC_API_URL' '$CONTAINER_NAME' > '$DEPLOY_PATH/.env'; cd '$DEPLOY_PATH'; docker compose -p ayocuci_admin_web_dev build; docker compose -p ayocuci_admin_web_dev up -d --remove-orphans; docker compose -p ayocuci_admin_web_dev ps"
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -lc "set -euxo pipefail; mkdir -p '$DEPLOY_PATH'; docker network inspect admin-network >/dev/null 2>&1 || docker network create admin-network; printf 'DOMAIN=%s\\nNEXT_PUBLIC_API_URL=%s\\nCONTAINER_NAME=%s\\n' '$DOMAIN' '$NEXT_PUBLIC_API_URL' '$CONTAINER_NAME' > '$DEPLOY_PATH/.env'; cd '$DEPLOY_PATH'; docker compose -p ayocuci_admin_web build; docker compose -p ayocuci_admin_web up -d --remove-orphans; docker compose -p ayocuci_admin_web ps"
