@@ -131,3 +131,13 @@ export interface OtpLog {
   message: string;
   created_at: string;
 }
+
+export interface AccountDeletion {
+  id: number;
+  actor_id: string;
+  actor_type: "user" | "admin" | string;
+  actor_name?: string | null;
+  reason: string;
+  reason_detail?: string | null;
+  created_at: string;
+}
