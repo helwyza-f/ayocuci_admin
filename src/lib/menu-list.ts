@@ -19,6 +19,7 @@ import {
   GitBranch,
   BookOpen,
   MessageSquareWarning,
+  Trash2,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -91,6 +92,12 @@ export const adminMenus: MenuGroup[] = [
         icon: ShieldAlert,
         module: "admin-management",
         masterOnly: true,
+      },
+      {
+        label: "Histori Hapus Akun",
+        href: "/account-deletions",
+        icon: Trash2,
+        module: "users",
       },
     ],
   },

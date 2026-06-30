@@ -50,11 +50,11 @@ jobs:
 
       - name: Prepare SSH key
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PRIVATE_KEY_B64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
         run: |
           set -euxo pipefail
-          if [ -z "${SSH_PRIVATE_KEY:-}" ]; then
-            echo "SSH_PRIVATE_KEY secret is empty"
+          if [ -z "${SSH_PRIVATE_KEY_B64:-}" ]; then
+            echo "SSH_PRIVATE_KEY_B64 secret is empty"
             exit 1
           fi
           : "${DEPLOY_HOST:?Set GitHub Environment variable DEPLOY_HOST}"
@@ -63,12 +63,15 @@ jobs:
           : "${NEXT_PUBLIC_API_URL:?Set GitHub Environment variable NEXT_PUBLIC_API_URL}"
           : "${CONTAINER_NAME:?Set GitHub Environment variable CONTAINER_NAME}"
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s' "$SSH_PRIVATE_KEY_B64" | tr -d '\r' | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null
-          ssh-keygen -lf ~/.ssh/id_ed25519
+          if ! grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/id_ed25519 && ! grep -q "BEGIN RSA PRIVATE KEY" ~/.ssh/id_ed25519; then
+            echo "SSH_PRIVATE_KEY is not a valid OpenSSH/RSA private key"
+            exit 1
+          fi
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "echo ssh-ready"
 
       - name: Verify SSH connection
         run: |
@@ -93,4 +96,4 @@ jobs:
       - name: Rebuild and restart admin web
         run: |
           set -euxo pipefail
-          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -lc "set -euxo pipefail; mkdir -p '$DEPLOY_PATH'; docker network inspect admin-network >/dev/null 2>&1 || docker network create admin-network; printf 'DOMAIN=%s\\nNEXT_PUBLIC_API_URL=%s\\nCONTAINER_NAME=%s\\n' '$DOMAIN' '$NEXT_PUBLIC_API_URL' '$CONTAINER_NAME' > '$DEPLOY_PATH/.env'; cd '$DEPLOY_PATH'; docker compose -p ayocuci_admin_web build; docker compose -p ayocuci_admin_web up -d --remove-orphans; docker compose -p ayocuci_admin_web ps"
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -lc "set -euxo pipefail; mkdir -p '$DEPLOY_PATH'; docker network inspect admin-network >/dev/null 2>&1 || docker network create admin-network; printf 'DOMAIN=%s\\nNEXT_PUBLIC_API_URL=%s\\nCONTAINER_NAME=%s\\n' '$DOMAIN' '$NEXT_PUBLIC_API_URL' '$CONTAINER_NAME' > '$DEPLOY_PATH/.env'; cd '$DEPLOY_PATH'; docker rm -f '$CONTAINER_NAME' || true; docker compose -p ayocuci_admin_web down --remove-orphans || true; docker compose -p ayocuci_admin_web build --no-cache; docker compose -p ayocuci_admin_web up -d --force-recreate --remove-orphans; docker compose -p ayocuci_admin_web ps"
