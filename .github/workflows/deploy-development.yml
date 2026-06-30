@@ -1,9 +1,8 @@
-name: Deploy Admin Web
+name: Deploy Admin Web (Dev)
 
 on:
   push:
     branches:
-      - main
       - development
   workflow_dispatch:
 
@@ -11,12 +10,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: admin-deploy-${{ github.ref_name }}
+  group: admin-web-dev
   cancel-in-progress: true
 
 jobs:
   deploy:
-    environment: ${{ github.ref_name == 'main' && 'Production' || 'development' }}
+    environment: development
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -66,7 +65,7 @@ jobs:
           printf '%s' "$SSH_PRIVATE_KEY_B64" | tr -d '\r' | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           if ! grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/id_ed25519 && ! grep -q "BEGIN RSA PRIVATE KEY" ~/.ssh/id_ed25519; then
-            echo "SSH_PRIVATE_KEY is not a valid OpenSSH/RSA private key"
+            echo "SSH_PRIVATE_KEY_B64 is not a valid OpenSSH/RSA private key"
             exit 1
           fi
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts

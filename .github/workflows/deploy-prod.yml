@@ -1,0 +1,98 @@
+name: Deploy Admin Web (Prod)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admin-web-prod
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment: Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      DEPLOY_PORT: 22
+      DEPLOY_USER: root
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      DOMAIN: ${{ vars.DOMAIN }}
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+      CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run build
+        run: npm run build
+
+      - name: Prepare SSH key
+        env:
+          SSH_PRIVATE_KEY_B64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
+        run: |
+          set -euxo pipefail
+          if [ -z "${SSH_PRIVATE_KEY_B64:-}" ]; then
+            echo "SSH_PRIVATE_KEY_B64 secret is empty"
+            exit 1
+          fi
+          : "${DEPLOY_HOST:?Set GitHub Environment variable DEPLOY_HOST}"
+          : "${DEPLOY_PATH:?Set GitHub Environment variable DEPLOY_PATH}"
+          : "${DOMAIN:?Set GitHub Environment variable DOMAIN}"
+          : "${NEXT_PUBLIC_API_URL:?Set GitHub Environment variable NEXT_PUBLIC_API_URL}"
+          : "${CONTAINER_NAME:?Set GitHub Environment variable CONTAINER_NAME}"
+          install -d -m 700 ~/.ssh
+          printf '%s' "$SSH_PRIVATE_KEY_B64" | tr -d '\r' | base64 -d > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          if ! grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/id_ed25519 && ! grep -q "BEGIN RSA PRIVATE KEY" ~/.ssh/id_ed25519; then
+            echo "SSH_PRIVATE_KEY_B64 is not a valid OpenSSH/RSA private key"
+            exit 1
+          fi
+          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "echo ssh-ready"
+
+      - name: Verify SSH connection
+        run: |
+          set -euxo pipefail
+          ssh -p "$DEPLOY_PORT" -o BatchMode=yes "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH' && echo connected && whoami && test -w '$DEPLOY_PATH'"
+
+      - name: Sync project to server
+        run: |
+          set -euxo pipefail
+          rsync -az \
+            --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.DS_Store' \
+            --exclude '.env' \
+            --exclude '.env.*' \
+            --exclude '.next/' \
+            --exclude 'node_modules/' \
+            -e "ssh -p $DEPLOY_PORT" \
+            ./ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+
+      - name: Rebuild and restart admin web
+        run: |
+          set -euxo pipefail
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" bash -lc "set -euxo pipefail; mkdir -p '$DEPLOY_PATH'; docker network inspect admin-network >/dev/null 2>&1 || docker network create admin-network; printf 'DOMAIN=%s\\nNEXT_PUBLIC_API_URL=%s\\nCONTAINER_NAME=%s\\n' '$DOMAIN' '$NEXT_PUBLIC_API_URL' '$CONTAINER_NAME' > '$DEPLOY_PATH/.env'; cd '$DEPLOY_PATH'; docker rm -f '$CONTAINER_NAME' || true; docker compose -p ayocuci_admin_web down --remove-orphans || true; docker compose -p ayocuci_admin_web build --no-cache; docker compose -p ayocuci_admin_web up -d --force-recreate --remove-orphans; docker compose -p ayocuci_admin_web ps"
