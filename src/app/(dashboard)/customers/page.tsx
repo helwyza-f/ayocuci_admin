@@ -32,7 +32,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { Customer } from "@/types/domain";
 import { Tenant } from "@/types/tenant";
 import { ApiResponse } from "@/types/api";
@@ -93,15 +92,6 @@ export default function CustomersPage() {
     if (selectedOutlet === "all") return "Semua Outlet";
     return tenants.find((t) => t.ot_id === selectedOutlet)?.ot_nama || "Pilih Outlet...";
   }, [selectedOutlet, tenants]);
-
-  const tenantIdByName = useMemo(() => {
-    return tenants.reduce<Record<string, string>>((acc, tenant) => {
-      if (tenant.ot_nama) {
-        acc[tenant.ot_nama.trim().toLowerCase()] = tenant.ot_id;
-      }
-      return acc;
-    }, {});
-  }, [tenants]);
 
   return (
     <div className="space-y-6">
@@ -226,29 +216,20 @@ export default function CustomersPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                      {(() => {
-                        const outletName = customer.outlet_name || "-";
-                        const outletId = tenantIdByName[outletName.trim().toLowerCase()];
-
-                        if (!outletId) {
-                          return (
-                            <div className="flex items-center gap-2 text-slate-800 font-bold text-xs tracking-tight">
-                              <Store className="h-3 w-3 text-primary/60 group-hover:scale-110 transition-transform" />
-                              {outletName}
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <Link
-                            href={`/tenants/${outletId}`}
-                            className="inline-flex items-center gap-2 text-slate-800 font-bold text-xs tracking-tight hover:text-primary hover:underline"
-                          >
-                            <Store className="h-3 w-3 text-primary/60 transition-transform group-hover:scale-110" />
-                            {outletName}
-                          </Link>
-                        );
-                      })()}
+                      {customer.outlet_id ? (
+                        <Link
+                          href={`/tenants/${customer.outlet_id}`}
+                          className="inline-flex items-center gap-2 text-slate-800 font-bold text-xs tracking-tight hover:text-primary hover:underline"
+                        >
+                          <Store className="h-3 w-3 text-primary/60 transition-transform group-hover:scale-110" />
+                          {customer.outlet_name || "-"}
+                        </Link>
+                      ) : (
+                        <div className="flex items-center gap-2 text-slate-800 font-bold text-xs tracking-tight">
+                          <Store className="h-3 w-3 text-primary/60 group-hover:scale-110 transition-transform" />
+                          {customer.outlet_name || "-"}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-center">
                       <div className="inline-flex items-center gap-1.5 font-bold text-slate-600 text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100/50 group-hover:bg-white transition-colors">

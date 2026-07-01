@@ -3,6 +3,7 @@ export interface Customer {
   name?: string;
   nohp?: string;
   outlet_name?: string;
+  outlet_id?: string;
   total_transaksi?: number;
   total_spent?: number;
   created_at?: string;
