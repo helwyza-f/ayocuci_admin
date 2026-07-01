@@ -110,8 +110,8 @@ export const ADMIN_PERMISSIONS: AdminPermissionResource[] = [
   },
   {
     key: "subscriptions",
-    label: "Riwayat Langganan",
-    description: "Pantau pembayaran paket dan status langganan.",
+    label: "Aktivasi Lisensi",
+    description: "Pantau riwayat aktivasi lisensi PRO dan addon. Aksi validasi mengikuti permission Top Up & Penagihan.",
     actions: ["read", "export"],
   },
   {

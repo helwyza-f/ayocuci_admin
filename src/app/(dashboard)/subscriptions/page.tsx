@@ -350,10 +350,10 @@ function SubscriptionsContent() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <ShieldCheck className="h-5 w-5 text-primary" />
-            Manajemen Langganan
+            Aktivasi Lisensi
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Pusat operasional aktivasi lisensi dan layanan add-on.
+            Pantau riwayat aktivasi lisensi PRO dan layanan add-on. Validasi transaksi mengikuti izin Top Up & Penagihan.
           </p>
         </div>
 

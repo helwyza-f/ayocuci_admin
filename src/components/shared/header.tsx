@@ -29,7 +29,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       notifications: "Siaran Notifikasi",
       "otp-logs": "Log OTP",
       packages: "Paket Layanan",
-      subscriptions: "Riwayat Langganan",
+      subscriptions: "Aktivasi Lisensi",
     };
 
     return (
