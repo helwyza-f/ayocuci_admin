@@ -1119,27 +1119,7 @@ export default function TenantDetailPage() {
         <TabsContent value="transaksi" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
            <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
               <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                 <div className="space-y-1">
-                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Daftar Transaksi Outlet</p>
-                   {staffTransactionFilter && (
-                     <div className="flex items-center gap-2">
-                       <Badge className="border border-primary/20 bg-primary/10 text-primary shadow-none text-[9px] font-bold uppercase">
-                         Filter Pegawai: {staffAccounts.find((staff) => staff.id === staffTransactionFilter)?.nama || staffTransactionFilter}
-                       </Badge>
-                       <Button
-                         variant="ghost"
-                         size="sm"
-                         className="h-6 px-2 text-[9px] font-bold uppercase text-slate-500 hover:bg-slate-100"
-                         onClick={() => {
-                           setStaffTransactionFilter(null);
-                           setPages((prev) => ({ ...prev, transactions: 1 }));
-                         }}
-                       >
-                         Reset Filter
-                       </Button>
-                     </div>
-                   )}
-                 </div>
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Daftar Transaksi Outlet</p>
                  <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-400">Hal {pages.transactions}</span>
                     <Button 
