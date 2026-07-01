@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useAuthStore } from "@/store/use-auth-store";
 
 
 import {
@@ -110,6 +111,12 @@ function KpiCard({
 
 // ─── Main Page ─────────────────────────────────────────────
 export default function DashboardPage() {
+  const { hasPermission, _hasHydrated } = useAuthStore();
+  const canReadAnalytics = _hasHydrated && hasPermission("analytics", "read");
+  const canReadUsers = _hasHydrated && hasPermission("users", "read");
+  const canReadTopups = _hasHydrated && hasPermission("topups", "read");
+  const canReadPackages = _hasHydrated && hasPermission("packages", "read");
+
   const { data, error, isLoading, mutate } = useSWR<ApiResponse<DashboardSummary>>(
     "/summary", apiFetcher, {
       dedupingInterval: 60_000, keepPreviousData: true, revalidateOnFocus: false,
@@ -117,26 +124,26 @@ export default function DashboardPage() {
   );
 
   const { data: activityData, isLoading: isActivityLoading, mutate: mutateActivity } = useSWR<ApiResponse<Topup[]>>(
-    "/topup-koin", apiFetcher, { dedupingInterval: 30_000 }
+    canReadTopups ? "/topup-koin" : null, apiFetcher, { dedupingInterval: 30_000 }
   );
 
   const { data: addonData, isLoading: isAddonLoading } = useSWR<ApiResponse<AddonTransaction[]>>(
-    "/topup-addon", apiFetcher, { dedupingInterval: 30_000 }
+    canReadPackages ? "/topup-addon" : null, apiFetcher, { dedupingInterval: 30_000 }
   );
 
   // Recent registrations (3 hari) — pakai endpoint growth dari analytics
   const { data: growth } = useSWR<GrowthSummary>(
-    "dashboard-growth-3", () => analyticsService.getGrowth(3), { dedupingInterval: 120_000 }
+    canReadAnalytics ? "dashboard-growth-3" : null, () => analyticsService.getGrowth(3), { dedupingInterval: 120_000 }
   );
 
   // Today's Activity Summary (GMV)
   const { data: activitySummary } = useSWR<ActivitySummary>(
-    "dashboard-activity-1", () => analyticsService.getActivity(1), { dedupingInterval: 120_000 }
+    canReadAnalytics ? "dashboard-activity-1" : null, () => analyticsService.getActivity(1), { dedupingInterval: 120_000 }
   );
 
   // Recent owners (3 hari) dari endpoint users — filter client-side
   const { data: allOwners } = useSWR<ApiResponse<Owner[]>>(
-    "/users", apiFetcher, { dedupingInterval: 120_000 }
+    canReadUsers ? "/users" : null, apiFetcher, { dedupingInterval: 120_000 }
   );
 
 
@@ -219,12 +226,14 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/analytics">
-            <Button variant="outline" size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 border-slate-200 text-primary hover:bg-primary/5">
-              <TrendingUp className="h-3 w-3" />
-              Lihat Analisis
-            </Button>
-          </Link>
+          {canReadAnalytics && (
+            <Link href="/analytics">
+              <Button variant="outline" size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 border-slate-200 text-primary hover:bg-primary/5">
+                <TrendingUp className="h-3 w-3" />
+                Lihat Analisis
+              </Button>
+            </Link>
+          )}
           <Button
             variant="outline" size="sm"
             onClick={() => mutate()}
@@ -249,7 +258,7 @@ export default function DashboardPage() {
         <KpiCard
           label="GMV Hari Ini"
           sub="Total Gross Merchandise Value hari ini"
-          value={activitySummary ? `Rp ${activitySummary.today_gmv.toLocaleString("id-ID")}` : "—"}
+          value={canReadAnalytics && activitySummary ? `Rp ${activitySummary.today_gmv.toLocaleString("id-ID")}` : "—"}
           icon={TrendingUp}
           color="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-200"
         />
@@ -300,23 +309,25 @@ export default function DashboardPage() {
               <Activity className="h-3.5 w-3.5" />
               Aktivitas Topup Terkini
             </h3>
-            <Link href="/topups">
-              <Button variant="ghost" size="sm" className="text-primary font-bold text-[9px] uppercase tracking-wider h-7">
-                Lihat Semua <ArrowRight className="h-3 w-3 ml-1" />
-              </Button>
-            </Link>
+              {canReadTopups && (
+                <Link href="/topups">
+                  <Button variant="ghost" size="sm" className="text-primary font-bold text-[9px] uppercase tracking-wider h-7">
+                    Lihat Semua <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </Link>
+              )}
+            </div>
+            <div className="min-h-[400px] rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+              <ActivityFeed 
+                activities={activities}
+                isLoading={isActivityLoading || isAddonLoading} 
+                onVerify={(item) => {
+                  setSelectedItem(item);
+                  setIsPreviewOpen(true);
+                }}
+              />
+            </div>
           </div>
-          <div className="min-h-[400px] rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-            <ActivityFeed 
-              activities={activities}
-              isLoading={isActivityLoading || isAddonLoading} 
-              onVerify={(item) => {
-                setSelectedItem(item);
-                setIsPreviewOpen(true);
-              }}
-            />
-          </div>
-        </div>
 
         {/* Sidebar kanan */}
         <div className="space-y-4">
@@ -330,11 +341,18 @@ export default function DashboardPage() {
                 </p>
               </div>
               <span className="text-xs font-extrabold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                {growth?.recent_new_owners ?? 0}
+                {canReadAnalytics ? (growth?.recent_new_owners ?? 0) : 0}
               </span>
             </div>
             <div className="px-4 py-2 max-h-[260px] overflow-y-auto custom-scrollbar">
-              {recentOwners.length === 0 ? (
+              {!canReadUsers ? (
+                <div className="py-10 text-center">
+                  <Users className="h-6 w-6 text-slate-200 mx-auto mb-2" />
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                    Role ini tidak memiliki akses owner
+                  </p>
+                </div>
+              ) : recentOwners.length === 0 ? (
                 <div className="py-10 text-center">
                   <Users className="h-6 w-6 text-slate-200 mx-auto mb-2" />
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
@@ -347,13 +365,15 @@ export default function DashboardPage() {
                 ))
               )}
             </div>
-            <div className="px-4 py-2.5 border-t border-slate-50">
-              <Link href="/users">
-                <Button variant="ghost" size="sm" className="w-full h-7 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/5">
-                  Lihat Semua Owner <ArrowRight className="h-3 w-3 ml-1" />
-                </Button>
-              </Link>
-            </div>
+            {canReadUsers && (
+              <div className="px-4 py-2.5 border-t border-slate-50">
+                <Link href="/users">
+                  <Button variant="ghost" size="sm" className="w-full h-7 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/5">
+                    Lihat Semua Owner <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            )}
           </Card>
 
           {/* Quick Links */}
@@ -365,7 +385,12 @@ export default function DashboardPage() {
               { label: "Manajemen Topup", href: "/topups", icon: Coins },
               { label: "Outlet & Tenant", href: "/tenants", icon: Store },
               { label: "Analytics Lengkap", href: "/analytics", icon: TrendingUp },
-            ].map(({ label, href, icon: Icon }) => (
+            ].filter(({ href }) => {
+              if (href === "/topups") return canReadTopups;
+              if (href === "/analytics") return canReadAnalytics;
+              if (href === "/tenants") return hasPermission("tenants", "read");
+              return true;
+            }).map(({ label, href, icon: Icon }) => (
               <Link key={href} href={href}>
                 <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 transition-colors group cursor-pointer">
                   <div className="flex items-center gap-2.5">
