@@ -1716,7 +1716,7 @@ export default function TenantDetailPage() {
           </DialogHeader>
 
           <div className="space-y-5 bg-white px-7 py-6">
-            <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 md:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 xl:grid-cols-[minmax(0,1fr)_220px]">
               <div className="space-y-1">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
                   Ringkasan Akun
@@ -1730,7 +1730,7 @@ export default function TenantDetailPage() {
                     : "Pastikan email login, role, dan status akun sesuai kebutuhan operasional outlet."}
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                     Status Login
@@ -1763,7 +1763,7 @@ export default function TenantDetailPage() {
                   placeholder="Nama lengkap"
                 />
               </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <div className="grid gap-2">
                   <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Email Login</label>
                   <input
@@ -1783,7 +1783,7 @@ export default function TenantDetailPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <div className="grid gap-2">
                   <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Role Outlet</label>
                   <select
