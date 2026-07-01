@@ -75,6 +75,20 @@ import {
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import PermissionGate from "@/components/shared/permission-gate";
 
+interface StaffRoleOption {
+  id: string;
+  nama: string;
+}
+
+interface StaffAccountForm {
+  nama: string;
+  email: string;
+  nohp: string;
+  role_id: string;
+  password: string;
+  status: number;
+}
+
 export default function TenantDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -88,6 +102,7 @@ export default function TenantDetailPage() {
   const [addonHistory, setAddonHistory] = useState<any[]>([]);
   const [trxHistory, setTrxHistory] = useState<any[]>([]);
   const [staffAccounts, setStaffAccounts] = useState<any[]>([]);
+  const [staffRoles, setStaffRoles] = useState<StaffRoleOption[]>([]);
   const [metrics, setMetrics] = useState<any>({
     today_orders: 0,
     today_revenue: 0,
@@ -109,6 +124,17 @@ export default function TenantDetailPage() {
   });
   const [koinFilter, setKoinFilter] = useState<'all' | 'masuk' | 'keluar'>('all');
   const [staffTransactionFilter, setStaffTransactionFilter] = useState<string | null>(null);
+  const [isStaffFormOpen, setIsStaffFormOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<any | null>(null);
+  const [staffSaving, setStaffSaving] = useState(false);
+  const [staffForm, setStaffForm] = useState<StaffAccountForm>({
+    nama: "",
+    email: "",
+    nohp: "",
+    role_id: "",
+    password: "",
+    status: 1,
+  });
 
   const filteredKoinHistory = useMemo(() => {
     return koinHistory.filter(tx => {
@@ -157,6 +183,7 @@ export default function TenantDetailPage() {
         setAddonHistory(res.data.addon_history || []);
         setTrxHistory(res.data.trx_history || []);
         setStaffAccounts(res.data.staff_accounts || []);
+        setStaffRoles(res.data.staff_roles || []);
         setMetrics(res.data.metrics || { today_orders: 0, today_revenue: 0, active_staff: 0 });
       }
     } catch (error) {
@@ -202,6 +229,125 @@ export default function TenantDetailPage() {
 
     if (profile) resolveRegions();
   }, [profile]);
+
+  const resetStaffForm = () => {
+    setEditingStaff(null);
+    setStaffForm({
+      nama: "",
+      email: "",
+      nohp: "",
+      role_id: staffRoles[0]?.id || "",
+      password: "",
+      status: 1,
+    });
+  };
+
+  const openCreateStaffForm = () => {
+    resetStaffForm();
+    setIsStaffFormOpen(true);
+  };
+
+  const openEditStaffForm = (staff: any) => {
+    setEditingStaff(staff);
+    setStaffForm({
+      nama: staff.nama || "",
+      email: staff.email || "",
+      nohp: staff.nohp || "",
+      role_id: staff.role_id || "",
+      password: "",
+      status: Number(staff.status) === 1 ? 1 : 0,
+    });
+    setIsStaffFormOpen(true);
+  };
+
+  const handleSaveStaff = async () => {
+    if (!profile?.ot_id) return;
+    if (!staffForm.nama.trim() || !staffForm.email.trim() || !staffForm.role_id) {
+      toast.error("Nama, email, dan role wajib diisi");
+      return;
+    }
+    if (!editingStaff && staffForm.password.trim().length < 6) {
+      toast.error("Password minimal 6 karakter");
+      return;
+    }
+
+    setStaffSaving(true);
+    try {
+      const payload: Record<string, unknown> = {
+        nama: staffForm.nama.trim(),
+        email: staffForm.email.trim(),
+        nohp: staffForm.nohp.trim(),
+        role_id: staffForm.role_id,
+        status: staffForm.status,
+      };
+      if (staffForm.password.trim()) {
+        payload.password = staffForm.password.trim();
+      }
+
+      if (editingStaff?.id) {
+        await api.put(`/tenants/${profile.ot_id}/staff-accounts/${editingStaff.id}`, payload);
+        toast.success("Akun karyawan berhasil diperbarui");
+      } else {
+        await api.post(`/tenants/${profile.ot_id}/staff-accounts`, payload);
+        toast.success("Akun karyawan berhasil dibuat");
+      }
+
+      setIsStaffFormOpen(false);
+      resetStaffForm();
+      fetchDetail();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Gagal menyimpan akun karyawan");
+    } finally {
+      setStaffSaving(false);
+    }
+  };
+
+  const handleDeleteStaff = async (staff: any) => {
+    if (!profile?.ot_id || !staff?.id) return;
+    if (!confirm(`Hapus akun karyawan ${staff.nama || staff.id}?`)) return;
+
+    try {
+      await api.delete(`/tenants/${profile.ot_id}/staff-accounts/${staff.id}`);
+      toast.success("Akun karyawan berhasil dihapus");
+      fetchDetail();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Gagal menghapus akun karyawan");
+    }
+  };
+
+  const getStaffAddonStatus = (staff: any) => {
+    if (staff.type !== "addon") {
+      return {
+        label: "Slot Dasar",
+        className: "bg-sky-50 text-sky-700 border-sky-200",
+      };
+    }
+
+    if (!staff.active_until) {
+      return {
+        label: "Addon Belum Aktif",
+        className: "bg-slate-100 text-slate-700 border-slate-200",
+      };
+    }
+
+    const remainingDays = differenceInDays(new Date(staff.active_until), new Date());
+    if (remainingDays < 0) {
+      return {
+        label: "Addon Expired",
+        className: "bg-rose-50 text-rose-700 border-rose-200",
+      };
+    }
+    if (remainingDays <= 7) {
+      return {
+        label: `Expired ${remainingDays} Hari Lagi`,
+        className: "bg-amber-50 text-amber-700 border-amber-200",
+      };
+    }
+    return {
+      label: "Addon Aktif",
+      className: "bg-violet-50 text-violet-700 border-violet-200",
+    };
+  };
 
   const handleValidateAddon = async (ha_id: string, status: "confirm" | "cancel") => {
     setConfirming(true);
@@ -405,9 +551,11 @@ export default function TenantDetailPage() {
           <TabsTrigger value="transaksi" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <History className="h-3 w-3" /> Transaksi
           </TabsTrigger>
-          <TabsTrigger value="staff" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
-            <Users className="h-3 w-3" /> Akun Karyawan
-          </TabsTrigger>
+          <PermissionGate module="staff-accounts" action="read">
+            <TabsTrigger value="staff" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+              <Users className="h-3 w-3" /> Akun Karyawan
+            </TabsTrigger>
+          </PermissionGate>
           <TabsTrigger value="addons" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Zap className="h-3 w-3" /> Layanan Add-on
           </TabsTrigger>
@@ -823,6 +971,7 @@ export default function TenantDetailPage() {
            </div>
         </TabsContent>
 
+        <PermissionGate module="staff-accounts" action="read">
         <TabsContent value="staff" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
             <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
@@ -831,9 +980,20 @@ export default function TenantDetailPage() {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Akun Karyawan Outlet</p>
                   <p className="mt-1 text-xs font-medium text-slate-500">Daftar login pegawai yang terhubung ke outlet ini.</p>
                 </div>
-                <Badge variant="outline" className="rounded-md border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase shadow-none">
-                  {staffAccounts.length} Akun
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="rounded-md border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase shadow-none">
+                    {staffAccounts.length} Akun
+                  </Badge>
+                  <PermissionGate module="staff-accounts" action="create">
+                    <Button
+                      size="sm"
+                      className="h-8 px-3 text-[10px] font-bold uppercase shadow-none"
+                      onClick={openCreateStaffForm}
+                    >
+                      <Plus className="mr-1 h-3.5 w-3.5" /> Tambah
+                    </Button>
+                  </PermissionGate>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -871,14 +1031,22 @@ export default function TenantDetailPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <Badge className={cn(
-                            "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
-                            staff.type === "addon"
-                              ? "bg-violet-50 text-violet-700 border-violet-200"
-                              : "bg-sky-50 text-sky-700 border-sky-200"
-                          )}>
-                            {staff.type === "addon" ? "Addon Staff" : "Base Staff"}
-                          </Badge>
+                          <div className="flex flex-col items-start gap-2">
+                            <Badge className={cn(
+                              "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
+                              staff.type === "addon"
+                                ? "bg-violet-50 text-violet-700 border-violet-200"
+                                : "bg-sky-50 text-sky-700 border-sky-200"
+                            )}>
+                              {staff.type === "addon" ? "Addon Staff" : "Base Staff"}
+                            </Badge>
+                            <Badge className={cn(
+                              "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
+                              getStaffAddonStatus(staff).className
+                            )}>
+                              {getStaffAddonStatus(staff).label}
+                            </Badge>
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <Badge className={cn(
@@ -913,6 +1081,28 @@ export default function TenantDetailPage() {
                             >
                               Lihat Transaksi <ArrowUpRight className="ml-1 h-3 w-3" />
                             </Button>
+                            <div className="flex items-center justify-end gap-1 pt-1">
+                              <PermissionGate module="staff-accounts" action="update">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-[9px] font-bold uppercase text-slate-600 hover:bg-slate-100"
+                                  onClick={() => openEditStaffForm(staff)}
+                                >
+                                  Edit
+                                </Button>
+                              </PermissionGate>
+                              <PermissionGate module="staff-accounts" action="delete">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-[9px] font-bold uppercase text-rose-600 hover:bg-rose-50"
+                                  onClick={() => handleDeleteStaff(staff)}
+                                >
+                                  Hapus
+                                </Button>
+                              </PermissionGate>
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -954,6 +1144,7 @@ export default function TenantDetailPage() {
             </Card>
           </div>
         </TabsContent>
+        </PermissionGate>
 
         {/* TAB: TRANSAKSI (WITH PAGINATION) */}
         <TabsContent value="transaksi" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1491,6 +1682,115 @@ export default function TenantDetailPage() {
 
       </Tabs>
     
+
+      <Dialog
+        open={isStaffFormOpen}
+        onOpenChange={(open) => {
+          setIsStaffFormOpen(open);
+          if (!open) resetStaffForm();
+        }}
+      >
+        <DialogContent className="max-w-lg rounded-2xl border-none p-0 shadow-2xl overflow-hidden">
+          <div className="border-b border-slate-100 bg-white px-6 py-5">
+            <h3 className="text-base font-bold text-slate-900">
+              {editingStaff ? "Edit Akun Karyawan" : "Tambah Akun Karyawan"}
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              {editingStaff ? "Perbarui data login, role, status, atau reset password pegawai." : "Buat akun pegawai baru untuk outlet ini."}
+            </p>
+          </div>
+
+          <div className="grid gap-4 bg-slate-50/40 px-6 py-5">
+            <div className="grid gap-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Nama Karyawan</label>
+              <input
+                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium outline-none focus:border-primary"
+                value={staffForm.nama}
+                onChange={(e) => setStaffForm((prev) => ({ ...prev, nama: e.target.value }))}
+                placeholder="Nama lengkap"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Email Login</label>
+                <input
+                  className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium outline-none focus:border-primary"
+                  value={staffForm.email}
+                  onChange={(e) => setStaffForm((prev) => ({ ...prev, email: e.target.value }))}
+                  placeholder="pegawai@outlet.com"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">No. HP</label>
+                <input
+                  className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium outline-none focus:border-primary"
+                  value={staffForm.nohp}
+                  onChange={(e) => setStaffForm((prev) => ({ ...prev, nohp: e.target.value }))}
+                  placeholder="08xxxxxxxxxx"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Role Outlet</label>
+                <select
+                  className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium outline-none focus:border-primary"
+                  value={staffForm.role_id}
+                  onChange={(e) => setStaffForm((prev) => ({ ...prev, role_id: e.target.value }))}
+                >
+                  <option value="">Pilih role</option>
+                  {staffRoles.map((role) => (
+                    <option key={role.id} value={role.id}>{role.nama}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Status Akun</label>
+                <select
+                  className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium outline-none focus:border-primary"
+                  value={String(staffForm.status)}
+                  onChange={(e) => setStaffForm((prev) => ({ ...prev, status: Number(e.target.value) }))}
+                >
+                  <option value="1">Aktif</option>
+                  <option value="0">Nonaktif</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                {editingStaff ? "Reset Password Baru" : "Password Awal"}
+              </label>
+              <input
+                type="password"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium outline-none focus:border-primary"
+                value={staffForm.password}
+                onChange={(e) => setStaffForm((prev) => ({ ...prev, password: e.target.value }))}
+                placeholder={editingStaff ? "Kosongkan jika tidak diubah" : "Minimal 6 karakter"}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-white px-6 py-4">
+            <Button
+              variant="outline"
+              className="h-10 rounded-xl border-slate-200 font-bold text-[10px] uppercase"
+              onClick={() => {
+                setIsStaffFormOpen(false);
+                resetStaffForm();
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              className="h-10 rounded-xl font-bold text-[10px] uppercase shadow-none"
+              disabled={staffSaving}
+              onClick={handleSaveStaff}
+            >
+              {staffSaving ? "Menyimpan..." : editingStaff ? "Simpan Perubahan" : "Buat Akun"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* KOIN TOPUP VALIDATION MODAL */}
       <Dialog open={isKoinModalOpen} onOpenChange={setIsKoinModalOpen}>

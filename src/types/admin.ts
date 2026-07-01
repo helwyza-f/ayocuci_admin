@@ -91,6 +91,12 @@ export const ADMIN_PERMISSIONS: AdminPermissionResource[] = [
     actions: ["read", "update", "delete", "suspend", "activate", "reset_data"],
   },
   {
+    key: "staff-accounts",
+    label: "Akun Karyawan Outlet",
+    description: "Kelola akun pegawai per outlet, status login, role, dan reset password.",
+    actions: ["read", "create", "update", "delete"],
+  },
+  {
     key: "users",
     label: "Owner / Pemilik",
     description: "Kelola data owner lintas outlet dan tindakan sensitif.",
@@ -211,6 +217,7 @@ const BASELINE_READ_PERMISSIONS: AdminPermissions = {
   dashboard: ["read"],
   analytics: ["read"],
   tenants: ["read"],
+  "staff-accounts": ["read"],
   users: ["read"],
   customers: ["read"],
   topups: ["read"],
@@ -236,6 +243,7 @@ export const ADMIN_ROLE_PRESETS: AdminPermissionPreset[] = [
     permissions: {
       ...BASELINE_READ_PERMISSIONS,
       tenants: ["read", "update"],
+      "staff-accounts": ["read", "update"],
       users: ["read", "update"],
       topups: ["read", "confirm", "cancel"],
     },
@@ -247,6 +255,7 @@ export const ADMIN_ROLE_PRESETS: AdminPermissionPreset[] = [
     permissions: {
       ...BASELINE_READ_PERMISSIONS,
       tenants: ["read", "update", "suspend", "activate", "reset_data"],
+      "staff-accounts": ["read", "create", "update", "delete"],
       users: ["read", "update"],
       topups: ["read", "confirm", "cancel"],
     },
