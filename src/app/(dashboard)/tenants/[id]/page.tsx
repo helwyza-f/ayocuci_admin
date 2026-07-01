@@ -79,6 +79,7 @@ export default function TenantDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("dashboard");
   
   // Real Data State
   const [profile, setProfile] = useState<Tenant | null>(null);
@@ -107,6 +108,7 @@ export default function TenantDetailPage() {
     topups: 1
   });
   const [koinFilter, setKoinFilter] = useState<'all' | 'masuk' | 'keluar'>('all');
+  const [staffTransactionFilter, setStaffTransactionFilter] = useState<string | null>(null);
 
   const filteredKoinHistory = useMemo(() => {
     return koinHistory.filter(tx => {
@@ -114,6 +116,13 @@ export default function TenantDetailPage() {
       return tx.hk_jenis_transaksi === koinFilter;
     });
   }, [koinHistory, koinFilter]);
+
+  const filteredTransactions = useMemo(() => {
+    if (!staffTransactionFilter) return trxHistory;
+    return trxHistory.filter(
+      (trx) => trx.actor_type === "pegawai" && trx.actor_id === staffTransactionFilter,
+    );
+  }, [trxHistory, staffTransactionFilter]);
 
   const itemsPerPage = 10;
 
@@ -385,7 +394,7 @@ export default function TenantDetailPage() {
         />
       </div>
 
-      <Tabs defaultValue="dashboard" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-white border border-slate-200 p-0.5 rounded-lg mb-4 flex flex-wrap md:flex-nowrap w-full md:w-fit h-9 shadow-none gap-0.5">
           <TabsTrigger value="dashboard" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <LayoutGrid className="h-3 w-3" /> Dashboard
@@ -845,6 +854,14 @@ export default function TenantDetailPage() {
                             <p className="text-xs font-bold text-slate-900">{staff.nama || "-"}</p>
                             <p className="text-[10px] font-medium text-slate-500">{staff.email || "-"}</p>
                             <p className="text-[10px] font-mono text-slate-400">{staff.nohp || "-"}</p>
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              <span className="text-[10px] font-bold text-slate-700">
+                                {Number(staff.tx_count || 0).toLocaleString("id-ID")} transaksi
+                              </span>
+                              <span className="text-[10px] font-bold text-emerald-700">
+                                Rp {Number(staff.tx_revenue || 0).toLocaleString("id-ID")}
+                              </span>
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -881,6 +898,21 @@ export default function TenantDetailPage() {
                             <p className="text-[9px] font-medium text-slate-400">
                               Dibuat {staff.created_at ? format(new Date(staff.created_at), "dd/MM/yy") : "-"}
                             </p>
+                            <p className="text-[9px] font-medium text-slate-400">
+                              Trx terakhir {staff.last_transaction_at ? format(new Date(staff.last_transaction_at), "dd/MM/yy HH:mm") : "-"}
+                            </p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="mt-1 h-7 px-2 text-[9px] font-bold uppercase text-primary hover:bg-primary/5"
+                              onClick={() => {
+                                setStaffTransactionFilter(staff.id || null);
+                                setPages((prev) => ({ ...prev, transactions: 1 }));
+                                setActiveTab("transaksi");
+                              }}
+                            >
+                              Lihat Transaksi <ArrowUpRight className="ml-1 h-3 w-3" />
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -927,7 +959,27 @@ export default function TenantDetailPage() {
         <TabsContent value="transaksi" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
            <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
               <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Daftar Transaksi Outlet</p>
+                 <div className="space-y-1">
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Daftar Transaksi Outlet</p>
+                   {staffTransactionFilter && (
+                     <div className="flex items-center gap-2">
+                       <Badge className="border border-primary/20 bg-primary/10 text-primary shadow-none text-[9px] font-bold uppercase">
+                         Filter Pegawai: {staffAccounts.find((staff) => staff.id === staffTransactionFilter)?.nama || staffTransactionFilter}
+                       </Badge>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         className="h-6 px-2 text-[9px] font-bold uppercase text-slate-500 hover:bg-slate-100"
+                         onClick={() => {
+                           setStaffTransactionFilter(null);
+                           setPages((prev) => ({ ...prev, transactions: 1 }));
+                         }}
+                       >
+                         Reset Filter
+                       </Button>
+                     </div>
+                   )}
+                 </div>
                  <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-slate-400">Hal {pages.transactions}</span>
                     <Button 
@@ -943,7 +995,7 @@ export default function TenantDetailPage() {
                       variant="outline" 
                       size="icon" 
                       className="h-7 w-7" 
-                      disabled={trxHistory.length <= pages.transactions * itemsPerPage}
+                      disabled={filteredTransactions.length <= pages.transactions * itemsPerPage}
                       onClick={() => setPages(prev => ({ ...prev, transactions: prev.transactions + 1 }))}
                     >
                       <ArrowUpRight className="h-3 w-3 rotate-45" />
@@ -962,10 +1014,17 @@ export default function TenantDetailPage() {
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                       {trxHistory.length > 0 ? trxHistory.slice((pages.transactions - 1) * itemsPerPage, pages.transactions * itemsPerPage).map((trx, i) => (
+                       {filteredTransactions.length > 0 ? filteredTransactions.slice((pages.transactions - 1) * itemsPerPage, pages.transactions * itemsPerPage).map((trx, i) => (
                           <tr key={i} className="hover:bg-slate-50/30 transition-colors">
                              <td className="px-6 py-4 font-bold text-[11px] text-slate-900 uppercase font-mono">{trx.id}</td>
-                             <td className="px-6 py-4 text-xs font-bold text-slate-700">{trx.cust || "-"}</td>
+                             <td className="px-6 py-4">
+                               <div className="space-y-1">
+                                 <p className="text-xs font-bold text-slate-700">{trx.cust || "-"}</p>
+                                 <p className="text-[9px] font-medium text-slate-400 uppercase">
+                                   {trx.kasir_name || (trx.actor_type === "pegawai" ? "Pegawai" : "User")}
+                                 </p>
+                               </div>
+                             </td>
                              <td className="px-6 py-4 text-xs font-bold text-primary">Rp {trx.total?.toLocaleString()}</td>
                              <td className="px-6 py-4">
                                 <Badge variant="outline" className={cn(
@@ -976,7 +1035,7 @@ export default function TenantDetailPage() {
                              <td className="px-6 py-4 text-right text-[10px] font-bold text-slate-400 uppercase">{format(new Date(trx.date), "dd/MM/yyyy HH:mm")}</td>
                           </tr>
                        )) : (
-                          <tr><td colSpan={5} className="py-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">Data transaksi tidak ditemukan</td></tr>
+                          <tr><td colSpan={5} className="py-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">{staffTransactionFilter ? "Tidak ada transaksi dari pegawai ini" : "Data transaksi tidak ditemukan"}</td></tr>
                        )}
                     </tbody>
                  </table>
