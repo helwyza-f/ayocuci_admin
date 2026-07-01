@@ -137,6 +137,22 @@ function TenantsPageContent() {
     return found ? found.name : selectedOwner;
   }, [selectedOwner, owners]);
 
+  const getSubscriptionBadgeClass = (status?: string | null) => {
+    switch ((status || "").toUpperCase()) {
+      case "PRO":
+        return "bg-orange-50 text-orange-700 border-orange-200";
+      case "TRIAL":
+        return "bg-sky-50 text-sky-700 border-sky-200";
+      case "EXPIRED":
+        return "bg-rose-50 text-rose-700 border-rose-200";
+      case "NONAKTIF":
+      case "INACTIVE":
+        return "bg-slate-100 text-slate-700 border-slate-200";
+      default:
+        return "bg-slate-50 text-slate-600 border-slate-200";
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* COMMAND BAR HEADER */}
@@ -308,9 +324,9 @@ function TenantsPageContent() {
                       <div className="flex flex-col items-center gap-1">
                         <Badge
                           className={cn(
-                            "rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none",
+                            "rounded-md px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide border shadow-none",
                             tenant.ot_status === 1
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                               : "bg-amber-50 text-amber-600 border-amber-100 animate-pulse"
                           )}
                         >
@@ -319,8 +335,8 @@ function TenantsPageContent() {
                         <Badge
                           variant="outline"
                           className={cn(
-                            "rounded px-1.5 py-0 text-[7px] font-bold uppercase border-none opacity-60",
-                            tenant.subscription_status === "PRO" ? "text-orange-600" : "text-slate-400"
+                            "rounded-md px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide border shadow-none",
+                            getSubscriptionBadgeClass(tenant.subscription_status)
                           )}
                         >
                           {tenant.subscription_status}
