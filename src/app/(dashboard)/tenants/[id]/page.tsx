@@ -86,6 +86,7 @@ export default function TenantDetailPage() {
   const [topupHistory, setTopupHistory] = useState<any[]>([]);
   const [addonHistory, setAddonHistory] = useState<any[]>([]);
   const [trxHistory, setTrxHistory] = useState<any[]>([]);
+  const [staffAccounts, setStaffAccounts] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any>({
     today_orders: 0,
     today_revenue: 0,
@@ -146,6 +147,7 @@ export default function TenantDetailPage() {
         setTopupHistory(res.data.topup_history || []);
         setAddonHistory(res.data.addon_history || []);
         setTrxHistory(res.data.trx_history || []);
+        setStaffAccounts(res.data.staff_accounts || []);
         setMetrics(res.data.metrics || { today_orders: 0, today_revenue: 0, active_staff: 0 });
       }
     } catch (error) {
@@ -393,6 +395,9 @@ export default function TenantDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="transaksi" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <History className="h-3 w-3" /> Transaksi
+          </TabsTrigger>
+          <TabsTrigger value="staff" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+            <Users className="h-3 w-3" /> Akun Karyawan
           </TabsTrigger>
           <TabsTrigger value="addons" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Zap className="h-3 w-3" /> Layanan Add-on
@@ -807,6 +812,115 @@ export default function TenantDetailPage() {
                  </Card>
               </div>
            </div>
+        </TabsContent>
+
+        <TabsContent value="staff" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
+            <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
+              <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Akun Karyawan Outlet</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">Daftar login pegawai yang terhubung ke outlet ini.</p>
+                </div>
+                <Badge variant="outline" className="rounded-md border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase shadow-none">
+                  {staffAccounts.length} Akun
+                </Badge>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/30 border-b border-slate-100">
+                      <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Karyawan</th>
+                      <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Role Outlet</th>
+                      <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Tipe</th>
+                      <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Akses</th>
+                      <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Masa Aktif</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {staffAccounts.length > 0 ? staffAccounts.map((staff, index) => (
+                      <tr key={staff.id || index} className="hover:bg-slate-50/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold text-slate-900">{staff.nama || "-"}</p>
+                            <p className="text-[10px] font-medium text-slate-500">{staff.email || "-"}</p>
+                            <p className="text-[10px] font-mono text-slate-400">{staff.nohp || "-"}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5">
+                            <Briefcase className="h-3 w-3 text-slate-400" />
+                            <span className="text-[10px] font-bold uppercase text-slate-700">{staff.role_name || "Tanpa Role"}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge className={cn(
+                            "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
+                            staff.type === "addon"
+                              ? "bg-violet-50 text-violet-700 border-violet-200"
+                              : "bg-sky-50 text-sky-700 border-sky-200"
+                          )}>
+                            {staff.type === "addon" ? "Addon Staff" : "Base Staff"}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge className={cn(
+                            "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
+                            Number(staff.status) === 1
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-slate-100 text-slate-700 border-slate-200"
+                          )}>
+                            {Number(staff.status) === 1 ? "Aktif" : "Nonaktif"}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold uppercase text-slate-700">
+                              {staff.active_until ? format(new Date(staff.active_until), "dd MMM yyyy") : "Permanen"}
+                            </p>
+                            <p className="text-[9px] font-medium text-slate-400">
+                              Dibuat {staff.created_at ? format(new Date(staff.created_at), "dd/MM/yy") : "-"}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={5} className="py-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                          Belum ada akun karyawan di outlet ini
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
+              <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Ringkasan SDM Outlet</p>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Slot Dasar</p>
+                  <p className="mt-2 text-2xl font-black text-slate-900">{profile?.ot_max_pegawai_base || 0}</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">Kuota bawaan gratis untuk akun pegawai aktif.</p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Pegawai Aktif</p>
+                  <p className="mt-2 text-2xl font-black text-emerald-700">{metrics.active_staff || 0}</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">Total akun pegawai dengan status aktif saat ini.</p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Addon Staff</p>
+                  <p className="mt-2 text-2xl font-black text-violet-700">
+                    {staffAccounts.filter((staff) => staff.type === "addon").length}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">Akun tambahan di luar slot dasar outlet.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* TAB: TRANSAKSI (WITH PAGINATION) */}
