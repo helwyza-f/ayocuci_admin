@@ -38,6 +38,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import PermissionGate from "@/components/shared/permission-gate";
 
 // ── Compact KPI ────────────────────────────────────────────────────────────────
 function Kpi({ label, value }: { label: string; value: string | number }) {
@@ -237,7 +238,8 @@ export default function UserDetailPage() {
   };
 
   return (
-    <div className="space-y-5 pb-16">
+    <PermissionGate module="users" action="read">
+      <div className="space-y-5 pb-16">
 
       {/* ── HEADER ────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3">
@@ -268,14 +270,16 @@ export default function UserDetailPage() {
             <span className="font-mono text-slate-500">#{params.id}</span>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={openEdit}
-          className="h-8 rounded text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white text-slate-600 hover:text-primary hover:bg-primary/5"
-        >
-          Atur Profil
-        </Button>
+        <PermissionGate module="users" action="update">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openEdit}
+            className="h-8 rounded text-[10px] font-bold uppercase tracking-widest border-slate-200 bg-white text-slate-600 hover:text-primary hover:bg-primary/5"
+          >
+            Atur Profil
+          </Button>
+        </PermissionGate>
         {profile.referral_code && (
           <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-100 rounded-lg">
             <p className="text-[9px] font-bold uppercase text-orange-400 tracking-widest">Kode Referral</p>
@@ -692,12 +696,15 @@ export default function UserDetailPage() {
             <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>
               Batal
             </Button>
-            <Button onClick={saveEdit} disabled={saving}>
-              {saving ? "Menyimpan..." : "Simpan"}
-            </Button>
+            <PermissionGate module="users" action="update">
+              <Button onClick={saveEdit} disabled={saving}>
+                {saving ? "Menyimpan..." : "Simpan"}
+              </Button>
+            </PermissionGate>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PermissionGate>
   );
 }

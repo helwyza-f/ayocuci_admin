@@ -41,10 +41,19 @@ import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { useRegionNames } from "@/hooks/use-region-names";
+import PermissionGate from "@/components/shared/permission-gate";
 
 const PAGE_SIZE = 20;
 
 export default function TenantsPage() {
+  return (
+    <PermissionGate module="tenants" action="read">
+      <TenantsPageContent />
+    </PermissionGate>
+  );
+}
+
+function TenantsPageContent() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const { data: tenantsResponse, isLoading } = useSWR<ApiResponse<Tenant[]>>(

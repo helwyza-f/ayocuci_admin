@@ -44,8 +44,17 @@ import { ApiResponse } from "@/types/api";
 import { Voucher } from "@/types/voucher";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
+import PermissionGate from "@/components/shared/permission-gate";
 
 export default function VoucherManagementPage() {
+  return (
+    <PermissionGate module="vouchers" action="read">
+      <VoucherManagementContent />
+    </PermissionGate>
+  );
+}
+
+function VoucherManagementContent() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -213,6 +222,7 @@ export default function VoucherManagementPage() {
              setIsDialogOpen(open);
              if (!open) setEditingId(null);
           }}>
+          <PermissionGate module="vouchers" action="create">
             <DialogTrigger asChild>
               <Button 
                 onClick={() => {
@@ -233,6 +243,7 @@ export default function VoucherManagementPage() {
                 <PlusCircle className="h-4 w-4" /> Buat Baru
               </Button>
             </DialogTrigger>
+          </PermissionGate>
             <DialogContent className="rounded-lg p-0 border border-slate-200 shadow-xl max-w-lg overflow-hidden bg-white">
                <VisuallyHidden.Root><DialogTitle>{editingId ? "Ubah" : "Buat"} Voucher Kampanye</DialogTitle></VisuallyHidden.Root>
                <div className="p-4 border-b border-slate-100 bg-white">
@@ -389,35 +400,41 @@ export default function VoucherManagementPage() {
                   {v.vc_target}
                 </Badge>
                 <div className="flex items-center gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-slate-400 hover:text-primary"
-                    onClick={() => handleEditVoucher(v)}
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-slate-400 hover:text-primary"
-                    onClick={() => toggleStatus(v.vc_id, v.vc_status)}
-                  >
-                    <Power
-                      className={cn(
-                        "w-3.5 h-3.5 transition-colors",
-                        v.vc_status === 1 ? "text-emerald-500" : "text-slate-300",
-                      )}
-                    />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-slate-400 hover:text-red-500 hover:bg-red-50"
-                    onClick={() => handleDeleteVoucher(v.vc_id)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
+                  <PermissionGate module="vouchers" action="update">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-slate-400 hover:text-primary"
+                      onClick={() => handleEditVoucher(v)}
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </Button>
+                  </PermissionGate>
+                  <PermissionGate module="vouchers" action="activate">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-slate-400 hover:text-primary"
+                      onClick={() => toggleStatus(v.vc_id, v.vc_status)}
+                    >
+                      <Power
+                        className={cn(
+                          "w-3.5 h-3.5 transition-colors",
+                          v.vc_status === 1 ? "text-emerald-500" : "text-slate-300",
+                        )}
+                      />
+                    </Button>
+                  </PermissionGate>
+                  <PermissionGate module="vouchers" action="delete">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-slate-400 hover:text-red-500 hover:bg-red-50"
+                      onClick={() => handleDeleteVoucher(v.vc_id)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </PermissionGate>
                 </div>
               </div>
 

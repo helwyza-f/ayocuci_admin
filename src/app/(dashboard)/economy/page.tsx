@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { ApiResponse } from "@/types/api";
 import { EconomyConfig } from "@/types/domain";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import PermissionGate from "@/components/shared/permission-gate";
 
 // Keys yang satuannya KOIN (bukan Rupiah), meski cfg_type = 'amount' di DB
 const KOIN_KEYS = new Set([
@@ -68,6 +69,14 @@ const DEPRECATED_CONFIG_KEYS = new Set([
 ]);
 
 export default function AdminEconomyPage() {
+  return (
+    <PermissionGate module="economy" action="read">
+      <AdminEconomyContent />
+    </PermissionGate>
+  );
+}
+
+function AdminEconomyContent() {
   // --- STATE ECONOMY ---
   const [configs, setConfigs] = useState<EconomyConfig[]>([]);
   const [loadingConfigs, setLoadingConfigs] = useState(true);
@@ -277,17 +286,19 @@ export default function AdminEconomyPage() {
                       <div className="p-2 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-primary/5 group-hover:text-primary group-hover:scale-110 transition-all duration-300 border border-slate-100/50">
                         {getIcon(cfg.cfg_key)}
                       </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-slate-400 hover:text-primary active:scale-90 transition-all"
-                        onClick={() => {
-                          setEditingConfig(cfg);
-                          setRawValue(cfg.cfg_value);
-                        }}
-                      >
-                        <Settings2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <PermissionGate module="economy" action="update">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-slate-400 hover:text-primary active:scale-90 transition-all"
+                          onClick={() => {
+                            setEditingConfig(cfg);
+                            setRawValue(cfg.cfg_value);
+                          }}
+                        >
+                          <Settings2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </PermissionGate>
                     </div>
                     <div className="space-y-0.5">
                       <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none group-hover:text-slate-500 transition-colors">
@@ -341,12 +352,14 @@ export default function AdminEconomyPage() {
                   className="rounded border-slate-200 h-8 text-[10px] font-bold shadow-none focus-visible:ring-primary/20"
                 />
               </div>
-              <Button
-                onClick={handleAddBank}
-                className="h-8 rounded font-bold text-[9px] uppercase gap-1.5 active:scale-[0.98] transition-all"
-              >
-                <Plus className="h-3.5 w-3.5" /> Save Endpoint
-              </Button>
+              <PermissionGate module="economy" action="create">
+                <Button
+                  onClick={handleAddBank}
+                  className="h-8 rounded font-bold text-[9px] uppercase gap-1.5 active:scale-[0.98] transition-all"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Save Endpoint
+                </Button>
+              </PermissionGate>
             </div>
           </Card>
 
@@ -376,22 +389,26 @@ export default function AdminEconomyPage() {
                       {bank.bank_name.substring(0, 2).toUpperCase()}
                     </div>
                     <div className="flex gap-1 translate-x-1 group-hover:translate-x-0 transition-transform">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleToggleBank(bank.id)}
-                        className="h-7 w-7 text-slate-400 hover:text-primary active:scale-90 transition-all"
-                      >
-                        <Power className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteBank(bank.id)}
-                        className="h-7 w-7 text-slate-400 hover:text-rose-600 active:scale-90 transition-all"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      <PermissionGate module="economy" action="update">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleBank(bank.id)}
+                          className="h-7 w-7 text-slate-400 hover:text-primary active:scale-90 transition-all"
+                        >
+                          <Power className="h-3 w-3" />
+                        </Button>
+                      </PermissionGate>
+                      <PermissionGate module="economy" action="delete">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteBank(bank.id)}
+                          className="h-7 w-7 text-slate-400 hover:text-rose-600 active:scale-90 transition-all"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </PermissionGate>
                     </div>
                   </div>
                   <div className="space-y-0.5 relative z-10">
@@ -461,14 +478,16 @@ export default function AdminEconomyPage() {
               >
                 Cancel
               </Button>
-              <Button
-                disabled={isUpdating}
-                onClick={handleUpdateConfig}
-                className="flex-1 h-8 rounded font-bold text-[9px] uppercase tracking-wider"
-              >
-                {isUpdating ? <LoaderIcon className="animate-spin h-3 w-3" /> : <Save className="h-3 w-3 mr-1.5" />}
-                Commit
-              </Button>
+              <PermissionGate module="economy" action="update">
+                <Button
+                  disabled={isUpdating}
+                  onClick={handleUpdateConfig}
+                  className="flex-1 h-8 rounded font-bold text-[9px] uppercase tracking-wider"
+                >
+                  {isUpdating ? <LoaderIcon className="animate-spin h-3 w-3" /> : <Save className="h-3 w-3 mr-1.5" />}
+                  Commit
+                </Button>
+              </PermissionGate>
             </div>
              <p className="text-[7px] text-center font-medium text-slate-400 uppercase tracking-tighter">
                 Updates propagate immediately to all nodes.

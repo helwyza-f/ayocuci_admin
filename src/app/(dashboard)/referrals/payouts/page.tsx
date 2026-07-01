@@ -15,6 +15,7 @@ import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { format } from "date-fns";
+import PermissionGate from "@/components/shared/permission-gate";
 
 const PAGE_SIZE = 10;
 
@@ -309,19 +310,20 @@ function ReferralPayoutsContent() {
                     />
                     <div className="flex flex-col gap-1.5">
                       {getNextStatuses(normalizedStatus).map((status) => (
-                        <Button
-                          key={status}
-                          size="sm"
-                          disabled={savingPayoutId === item.rp_id}
-                          onClick={() => handleUpdatePayout(item.rp_id, status)}
-                          className={cn(
-                            "rounded font-bold uppercase text-[9px] tracking-widest h-8 active:scale-[0.98] transition-all",
-                            status === "paid" ? "bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-100" : "bg-slate-900 hover:bg-black shadow-sm shadow-slate-200"
-                          )}
-                        >
-                          {savingPayoutId === item.rp_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronRight className="h-3 w-3 mr-1 group-hover:translate-x-0.5 transition-transform" />}
-                          Ke {statusLabel(status)}
-                        </Button>
+                        <PermissionGate key={status} module="referrals" action="approve">
+                          <Button
+                            size="sm"
+                            disabled={savingPayoutId === item.rp_id}
+                            onClick={() => handleUpdatePayout(item.rp_id, status)}
+                            className={cn(
+                              "rounded font-bold uppercase text-[9px] tracking-widest h-8 active:scale-[0.98] transition-all",
+                              status === "paid" ? "bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-100" : "bg-slate-900 hover:bg-black shadow-sm shadow-slate-200"
+                            )}
+                          >
+                            {savingPayoutId === item.rp_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronRight className="h-3 w-3 mr-1 group-hover:translate-x-0.5 transition-transform" />}
+                            Ke {statusLabel(status)}
+                          </Button>
+                        </PermissionGate>
                       ))}
                       {getNextStatuses(normalizedStatus).length === 0 && (
                         <div className="flex items-center justify-center gap-1.5 py-2 text-emerald-600 font-bold text-[9px] uppercase italic tracking-wider">
@@ -350,8 +352,10 @@ function ReferralPayoutsContent() {
 
 export default function PayoutsPageAdmin() {
   return (
-    <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>}>
-      <ReferralPayoutsContent />
-    </Suspense>
+    <PermissionGate module="referrals" action="read">
+      <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>}>
+        <ReferralPayoutsContent />
+      </Suspense>
+    </PermissionGate>
   );
 }

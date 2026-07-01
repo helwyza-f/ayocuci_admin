@@ -25,8 +25,9 @@ import { economyService } from "@/services/economy.service";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EconomyConfig, KoinPackage } from "@/types/domain";
+import PermissionGate from "@/components/shared/permission-gate";
 
-export default function KoinPackagesPage() {
+function KoinPackagesContent() {
   const [packages, setPackages] = useState<KoinPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -150,21 +151,23 @@ export default function KoinPackagesPage() {
           <Badge variant="outline" className="h-8 px-2 rounded font-bold text-[9px] uppercase tracking-wider text-slate-500 bg-white border-slate-200 shadow-none">
              Base: Rp {pricePerCoin.toLocaleString()}/U
           </Badge>
-          <Button
-            onClick={() => {
-              setIsAdding(!isAdding);
-              if (isAdding) {
-                setEditingId(null);
-                setFormData({ jumlah_koin: "", discount_pct: "" });
-              }
-            }}
-            variant={isAdding ? "outline" : "default"}
-            size="sm"
-            className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none"
-          >
-            {isAdding ? <X className="h-3.5 w-3.5" /> : <PlusCircle className="h-3.5 w-3.5" />}
-            {isAdding ? "Batal" : "Buat Baru"}
-          </Button>
+          <PermissionGate module="packages" action="create">
+            <Button
+              onClick={() => {
+                setIsAdding(!isAdding);
+                if (isAdding) {
+                  setEditingId(null);
+                  setFormData({ jumlah_koin: "", discount_pct: "" });
+                }
+              }}
+              variant={isAdding ? "outline" : "default"}
+              size="sm"
+              className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none"
+            >
+              {isAdding ? <X className="h-3.5 w-3.5" /> : <PlusCircle className="h-3.5 w-3.5" />}
+              {isAdding ? "Batal" : "Buat Baru"}
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -198,12 +201,14 @@ export default function KoinPackagesPage() {
                 />
               </div>
             </div>
-            <Button
-              onClick={handleSubmit}
-              className="h-9 rounded font-bold text-[10px] uppercase tracking-wider"
-            >
-              {editingId ? "Simpan Perubahan" : "Terbitkan Paket"}
-            </Button>
+            <PermissionGate module="packages" action="create">
+              <Button
+                onClick={handleSubmit}
+                className="h-9 rounded font-bold text-[10px] uppercase tracking-wider"
+              >
+                {editingId ? "Simpan Perubahan" : "Terbitkan Paket"}
+              </Button>
+            </PermissionGate>
           </div>
         </Card>
       )}
@@ -229,22 +234,26 @@ export default function KoinPackagesPage() {
                     <Zap className="h-4 w-4" />
                   </div>
                   <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-slate-300 hover:text-primary"
-                      onClick={() => handleEdit(pkg)}
-                    >
-                      <Edit3 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-slate-300 hover:text-rose-600"
-                      onClick={() => handleDelete(pkg.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <PermissionGate module="packages" action="update">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-slate-300 hover:text-primary"
+                        onClick={() => handleEdit(pkg)}
+                      >
+                        <Edit3 className="h-3.5 w-3.5" />
+                      </Button>
+                    </PermissionGate>
+                    <PermissionGate module="packages" action="delete">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-slate-300 hover:text-rose-600"
+                        onClick={() => handleDelete(pkg.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </PermissionGate>
                   </div>
                 </div>
 
@@ -296,5 +305,13 @@ export default function KoinPackagesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function KoinPackagesPage() {
+  return (
+    <PermissionGate module="packages" action="read">
+      <KoinPackagesContent />
+    </PermissionGate>
   );
 }

@@ -25,6 +25,7 @@ import { ExcelColumn } from "@/lib/export-excel";
 import { ApiResponse } from "@/types/api";
 import { AccountDeletion } from "@/types/domain";
 import { AccountDeletionRow } from "@/services/account-deletion.service";
+import PermissionGate from "@/components/shared/permission-gate";
 
 const REASON_LABELS: Record<string, string> = {
   business_closed: "Usaha tutup",
@@ -43,7 +44,7 @@ function getReasonLabel(reason: string) {
   return REASON_LABELS[reason] || reason;
 }
 
-export default function AccountDeletionsPage() {
+function AccountDeletionsContent() {
   const [search, setSearch] = useState("");
   const [actorType, setActorType] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
@@ -341,5 +342,13 @@ export default function AccountDeletionsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function AccountDeletionsPage() {
+  return (
+    <PermissionGate module="account-deletions" action="read">
+      <AccountDeletionsContent />
+    </PermissionGate>
   );
 }

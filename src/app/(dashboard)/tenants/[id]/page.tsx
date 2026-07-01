@@ -73,6 +73,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import PermissionGate from "@/components/shared/permission-gate";
 
 export default function TenantDetailPage() {
   const params = useParams();
@@ -307,7 +308,8 @@ export default function TenantDetailPage() {
     );
 
   return (
-    <div className="space-y-6">
+    <PermissionGate module="tenants" action="read">
+      <div className="space-y-6">
       {/* HEADER / ACTION BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -1271,14 +1273,16 @@ export default function TenantDetailPage() {
               Reset Data Operasional
             </h2>
             {profile && (
-              <ResetDataForm 
-                outletId={profile.ot_id} 
-                outletName={profile.ot_nama}
-                onSuccess={() => {
-                  toast.success("Reset data berhasil. Halaman akan dimuat ulang.");
-                  setTimeout(() => window.location.reload(), 1500);
-                }}
-              />
+              <PermissionGate module="tenants" action="reset_data">
+                <ResetDataForm 
+                  outletId={profile.ot_id} 
+                  outletName={profile.ot_nama}
+                  onSuccess={() => {
+                    toast.success("Reset data berhasil. Halaman akan dimuat ulang.");
+                    setTimeout(() => window.location.reload(), 1500);
+                  }}
+                />
+              </PermissionGate>
             )}
           </div>
 
@@ -1298,14 +1302,16 @@ export default function TenantDetailPage() {
               Hapus Outlet
             </h2>
             {profile && (
-              <DeleteTenantAction
-                outletId={profile.ot_id}
-                outletName={profile.ot_nama}
-                onDeleted={() => {
-                  toast.success("Outlet berhasil dihapus. Anda akan diarahkan ke daftar outlet.");
-                  setTimeout(() => router.push("/tenants"), 1200);
-                }}
-              />
+              <PermissionGate module="tenants" action="delete">
+                <DeleteTenantAction
+                  outletId={profile.ot_id}
+                  outletName={profile.ot_nama}
+                  onDeleted={() => {
+                    toast.success("Outlet berhasil dihapus. Anda akan diarahkan ke daftar outlet.");
+                    setTimeout(() => router.push("/tenants"), 1200);
+                  }}
+                />
+              </PermissionGate>
             )}
           </div>
         </TabsContent>
@@ -1527,6 +1533,7 @@ export default function TenantDetailPage() {
             </div>
          </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PermissionGate>
   );
 }

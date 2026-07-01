@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import api from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
+import PermissionGate from "@/components/shared/permission-gate";
 
-export default function SettingsPage() {
+function SettingsContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -90,15 +91,17 @@ export default function SettingsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-           <Button 
-            onClick={handleSave} 
-            disabled={loading || saving}
-            size="sm"
-            className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none"
-          >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            Commit Changes
-          </Button>
+           <PermissionGate module="settings" action="update">
+             <Button 
+              onClick={handleSave} 
+              disabled={loading || saving}
+              size="sm"
+              className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Commit Changes
+            </Button>
+           </PermissionGate>
         </div>
       </div>
 
@@ -272,5 +275,13 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <PermissionGate module="settings" action="read">
+      <SettingsContent />
+    </PermissionGate>
   );
 }

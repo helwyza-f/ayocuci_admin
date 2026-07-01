@@ -18,10 +18,19 @@ import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { format } from "date-fns";
+import PermissionGate from "@/components/shared/permission-gate";
 
 const PAGE_SIZE = 20;
 
 export default function OwnersPage() {
+  return (
+    <PermissionGate module="users" action="read">
+      <OwnersPageContent />
+    </PermissionGate>
+  );
+}
+
+function OwnersPageContent() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });

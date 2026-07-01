@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Inter", ui-sans-serif, system-ui;
-  --font-heading: "Roboto", ui-sans-serif, system-ui;
+  --font-sans: "Inter", "Manrope", ui-sans-serif, system-ui;
+  --font-heading: "Space Grotesk", "Inter", ui-sans-serif, system-ui;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   
   --color-primary: var(--primary);
@@ -47,7 +47,7 @@
 }
 
 :root {
-  --background: oklch(0.985 0 0);
+  --background: oklch(0.986 0.01 240);
   --foreground: oklch(0.145 0.02 264);
   
   --card: oklch(1 0 0);
@@ -57,24 +57,24 @@
   --popover-foreground: oklch(0.145 0.02 264);
   
   /* Primary: Vibrant AyoCuci Orange */
-  --primary: oklch(0.65 0.25 45);
+  --primary: oklch(0.63 0.19 39);
   --primary-foreground: oklch(0.985 0 0);
   
-  --secondary: oklch(0.96 0.02 45);
+  --secondary: oklch(0.96 0.02 39);
   --secondary-foreground: oklch(0.145 0.02 45);
   
-  --muted: oklch(0.96 0.01 45);
+  --muted: oklch(0.965 0.01 240);
   --muted-foreground: oklch(0.5 0.02 45);
   
-  --accent: oklch(0.96 0.02 45);
+  --accent: oklch(0.96 0.02 240);
   --accent-foreground: oklch(0.145 0.02 45);
   
   --destructive: oklch(0.6 0.18 28);
   --destructive-foreground: oklch(0.985 0 0);
   
-  --border: oklch(0.91 0.01 45);
-  --input: oklch(0.91 0.01 45);
-  --ring: oklch(0.65 0.25 45);
+  --border: oklch(0.91 0.01 240);
+  --input: oklch(0.91 0.01 240);
+  --ring: oklch(0.63 0.19 39);
   
   --radius: 0.5rem;
 }
@@ -84,7 +84,10 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-[#F1F5F9] text-slate-900 antialiased font-sans;
+    @apply bg-[#F4F7FB] text-slate-900 antialiased font-sans;
+    background-image:
+      radial-gradient(circle at top left, rgba(255, 125, 67, 0.08), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.04), transparent 35%);
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading tracking-tight font-bold;
@@ -94,6 +97,10 @@
 @layer utilities {
   .shadow-soft {
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04), 0 20px 25px -5px rgba(0, 0, 0, 0.02);
+  }
+
+  .surface-panel {
+    @apply border border-white/70 bg-white/85 backdrop-blur-xl shadow-[0_10px_40px_-24px_rgba(15,23,42,0.35)];
   }
   
   .bg-glass {

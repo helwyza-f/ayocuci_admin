@@ -59,10 +59,19 @@ import { resolveUploadUrl } from "@/lib/upload-url";
 import { getTopupStatusUi, isTopupActionable } from "@/lib/topup-status";
 import useSWR from "swr";
 import { useRegionNames } from "@/hooks/use-region-names";
+import PermissionGate from "@/components/shared/permission-gate";
 
 const PAGE_SIZE = 25;
 
 export default function TopupsManagementPage() {
+  return (
+    <PermissionGate module="topups" action="read">
+      <TopupsManagementContent />
+    </PermissionGate>
+  );
+}
+
+function TopupsManagementContent() {
   const [data, setData] = useState<Topup[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
@@ -646,31 +655,37 @@ export default function TopupsManagementPage() {
               <div className="flex flex-col gap-2">
                 {selectedTopup.tk_metode_bayar === 'transfer' ? (
                    <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      disabled={confirming || !selectedTopup.tk_bukti}
-                      onClick={() => handleAction(selectedTopup.tk_id, "success")}
-                      className="h-10 rounded font-bold text-[10px] uppercase tracking-wider"
-                    >
-                      Setujui
-                    </Button>
+                    <PermissionGate module="topups" action="confirm">
+                      <Button
+                        disabled={confirming || !selectedTopup.tk_bukti}
+                        onClick={() => handleAction(selectedTopup.tk_id, "success")}
+                        className="h-10 rounded font-bold text-[10px] uppercase tracking-wider"
+                      >
+                        Setujui
+                      </Button>
+                    </PermissionGate>
+                    <PermissionGate module="topups" action="cancel">
+                      <Button
+                        variant="outline"
+                        disabled={confirming}
+                        onClick={() => handleAction(selectedTopup.tk_id, "failed")}
+                        className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-rose-600 border-slate-200"
+                      >
+                        Tolak
+                      </Button>
+                    </PermissionGate>
+                  </div>
+                ) : (
+                  <PermissionGate module="topups" action="cancel">
                     <Button
                       variant="outline"
                       disabled={confirming}
-                      onClick={() => handleAction(selectedTopup.tk_id, "failed")}
-                      className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-rose-600 border-slate-200"
+                      onClick={() => handleCancelMidtrans(selectedTopup.tk_id)}
+                      className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-amber-600 border-amber-200 bg-amber-50/30"
                     >
-                      Tolak
+                      Batalkan Midtrans
                     </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    disabled={confirming}
-                    onClick={() => handleCancelMidtrans(selectedTopup.tk_id)}
-                    className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-amber-600 border-amber-200 bg-amber-50/30"
-                  >
-                    Batalkan Midtrans
-                  </Button>
+                  </PermissionGate>
                 )}
               </div>
             ) : (
