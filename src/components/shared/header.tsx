@@ -14,6 +14,13 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const pathname = usePathname();
   const { logout, admin, _hasHydrated } = useAuthStore();
 
+  const getRoleLabel = () => {
+    if (admin?.adm_is_master) return "Master Admin";
+    if (admin?.role?.nama?.trim()) return admin.role.nama.trim();
+    if (admin?.adm_role?.trim()) return admin.adm_role.trim();
+    return "Admin";
+  };
+
   const getTitle = () => {
     const segment = pathname.split("/").pop();
     if (!segment || segment === "" || segment === "dashboard")
@@ -89,7 +96,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
                   {admin?.adm_nama || "Administrator"}
                 </p>
                 <p className="truncate text-[9px] font-medium text-primary uppercase tracking-tight">
-                  {admin?.adm_is_master ? "Master Admin" : "Superadmin"}
+                  {getRoleLabel()}
                 </p>
               </>
             ) : (
