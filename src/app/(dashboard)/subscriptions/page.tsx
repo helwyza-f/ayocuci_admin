@@ -59,6 +59,8 @@ import { apiFetcher } from "@/lib/fetcher";
 import { resolveUploadUrl } from "@/lib/upload-url";
 import useSWR from "swr";
 import { useRegionNames } from "@/hooks/use-region-names";
+import PermissionGate from "@/components/shared/permission-gate";
+import { useAuthStore } from "@/store/use-auth-store";
 
 const PAGE_SIZE = 25;
 
@@ -83,7 +85,13 @@ function KpiCard({
   );
 }
 
-export default function SubscriptionsPage() {
+function SubscriptionsContent() {
+  const { hasPermission } = useAuthStore();
+  const canReadEconomy = hasPermission("economy", "read");
+  const canReadUsers = hasPermission("users", "read");
+  const canExportSubscriptions = hasPermission("subscriptions", "export");
+  const canConfirmTopups = hasPermission("topups", "confirm");
+  const canCancelTopups = hasPermission("topups", "cancel");
   const [data, setData] = useState<AddonTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
@@ -123,7 +131,7 @@ export default function SubscriptionsPage() {
   );
 
   const { data: configsResponse } = useSWR<ApiResponse<EconomyConfig[]>>(
-    "/economy/configs",
+    canReadEconomy ? "/economy/configs" : null,
     apiFetcher,
     {
       dedupingInterval: 60_000,
@@ -139,7 +147,7 @@ export default function SubscriptionsPage() {
   }, [configsResponse]);
 
   const { data: ownersResponse } = useSWR<ApiResponse<Owner[]>>(
-    "/users",
+    canReadUsers ? "/users" : null,
     apiFetcher,
     {
       dedupingInterval: 60_000,
@@ -350,33 +358,35 @@ export default function SubscriptionsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-           <ExportExcelButton
-            data={subscriptionExportRows}
-            filename="subscriptions_report"
-            sheetName="Subscriptions"
-            disabled={regionNames.isLoading}
-            columns={[
-              { header: "ID", key: "ha_id", width: 22 },
-              { header: "ID Owner", key: "owner_id", width: 12 },
-              { header: "Nama Owner", key: "owner_name", width: 25 },
-              { header: "Kode Owner", key: "owner_code", width: 14 },
-              { header: "Email", key: "owner_email", width: 30 },
-              { header: "No HP Owner", key: "owner_nohp", width: 18 },
-              { header: "ID Outlet", key: "ha_outlet", width: 14 },
-              { header: "Nama Outlet", key: "outlet_name", width: 25 },
-              { header: "Kota", key: "outlet_city", width: 18 },
-              { header: "Provinsi", key: "outlet_province", width: 18 },
-              { header: "Tanggal Bergabung", key: "join_date", width: 18, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
-              { header: "Koin", key: "outlet_koin", width: 12 },
-              { header: "Harga", key: "ha_total", width: 15, format: (v, item) => {
-                 if (v == null) return "Rp 0";
-                 if (item.ha_metode_bayar === "KOIN") return `Rp ${(Number(v) * pricePerCoin).toLocaleString()}`;
-                 return `Rp ${Number(v).toLocaleString()}`;
-              }},
-              { header: "Metode Pembayaran", key: "ha_metode_bayar", width: 20 },
-              { header: "Item", key: "item_names", width: 45 },
-            ]}
-          />
+          <PermissionGate module="subscriptions" action="export">
+            <ExportExcelButton
+              data={subscriptionExportRows}
+              filename="subscriptions_report"
+              sheetName="Subscriptions"
+              disabled={regionNames.isLoading || !canExportSubscriptions}
+              columns={[
+                { header: "ID", key: "ha_id", width: 22 },
+                { header: "ID Owner", key: "owner_id", width: 12 },
+                { header: "Nama Owner", key: "owner_name", width: 25 },
+                { header: "Kode Owner", key: "owner_code", width: 14 },
+                { header: "Email", key: "owner_email", width: 30 },
+                { header: "No HP Owner", key: "owner_nohp", width: 18 },
+                { header: "ID Outlet", key: "ha_outlet", width: 14 },
+                { header: "Nama Outlet", key: "outlet_name", width: 25 },
+                { header: "Kota", key: "outlet_city", width: 18 },
+                { header: "Provinsi", key: "outlet_province", width: 18 },
+                { header: "Tanggal Bergabung", key: "join_date", width: 18, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
+                { header: "Koin", key: "outlet_koin", width: 12 },
+                { header: "Harga", key: "ha_total", width: 15, format: (v, item) => {
+                   if (v == null) return "Rp 0";
+                   if (item.ha_metode_bayar === "KOIN") return `Rp ${(Number(v) * pricePerCoin).toLocaleString()}`;
+                   return `Rp ${Number(v).toLocaleString()}`;
+                }},
+                { header: "Metode Pembayaran", key: "ha_metode_bayar", width: 20 },
+                { header: "Item", key: "item_names", width: 45 },
+              ]}
+            />
+          </PermissionGate>
            <Button
             variant="ghost"
             size="sm"
@@ -715,21 +725,25 @@ export default function SubscriptionsPage() {
           <div className="p-4 bg-white border-t border-slate-100 flex flex-col gap-2">
             {selectedTrx?.ha_status === "PENDING_VALIDATION" || selectedTrx?.ha_status === "PENDING" ? (
               <div className="grid grid-cols-2 gap-2">
-                <Button
-                  disabled={confirming || !selectedTrx.ha_bukti}
-                  onClick={() => handleApprove(selectedTrx.ha_id)}
-                  className="h-10 rounded font-bold text-[10px] uppercase tracking-wider"
-                >
-                  {confirming ? <LoaderIcon className="h-4 w-4 animate-spin" /> : "Setujui"}
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={confirming}
-                  onClick={() => handleReject(selectedTrx.ha_id)}
-                  className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-rose-600 border-slate-200"
-                >
-                  Tolak
-                </Button>
+                <PermissionGate module="topups" action="confirm">
+                  <Button
+                    disabled={confirming || !selectedTrx.ha_bukti || !canConfirmTopups}
+                    onClick={() => handleApprove(selectedTrx.ha_id)}
+                    className="h-10 rounded font-bold text-[10px] uppercase tracking-wider"
+                  >
+                    {confirming ? <LoaderIcon className="h-4 w-4 animate-spin" /> : "Setujui"}
+                  </Button>
+                </PermissionGate>
+                <PermissionGate module="topups" action="cancel">
+                  <Button
+                    variant="outline"
+                    disabled={confirming || !canCancelTopups}
+                    onClick={() => handleReject(selectedTrx.ha_id)}
+                    className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-rose-600 border-slate-200"
+                  >
+                    Tolak
+                  </Button>
+                </PermissionGate>
               </div>
             ) : (
               <div className="p-2.5 bg-slate-50 rounded border border-slate-100 text-center">
@@ -745,5 +759,13 @@ export default function SubscriptionsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function SubscriptionsPage() {
+  return (
+    <PermissionGate module="subscriptions" action="read">
+      <SubscriptionsContent />
+    </PermissionGate>
   );
 }

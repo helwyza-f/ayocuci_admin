@@ -97,7 +97,7 @@ export const adminMenus: MenuGroup[] = [
         label: "Histori Hapus Akun",
         href: "/account-deletions",
         icon: Trash2,
-        module: "users",
+        module: "account-deletions",
       },
     ],
   },
