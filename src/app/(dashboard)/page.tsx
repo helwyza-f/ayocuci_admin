@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ApiResponse } from "@/types/api";
+import { ApiErrorResponse, ApiResponse } from "@/types/api";
 import { Owner } from "@/types/domain";
 import useSWR from "swr";
 import { apiFetcher } from "@/lib/fetcher";
@@ -26,6 +26,7 @@ import { analyticsService, GrowthSummary, ActivitySummary } from "@/services/ana
 import { topupService } from "@/services/topup.service";
 import { addonService, AddonTransaction } from "@/services/addon.service";
 import { toast } from "sonner";
+import { AxiosError } from "axios";
 import {
   Dialog, DialogContent, DialogTitle,
 } from "@/components/ui/dialog";
@@ -33,6 +34,7 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { Badge } from "@/components/ui/badge";
 import { type ActivityFeedItem } from "@/components/modules/dashboard/activity-feed";
 import { Topup } from "@/types/topup";
+import PermissionGate from "@/components/shared/permission-gate";
 
 // ─── Tipe data summary platform ───────────────────────────
 interface DashboardSummary {
@@ -116,6 +118,9 @@ export default function DashboardPage() {
   const canReadUsers = _hasHydrated && hasPermission("users", "read");
   const canReadTopups = _hasHydrated && hasPermission("topups", "read");
   const canReadPackages = _hasHydrated && hasPermission("packages", "read");
+  const canConfirmTopups = _hasHydrated && hasPermission("topups", "confirm");
+  const canCancelTopups = _hasHydrated && hasPermission("topups", "cancel");
+  const canTakeVerificationAction = canConfirmTopups || canCancelTopups;
 
   const { data, error, isLoading, mutate } = useSWR<ApiResponse<DashboardSummary>>(
     "/summary", apiFetcher, {
@@ -205,8 +210,9 @@ export default function DashboardPage() {
       toast.success("Verifikasi berhasil diproses");
       setIsPreviewOpen(false);
       mutateActivity();
-    } catch {
-      toast.error("Gagal memproses verifikasi");
+    } catch (error) {
+      const err = error as AxiosError<ApiErrorResponse>;
+      toast.error(err.response?.data?.message || "Gagal memproses verifikasi");
     } finally {
       setConfirming(false);
     }
@@ -470,28 +476,34 @@ export default function DashboardPage() {
           </div>
 
           <div className="p-5 bg-white border-t border-slate-100">
-            {selectedItem && isTopupActionable(selectedItem.tk_status) ? (
+            {selectedItem && isTopupActionable(selectedItem.tk_status) && canTakeVerificationAction ? (
               <div className="flex gap-3">
-                <Button
-                  disabled={confirming || !selectedItem.tk_bukti}
-                  onClick={() => setIsConfirmModalOpen(true)}
-                  className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 shadow-md"
-                >
-                  {confirming ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Setujui"}
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={confirming}
-                  onClick={() => handleAction('failed')}
-                  className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider text-rose-600 border-slate-200 hover:bg-rose-50"
-                >
-                  Tolak
-                </Button>
+                <PermissionGate module="topups" action="confirm">
+                  <Button
+                    disabled={confirming || !selectedItem.tk_bukti}
+                    onClick={() => setIsConfirmModalOpen(true)}
+                    className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 shadow-md"
+                  >
+                    {confirming ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Setujui"}
+                  </Button>
+                </PermissionGate>
+                <PermissionGate module="topups" action="cancel">
+                  <Button
+                    variant="outline"
+                    disabled={confirming}
+                    onClick={() => handleAction('failed')}
+                    className="flex-1 h-11 rounded-xl font-bold text-[11px] uppercase tracking-wider text-rose-600 border-slate-200 hover:bg-rose-50"
+                  >
+                    Tolak
+                  </Button>
+                </PermissionGate>
               </div>
             ) : (
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
                  <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest italic">
-                   Locked: {getTopupStatusUi(selectedItem?.tk_status).label}
+                   {canTakeVerificationAction
+                     ? `Locked: ${getTopupStatusUi(selectedItem?.tk_status).label}`
+                     : "Read only: role ini tidak memiliki izin verifikasi"}
                  </p>
               </div>
             )}
@@ -515,7 +527,9 @@ export default function DashboardPage() {
              </div>
              <div className="grid grid-cols-2 gap-3 pt-2">
                 <Button variant="outline" className="h-10 rounded-xl font-bold text-[10px] uppercase border-slate-200" onClick={() => setIsConfirmModalOpen(false)}>Batal</Button>
-                <Button className="h-10 rounded-xl font-bold text-[10px] uppercase bg-emerald-500 hover:bg-emerald-600" onClick={() => { setIsConfirmModalOpen(false); handleAction("success"); }}>Ya, Lanjutkan</Button>
+                <PermissionGate module="topups" action="confirm">
+                  <Button className="h-10 rounded-xl font-bold text-[10px] uppercase bg-emerald-500 hover:bg-emerald-600" onClick={() => { setIsConfirmModalOpen(false); handleAction("success"); }}>Ya, Lanjutkan</Button>
+                </PermissionGate>
              </div>
           </div>
         </DialogContent>
