@@ -11,7 +11,6 @@ import {
   Gift,
   Calendar,
   Coins,
-  ShieldCheck,
   MapPin,
   Phone,
   Settings2,
@@ -70,27 +69,10 @@ import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import PermissionGate from "@/components/shared/permission-gate";
-
-interface StaffRoleOption {
-  id: string;
-  nama: string;
-}
-
-interface StaffAccountForm {
-  nama: string;
-  email: string;
-  nohp: string;
-  role_id: string;
-  password: string;
-  status: number;
-}
 
 export default function TenantDetailPage() {
   const params = useParams();
@@ -105,7 +87,6 @@ export default function TenantDetailPage() {
   const [addonHistory, setAddonHistory] = useState<any[]>([]);
   const [trxHistory, setTrxHistory] = useState<any[]>([]);
   const [staffAccounts, setStaffAccounts] = useState<any[]>([]);
-  const [staffRoles, setStaffRoles] = useState<StaffRoleOption[]>([]);
   const [metrics, setMetrics] = useState<any>({
     today_orders: 0,
     today_revenue: 0,
@@ -126,18 +107,6 @@ export default function TenantDetailPage() {
     topups: 1
   });
   const [koinFilter, setKoinFilter] = useState<'all' | 'masuk' | 'keluar'>('all');
-  const [isStaffFormOpen, setIsStaffFormOpen] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<any | null>(null);
-  const [staffSaving, setStaffSaving] = useState(false);
-  const [staffForm, setStaffForm] = useState<StaffAccountForm>({
-    nama: "",
-    email: "",
-    nohp: "",
-    role_id: "",
-    password: "",
-    status: 1,
-  });
-
   const filteredKoinHistory = useMemo(() => {
     return koinHistory.filter(tx => {
       if (koinFilter === 'all') return true;
@@ -178,7 +147,6 @@ export default function TenantDetailPage() {
         setAddonHistory(res.data.addon_history || []);
         setTrxHistory(res.data.trx_history || []);
         setStaffAccounts(res.data.staff_accounts || []);
-        setStaffRoles(res.data.staff_roles || []);
         setMetrics(res.data.metrics || { today_orders: 0, today_revenue: 0, active_staff: 0 });
       }
     } catch (error) {
@@ -224,78 +192,6 @@ export default function TenantDetailPage() {
 
     if (profile) resolveRegions();
   }, [profile]);
-
-  const resetStaffForm = () => {
-    setEditingStaff(null);
-    setStaffForm({
-      nama: "",
-      email: "",
-      nohp: "",
-      role_id: staffRoles[0]?.id || "",
-      password: "",
-      status: 1,
-    });
-  };
-
-  const openCreateStaffForm = () => {
-    resetStaffForm();
-    setIsStaffFormOpen(true);
-  };
-
-  const openEditStaffForm = (staff: any) => {
-    setEditingStaff(staff);
-    setStaffForm({
-      nama: staff.nama || "",
-      email: staff.email || "",
-      nohp: staff.nohp || "",
-      role_id: staff.role_id || "",
-      password: "",
-      status: Number(staff.status) === 1 ? 1 : 0,
-    });
-    setIsStaffFormOpen(true);
-  };
-
-  const handleSaveStaff = async () => {
-    if (!profile?.ot_id) return;
-    if (!staffForm.nama.trim() || !staffForm.email.trim() || !staffForm.role_id) {
-      toast.error("Nama, email, dan role wajib diisi");
-      return;
-    }
-    if (!editingStaff && staffForm.password.trim().length < 6) {
-      toast.error("Password minimal 6 karakter");
-      return;
-    }
-
-    setStaffSaving(true);
-    try {
-      const payload: Record<string, unknown> = {
-        nama: staffForm.nama.trim(),
-        email: staffForm.email.trim(),
-        nohp: staffForm.nohp.trim(),
-        role_id: staffForm.role_id,
-        status: staffForm.status,
-      };
-      if (staffForm.password.trim()) {
-        payload.password = staffForm.password.trim();
-      }
-
-      if (editingStaff?.id) {
-        await api.put(`/tenants/${profile.ot_id}/staff-accounts/${editingStaff.id}`, payload);
-        toast.success("Akun karyawan berhasil diperbarui");
-      } else {
-        await api.post(`/tenants/${profile.ot_id}/staff-accounts`, payload);
-        toast.success("Akun karyawan berhasil dibuat");
-      }
-
-      setIsStaffFormOpen(false);
-      resetStaffForm();
-      fetchDetail();
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Gagal menyimpan akun karyawan");
-    } finally {
-      setStaffSaving(false);
-    }
-  };
 
   const handleDeleteStaff = async (staff: any) => {
     if (!profile?.ot_id || !staff?.id) return;
@@ -1026,7 +922,7 @@ export default function TenantDetailPage() {
                     <Button
                       size="sm"
                       className="h-8 px-3 text-[10px] font-bold uppercase shadow-none"
-                      onClick={openCreateStaffForm}
+                      onClick={() => router.push(`/tenants/${params.id}/staff-accounts/new`)}
                     >
                       <Plus className="mr-1 h-3.5 w-3.5" /> Tambah
                     </Button>
@@ -1116,7 +1012,7 @@ export default function TenantDetailPage() {
                                   variant="ghost"
                                   size="sm"
                                   className="h-7 px-2 text-[9px] font-bold uppercase text-slate-600 hover:bg-slate-100"
-                                  onClick={() => openEditStaffForm(staff)}
+                                  onClick={() => router.push(`/tenants/${params.id}/staff-accounts/${staff.id}`)}
                                 >
                                   Edit
                                 </Button>
@@ -1691,171 +1587,6 @@ export default function TenantDetailPage() {
 
       </Tabs>
     
-
-      <Dialog
-        open={isStaffFormOpen}
-        onOpenChange={(open) => {
-          setIsStaffFormOpen(open);
-          if (!open) resetStaffForm();
-        }}
-      >
-        <DialogContent className="max-w-2xl overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-0 shadow-[0_28px_90px_rgba(15,23,42,0.18)]">
-          <DialogHeader className="gap-0 border-b border-slate-100 bg-[linear-gradient(180deg,#fff7f2_0%,#ffffff_78%)] px-7 py-6 pr-14">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Kontrol Akses Pegawai
-            </div>
-            <DialogTitle className="mt-4 text-[22px] font-black tracking-tight text-slate-900">
-              {editingStaff ? "Edit Akun Karyawan" : "Tambah Akun Karyawan"}
-            </DialogTitle>
-            <DialogDescription className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-              {editingStaff
-                ? "Perbarui identitas login, role operasional, status akses, dan reset password pegawai bila diperlukan."
-                : "Buat akun pegawai baru yang akan dipakai untuk login ke aplikasi outlet."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-5 bg-white px-7 py-6">
-            <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 xl:grid-cols-[minmax(0,1fr)_220px]">
-              <div className="space-y-1">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                  Ringkasan Akun
-                </p>
-                <p className="text-sm font-semibold text-slate-900">
-                  {staffForm.nama?.trim() || "Nama pegawai belum diisi"}
-                </p>
-                <p className="text-xs leading-5 text-slate-500">
-                  {editingStaff
-                    ? "Perubahan di sini akan langsung memengaruhi akses login pegawai pada outlet ini."
-                    : "Pastikan email login, role, dan status akun sesuai kebutuhan operasional outlet."}
-                </p>
-              </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                    Status Login
-                  </p>
-                  <p className={cn(
-                    "mt-2 text-sm font-bold",
-                    staffForm.status === 1 ? "text-emerald-600" : "text-slate-600"
-                  )}>
-                    {staffForm.status === 1 ? "Aktif" : "Nonaktif"}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                    Role Outlet
-                  </p>
-                  <p className="mt-2 truncate text-sm font-bold text-slate-900">
-                    {staffRoles.find((role) => role.id === staffForm.role_id)?.nama || "Belum dipilih"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-5 rounded-3xl border border-slate-200 bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] p-5">
-              <div className="grid gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Nama Karyawan</label>
-                <input
-                  className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  value={staffForm.nama}
-                  onChange={(e) => setStaffForm((prev) => ({ ...prev, nama: e.target.value }))}
-                  placeholder="Nama lengkap"
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                <div className="grid gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Email Login</label>
-                  <input
-                    className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    value={staffForm.email}
-                    onChange={(e) => setStaffForm((prev) => ({ ...prev, email: e.target.value }))}
-                    placeholder="pegawai@outlet.com"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">No. HP</label>
-                  <input
-                    className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    value={staffForm.nohp}
-                    onChange={(e) => setStaffForm((prev) => ({ ...prev, nohp: e.target.value }))}
-                    placeholder="08xxxxxxxxxx"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                <div className="grid gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Role Outlet</label>
-                  <select
-                    className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    value={staffForm.role_id}
-                    onChange={(e) => setStaffForm((prev) => ({ ...prev, role_id: e.target.value }))}
-                  >
-                    <option value="">Pilih role</option>
-                    {staffRoles.map((role) => (
-                      <option key={role.id} value={role.id}>{role.nama}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Status Akun</label>
-                  <select
-                    className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    value={String(staffForm.status)}
-                    onChange={(e) => setStaffForm((prev) => ({ ...prev, status: Number(e.target.value) }))}
-                  >
-                    <option value="1">Aktif</option>
-                    <option value="0">Nonaktif</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                  {editingStaff ? "Reset Password Baru" : "Password Awal"}
-                </label>
-                <input
-                  type="password"
-                  className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  value={staffForm.password}
-                  onChange={(e) => setStaffForm((prev) => ({ ...prev, password: e.target.value }))}
-                  placeholder={editingStaff ? "Kosongkan jika tidak diubah" : "Minimal 6 karakter"}
-                />
-                <p className="text-[11px] leading-5 text-slate-400">
-                  {editingStaff
-                    ? "Isi hanya jika Anda ingin mengganti password login pegawai ini."
-                    : "Password awal akan dipakai pegawai saat pertama kali login."}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-3 border-t border-slate-100 bg-white/95 px-7 py-5">
-            <Button
-              variant="outline"
-              className="rounded-2xl border-slate-200 px-5"
-              onClick={() => {
-                setIsStaffFormOpen(false);
-                resetStaffForm();
-              }}
-            >
-              Batal
-            </Button>
-            <Button
-              className="rounded-2xl bg-primary px-5 text-white shadow-[0_14px_32px_rgba(234,88,12,0.26)] hover:bg-primary/90"
-              disabled={staffSaving}
-              onClick={handleSaveStaff}
-            >
-              {staffSaving ? (
-                <>
-                  <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-                  Menyimpan...
-                </>
-              ) : editingStaff ? "Simpan Perubahan" : "Buat Akun"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* KOIN TOPUP VALIDATION MODAL */}
       <Dialog open={isKoinModalOpen} onOpenChange={setIsKoinModalOpen}>
         <DialogContent className="max-w-md p-0 overflow-hidden border-none rounded-xl shadow-2xl bg-white">
