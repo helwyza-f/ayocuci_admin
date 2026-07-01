@@ -123,7 +123,6 @@ export default function TenantDetailPage() {
     topups: 1
   });
   const [koinFilter, setKoinFilter] = useState<'all' | 'masuk' | 'keluar'>('all');
-  const [staffTransactionFilter, setStaffTransactionFilter] = useState<string | null>(null);
   const [isStaffFormOpen, setIsStaffFormOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<any | null>(null);
   const [staffSaving, setStaffSaving] = useState(false);
@@ -142,13 +141,6 @@ export default function TenantDetailPage() {
       return tx.hk_jenis_transaksi === koinFilter;
     });
   }, [koinHistory, koinFilter]);
-
-  const filteredTransactions = useMemo(() => {
-    if (!staffTransactionFilter) return trxHistory;
-    return trxHistory.filter(
-      (trx) => trx.actor_type === "pegawai" && trx.actor_id === staffTransactionFilter,
-    );
-  }, [trxHistory, staffTransactionFilter]);
 
   const itemsPerPage = 10;
 
@@ -1014,14 +1006,6 @@ export default function TenantDetailPage() {
                             <p className="text-xs font-bold text-slate-900">{staff.nama || "-"}</p>
                             <p className="text-[10px] font-medium text-slate-500">{staff.email || "-"}</p>
                             <p className="text-[10px] font-mono text-slate-400">{staff.nohp || "-"}</p>
-                            <div className="flex flex-wrap items-center gap-2 pt-1">
-                              <span className="text-[10px] font-bold text-slate-700">
-                                {Number(staff.tx_count || 0).toLocaleString("id-ID")} transaksi
-                              </span>
-                              <span className="text-[10px] font-bold text-emerald-700">
-                                Rp {Number(staff.tx_revenue || 0).toLocaleString("id-ID")}
-                              </span>
-                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -1066,21 +1050,6 @@ export default function TenantDetailPage() {
                             <p className="text-[9px] font-medium text-slate-400">
                               Dibuat {staff.created_at ? format(new Date(staff.created_at), "dd/MM/yy") : "-"}
                             </p>
-                            <p className="text-[9px] font-medium text-slate-400">
-                              Trx terakhir {staff.last_transaction_at ? format(new Date(staff.last_transaction_at), "dd/MM/yy HH:mm") : "-"}
-                            </p>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="mt-1 h-7 px-2 text-[9px] font-bold uppercase text-primary hover:bg-primary/5"
-                              onClick={() => {
-                                setStaffTransactionFilter(staff.id || null);
-                                setPages((prev) => ({ ...prev, transactions: 1 }));
-                                setActiveTab("transaksi");
-                              }}
-                            >
-                              Lihat Transaksi <ArrowUpRight className="ml-1 h-3 w-3" />
-                            </Button>
                             <div className="flex items-center justify-end gap-1 pt-1">
                               <PermissionGate module="staff-accounts" action="update">
                                 <Button
@@ -1186,7 +1155,7 @@ export default function TenantDetailPage() {
                       variant="outline" 
                       size="icon" 
                       className="h-7 w-7" 
-                      disabled={filteredTransactions.length <= pages.transactions * itemsPerPage}
+                      disabled={trxHistory.length <= pages.transactions * itemsPerPage}
                       onClick={() => setPages(prev => ({ ...prev, transactions: prev.transactions + 1 }))}
                     >
                       <ArrowUpRight className="h-3 w-3 rotate-45" />
@@ -1205,7 +1174,7 @@ export default function TenantDetailPage() {
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                       {filteredTransactions.length > 0 ? filteredTransactions.slice((pages.transactions - 1) * itemsPerPage, pages.transactions * itemsPerPage).map((trx, i) => (
+                       {trxHistory.length > 0 ? trxHistory.slice((pages.transactions - 1) * itemsPerPage, pages.transactions * itemsPerPage).map((trx, i) => (
                           <tr key={i} className="hover:bg-slate-50/30 transition-colors">
                              <td className="px-6 py-4 font-bold text-[11px] text-slate-900 uppercase font-mono">{trx.id}</td>
                              <td className="px-6 py-4">
@@ -1226,7 +1195,7 @@ export default function TenantDetailPage() {
                              <td className="px-6 py-4 text-right text-[10px] font-bold text-slate-400 uppercase">{format(new Date(trx.date), "dd/MM/yyyy HH:mm")}</td>
                           </tr>
                        )) : (
-                          <tr><td colSpan={5} className="py-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">{staffTransactionFilter ? "Tidak ada transaksi dari pegawai ini" : "Data transaksi tidak ditemukan"}</td></tr>
+                          <tr><td colSpan={5} className="py-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">Data transaksi tidak ditemukan</td></tr>
                        )}
                     </tbody>
                  </table>
