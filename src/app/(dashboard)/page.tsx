@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useAuthStore } from "@/store/use-auth-store";
 
 
@@ -145,17 +145,17 @@ export default function DashboardPage() {
   );
 
   // Recent registrations (3 hari) — pakai endpoint growth dari analytics
-  const { data: growth } = useSWR<GrowthSummary>(
+  const { data: growth, mutate: mutateGrowth } = useSWR<GrowthSummary>(
     canReadAnalytics ? "dashboard-growth-3" : null, () => analyticsService.getGrowth(3), { dedupingInterval: 120_000 }
   );
 
   // Today's Activity Summary (GMV)
-  const { data: activitySummary } = useSWR<ActivitySummary>(
+  const { data: activitySummary, mutate: mutateActivitySummary } = useSWR<ActivitySummary>(
     canReadAnalytics ? "dashboard-activity-1" : null, () => analyticsService.getActivity(1), { dedupingInterval: 120_000 }
   );
 
   // Recent owners (3 hari) dari endpoint users — filter client-side
-  const { data: allOwners } = useSWR<ApiResponse<Owner[]>>(
+  const { data: allOwners, mutate: mutateOwners } = useSWR<ApiResponse<Owner[]>>(
     canReadUsers ? "/users" : null, apiFetcher, { dedupingInterval: 120_000 }
   );
 
@@ -240,6 +240,16 @@ export default function DashboardPage() {
     }
   };
 
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      mutate(),
+      mutateActivity(),
+      mutateGrowth(),
+      mutateActivitySummary(),
+      mutateOwners(),
+    ]);
+  }, [mutate, mutateActivity, mutateGrowth, mutateActivitySummary, mutateOwners]);
+
   return (
     <div className="space-y-6">
       {/* ── COMMAND BAR ── */}
@@ -264,7 +274,7 @@ export default function DashboardPage() {
           )}
           <Button
             variant="outline" size="sm"
-            onClick={() => mutate()}
+            onClick={handleRefresh}
             disabled={isLoading}
             className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 border-slate-200"
           >
