@@ -40,7 +40,15 @@ import PermissionGate from "@/components/shared/permission-gate";
 interface DashboardSummary {
   total_outlets: number;
   total_koin: number;
+  total_koin_idle?: number;
+  total_koin_purchased?: number;
+  total_koin_used?: number;
+  koin_used_today?: number;
+  new_users_today?: number;
+  transactions_today?: number;
   active_tenant: number;
+  active_outlets?: number;
+  inactive_outlets?: number;
   trial_outlets?: number;
   pro_outlets?: number;
   expired_outlets?: number;
@@ -168,6 +176,20 @@ export default function DashboardPage() {
   ).sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime());
 
   const stats = data?.data || { total_outlets: 0, total_koin: 0, active_tenant: 0 };
+  const dashboardStats = {
+    totalOutlets: stats.total_outlets ?? 0,
+    activeOutlets: stats.active_outlets ?? stats.active_tenant ?? 0,
+    inactiveOutlets: stats.inactive_outlets ?? 0,
+    totalKoinIdle: stats.total_koin_idle ?? stats.total_koin ?? 0,
+    totalKoinPurchased: stats.total_koin_purchased ?? 0,
+    totalKoinUsed: stats.total_koin_used ?? 0,
+    koinUsedToday: stats.koin_used_today ?? 0,
+    newUsersToday: stats.new_users_today ?? 0,
+    transactionsToday: stats.transactions_today ?? 0,
+    trialOutlets: stats.trial_outlets ?? 0,
+    proOutlets: stats.pro_outlets ?? 0,
+    expiredOutlets: stats.expired_outlets ?? 0,
+  };
   
   // MERGE & SORT ACTIVITIES
   const activities = useMemo<ActivityFeedItem[]>(() => {
@@ -228,7 +250,7 @@ export default function DashboardPage() {
             Pusat Kontrol
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Ringkasan operasional platform AyoCuci hari ini.
+            Ringkasan growth, outlet aktif, dan pergerakan koin platform hari ini.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -260,49 +282,123 @@ export default function DashboardPage() {
       )}
 
       {/* ── PLATFORM STATS ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
-          label="GMV Hari Ini"
-          sub="Total Gross Merchandise Value hari ini"
-          value={canReadAnalytics && activitySummary ? `Rp ${activitySummary.today_gmv.toLocaleString("id-ID")}` : "—"}
-          icon={TrendingUp}
-          color="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-200"
-        />
-        <KpiCard
-          label="Outlet Total"
-          sub="Total outlet terdaftar di platform"
-          value={isLoading ? "—" : stats.total_outlets.toLocaleString("id-ID")}
-          icon={Store}
-          color="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 shadow-slate-100"
-        />
-        <KpiCard
-          label="Saldo Koin Aktif"
-          sub="Saldo koin dari outlet aktif"
-          value={isLoading ? "—" : stats.total_koin.toLocaleString("id-ID")}
-          icon={Coins}
-          color="bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-orange-200"
-        />
-        <KpiCard
-          label="Outlet PRO Aktif"
-          sub="Outlet dengan lisensi PRO aktif"
-          value={isLoading ? "—" : (stats.pro_outlets ?? 0).toLocaleString("id-ID")}
-          icon={Zap}
-          color="bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-emerald-200"
-        />
-        <KpiCard
-          label="Outlet Trial Aktif"
-          sub="Outlet masih dalam masa trial"
-          value={isLoading ? "—" : (stats.trial_outlets ?? 0).toLocaleString("id-ID")}
-          icon={Clock}
-          color="bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-amber-200"
-        />
-        <KpiCard
-          label="Outlet Aktif"
-          sub="Total PRO + trial aktif"
-          value={isLoading ? "—" : stats.active_tenant.toLocaleString("id-ID")}
-          icon={Activity}
-          color="bg-gradient-to-br from-cyan-400 to-cyan-500 text-white shadow-cyan-200"
-        />
+      <div className="space-y-4">
+        <div className="space-y-1 px-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">
+            Growth Hari Ini
+          </p>
+          <p className="text-xs text-slate-500">
+            Fokus ke akuisisi baru, aktivitas transaksi, dan pemakaian koin hari ini.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <KpiCard
+            label="New User Hari Ini"
+            sub="Owner baru yang registrasi hari ini"
+            value={isLoading ? "—" : dashboardStats.newUsersToday.toLocaleString("id-ID")}
+            icon={UserPlus}
+            color="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-fuchsia-200"
+          />
+          <KpiCard
+            label="Total Transaksi Hari Ini"
+            sub="Jumlah transaksi laundry yang tercatat hari ini"
+            value={isLoading ? "—" : dashboardStats.transactionsToday.toLocaleString("id-ID")}
+            icon={Activity}
+            color="bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-cyan-200"
+          />
+          <KpiCard
+            label="Koin Terpakai Hari Ini"
+            sub="Koin keluar hari ini dari seluruh outlet"
+            value={isLoading ? "—" : dashboardStats.koinUsedToday.toLocaleString("id-ID")}
+            icon={Coins}
+            color="bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-orange-200"
+          />
+          <KpiCard
+            label="Outlet Operasional Hari Ini"
+            sub="Outlet yang benar-benar bertransaksi hari ini"
+            value={canReadAnalytics && activitySummary ? activitySummary.today_active_outlets.toLocaleString("id-ID") : "—"}
+            icon={TrendingUp}
+            color="bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-emerald-200"
+          />
+        </div>
+
+        <div className="space-y-1 px-1 pt-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">
+            Status Outlet
+          </p>
+          <p className="text-xs text-slate-500">
+            Outlet aktif dihitung jika status outlet aktif dan lisensi masih berjalan. Sisanya masuk nonaktif.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <KpiCard
+            label="Total Outlet"
+            sub="Seluruh outlet yang pernah terdaftar"
+            value={isLoading ? "—" : dashboardStats.totalOutlets.toLocaleString("id-ID")}
+            icon={Store}
+            color="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 shadow-slate-100"
+          />
+          <KpiCard
+            label="Outlet Aktif"
+            sub="Status aktif + lisensi PRO/trial masih valid"
+            value={isLoading ? "—" : dashboardStats.activeOutlets.toLocaleString("id-ID")}
+            icon={Zap}
+            color="bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-emerald-200"
+          />
+          <KpiCard
+            label="Outlet Tidak Aktif"
+            sub="Expired, dinonaktifkan, atau belum punya akses jalan"
+            value={isLoading ? "—" : dashboardStats.inactiveOutlets.toLocaleString("id-ID")}
+            icon={AlertCircle}
+            color="bg-gradient-to-br from-rose-400 to-rose-500 text-white shadow-rose-200"
+          />
+          <KpiCard
+            label="Outlet Expired"
+            sub={`${dashboardStats.proOutlets.toLocaleString("id-ID")} PRO aktif • ${dashboardStats.trialOutlets.toLocaleString("id-ID")} trial aktif`}
+            value={isLoading ? "—" : dashboardStats.expiredOutlets.toLocaleString("id-ID")}
+            icon={Clock}
+            color="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-200"
+          />
+        </div>
+
+        <div className="space-y-1 px-1 pt-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">
+            Ekonomi Koin
+          </p>
+          <p className="text-xs text-slate-500">
+            Koin dibeli = hasil top up sukses. Koin mengendap = saldo yang masih tersimpan di outlet aktif.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <KpiCard
+            label="Koin Sudah Dibeli"
+            sub="Akumulasi top up koin berhasil"
+            value={isLoading ? "—" : dashboardStats.totalKoinPurchased.toLocaleString("id-ID")}
+            icon={Coins}
+            color="bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-orange-200"
+          />
+          <KpiCard
+            label="Koin Mengendap"
+            sub="Saldo koin yang belum terpakai"
+            value={isLoading ? "—" : dashboardStats.totalKoinIdle.toLocaleString("id-ID")}
+            icon={Store}
+            color="bg-gradient-to-br from-cyan-400 to-blue-500 text-white shadow-cyan-200"
+          />
+          <KpiCard
+            label="Total Koin Terpakai"
+            sub="Akumulasi seluruh koin keluar"
+            value={isLoading ? "—" : dashboardStats.totalKoinUsed.toLocaleString("id-ID")}
+            icon={ArrowUpRight}
+            color="bg-gradient-to-br from-fuchsia-500 to-pink-500 text-white shadow-fuchsia-200"
+          />
+          <KpiCard
+            label="GMV Hari Ini"
+            sub="Nilai transaksi masuk hari ini"
+            value={canReadAnalytics && activitySummary ? `Rp ${activitySummary.today_gmv.toLocaleString("id-ID")}` : "—"}
+            icon={TrendingUp}
+            color="bg-gradient-to-br from-slate-900 to-slate-700 text-white shadow-slate-300"
+          />
+        </div>
       </div>
 
       {/* ── RECENT REGISTRATIONS + ACTIVITY FEED ── */}
