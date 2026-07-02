@@ -28,6 +28,46 @@ const getPayoutMethod = (reward: Pick<ReferralAdminReward, "rr_coin_amount" | "r
     ? "Koin"
     : "Cash";
 
+const getSettlementStatus = (
+  reward: Pick<ReferralAdminReward, "rr_status" | "rr_coin_amount" | "rr_coin_status">,
+) => {
+  const payoutMethod = getPayoutMethod(reward);
+
+  if (payoutMethod === "Koin") {
+    if (reward.rr_coin_status === "claimed") {
+      return {
+        label: "Masuk ke Koin",
+        className:
+          "border-sky-100 bg-sky-50 text-sky-600",
+        bucket: "paid" as const,
+      };
+    }
+
+    return {
+      label: "Belum Ditukar",
+      className:
+        "border-orange-100 bg-orange-50 text-orange-600",
+      bucket: "pending" as const,
+    };
+  }
+
+  if (reward.rr_status === "paid" || reward.rr_status === "done") {
+    return {
+      label: "Sudah Dicairkan",
+      className:
+        "border-emerald-100 bg-emerald-50 text-emerald-600",
+      bucket: "paid" as const,
+    };
+  }
+
+  return {
+    label: "Menunggu",
+    className:
+      "border-orange-100 bg-orange-50 text-orange-600",
+    bucket: "pending" as const,
+  };
+};
+
 const getPayoutMethodFromRow = (row: Record<string, unknown> | undefined) =>
   getPayoutMethod({
     rr_coin_amount: Number(row?.rr_coin_amount || 0),
@@ -106,10 +146,7 @@ function ReferralRewardsContent() {
     }
     
     if (rewardStatusFilter !== "all") {
-      r = r.filter((rw) => {
-        if (rewardStatusFilter === "pending") return rw.rr_status === "credited" || rw.rr_status === "pending";
-        return rw.rr_status === "paid" || rw.rr_status === "done";
-      });
+      r = r.filter((rw) => getSettlementStatus(rw).bucket === rewardStatusFilter);
     }
 
     if (rewardSearch.trim()) {
@@ -221,7 +258,11 @@ function ReferralRewardsContent() {
                 { header: "Nominal Top Up (Rp)", key: "topup_amount_rp", width: 18, format: (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}` },
                 { header: "Komisi", key: "rr_reward_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
                 { header: "Metode Pencairan", key: "payout_method", width: 16, format: (_, r) => getPayoutMethodFromRow(r) },
-                { header: "Status", key: "rr_status", width: 15 },
+                { header: "Status Realisasi", key: "rr_status", width: 18, format: (_, row) => getSettlementStatus({
+                  rr_status: String(row?.rr_status || ""),
+                  rr_coin_amount: Number(row?.rr_coin_amount || 0),
+                  rr_coin_status: String(row?.rr_coin_status || ""),
+                }).label },
               ]}
             />
             {(rewardSearch || rewardTypeFilter !== "all" || rewardStatusFilter !== "all" || rewardDateRange.start) && (
@@ -249,7 +290,7 @@ function ReferralRewardsContent() {
                   <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Nominal Top Up</th>
                   <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Komisi</th>
                   <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Metode Pencairan</th>
-                  <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Status Pencairan</th>
+                  <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Status Realisasi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -326,15 +367,15 @@ function ReferralRewardsContent() {
                         </Badge>
                       </td>
                       <td className="px-5 py-3 text-right">
-                        {(r.rr_status === "paid" || r.rr_status === "done") ? (
-                          <Badge variant="outline" className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-600 shadow-none">
-                            Sudah Dicairkan
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-orange-100 bg-orange-50 text-orange-600 shadow-none">
-                            Menunggu
-                          </Badge>
-                        )}
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "rounded px-1.5 py-0 text-[8px] font-bold uppercase shadow-none",
+                            getSettlementStatus(r).className,
+                          )}
+                        >
+                          {getSettlementStatus(r).label}
+                        </Badge>
                       </td>
                     </tr>
                   ))
