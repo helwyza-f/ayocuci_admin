@@ -83,6 +83,7 @@ function TenantsPageContent() {
   const [open, setOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState(searchParams.get("status") || "all");
+  const [selectedActivity, setSelectedActivity] = useState(searchParams.get("activity") || "all");
   const [koinThreshold, setKoinThreshold] = useState(searchParams.get("koin") || "all");
   const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
 
@@ -102,13 +103,16 @@ function TenantsPageContent() {
         (selectedStatus === "pro" && subscriptionStatus === "PRO") ||
         (selectedStatus === "trial" && subscriptionStatus === "TRIAL") ||
         (selectedStatus === "expired" && subscriptionStatus === "EXPIRED");
+      const matchesActivity =
+        selectedActivity === "all" ||
+        (selectedActivity === "today_tx" && Number(t.daily_tx_count || 0) > 0);
       const matchesKoin =
         koinThreshold === "all" ||
         Number(t.ot_koin || 0) < Number(koinThreshold);
-      return matchesSearch && matchesOwner && matchesStatus && matchesKoin;
+      return matchesSearch && matchesOwner && matchesStatus && matchesActivity && matchesKoin;
     });
     return filterByDateRange(byFilter, (t) => t.ot_created, dateRange);
-  }, [search, selectedOwner, selectedStatus, koinThreshold, dateRange, tenants]);
+  }, [search, selectedOwner, selectedStatus, selectedActivity, koinThreshold, dateRange, tenants]);
 
   const tenantExportRows = useMemo(
     () =>
@@ -143,18 +147,20 @@ function TenantsPageContent() {
   const handleSearch = (val: string) => { setSearch(val); setPage(1); };
   const handleOwnerFilter = (val: string) => { setSelectedOwner(val); setPage(1); };
   const handleStatusFilter = (val: string) => { setSelectedStatus(val); setPage(1); };
+  const handleActivityFilter = (val: string) => { setSelectedActivity(val); setPage(1); };
   const handleKoinThreshold = (val: string) => { setKoinThreshold(val); setPage(1); };
   const handleDateRange = (r: DateRange) => { setDateRange(r); setPage(1); };
   const handleReset = () => {
     setSearch("");
     handleOwnerFilter("all");
     handleStatusFilter("all");
+    handleActivityFilter("all");
     handleKoinThreshold("all");
     setDateRange({ start: "", end: "" });
     setPage(1);
   };
   const isFiltered =
-    search || selectedOwner !== "all" || selectedStatus !== "all" || koinThreshold !== "all" || dateRange.start || dateRange.end;
+    search || selectedOwner !== "all" || selectedStatus !== "all" || selectedActivity !== "all" || koinThreshold !== "all" || dateRange.start || dateRange.end;
 
   const ownerLabel = useMemo(() => {
     if (selectedOwner === "all") return "Semua Owner";
@@ -276,6 +282,19 @@ function TenantsPageContent() {
                 </Command>
               </PopoverContent>
             </Popover>
+
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <div className="relative flex items-center">
+              <select
+                value={selectedActivity}
+                onChange={(e) => handleActivityFilter(e.target.value)}
+                className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
+              >
+                <option value="all">Semua Aktivitas</option>
+                <option value="today_tx">Transaksi Hari Ini</option>
+              </select>
+              <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
 
             <div className="h-4 w-px bg-slate-100 mx-0.5" />
             <div className="relative flex items-center">

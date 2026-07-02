@@ -324,6 +324,7 @@ export default function DashboardPage() {
             value={isLoading ? "—" : dashboardStats.transactionsToday.toLocaleString("id-ID")}
             icon={Activity}
             color="bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-cyan-200"
+            href="/tenants?activity=today_tx"
           />
           <KpiCard
             label="Koin Terpakai Hari Ini"
@@ -331,6 +332,7 @@ export default function DashboardPage() {
             value={isLoading ? "—" : dashboardStats.koinUsedToday.toLocaleString("id-ID")}
             icon={Coins}
             color="bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-orange-200"
+            href="/tenants?activity=today_tx"
           />
           <KpiCard
             label="Outlet Operasional Hari Ini"
