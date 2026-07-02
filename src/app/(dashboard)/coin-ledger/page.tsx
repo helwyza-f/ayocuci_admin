@@ -183,6 +183,7 @@ function CoinLedgerContent() {
                 className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
               >
                 <option value="all">Semua Sumber</option>
+                <option value="topup_koin">Top Up Koin</option>
                 <option value="transaksi_laundry">Transaksi Laundry</option>
                 <option value="addon_koin">Addon via Koin</option>
                 <option value="referral">Referral</option>
@@ -272,7 +273,11 @@ function CoinLedgerContent() {
                       </td>
                       <td className="px-5 py-3">
                         <Badge variant="outline" className="uppercase text-[10px] font-bold">
-                          {item.source_type.replaceAll("_", " ")}
+                          {item.source_type === "topup_koin"
+                            ? "TOP UP KOIN"
+                            : item.source_type === "addon_koin"
+                              ? "ADDON VIA KOIN"
+                              : item.source_type.replaceAll("_", " ")}
                         </Badge>
                       </td>
                       <td className="px-5 py-3 text-[11px] font-medium text-slate-600">
