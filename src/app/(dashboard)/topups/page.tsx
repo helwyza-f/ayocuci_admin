@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,12 +57,39 @@ import { Tenant } from "@/types/tenant";
 import { Owner } from "@/types/domain";
 import { apiFetcher } from "@/lib/fetcher";
 import { resolveUploadUrl } from "@/lib/upload-url";
-import { getTopupStatusUi, isTopupActionable } from "@/lib/topup-status";
+import { getTopupStatusUi, isTopupActionable, normalizeTopupStatus } from "@/lib/topup-status";
 import useSWR from "swr";
 import { useRegionNames } from "@/hooks/use-region-names";
 import PermissionGate from "@/components/shared/permission-gate";
 
 const PAGE_SIZE = 25;
+
+function KpiCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  color,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon: React.ElementType;
+  color: string;
+}) {
+  return (
+    <Card className="border border-slate-200 bg-white rounded-2xl p-5 flex flex-col gap-3 shadow-sm">
+      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${color}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{value}</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
+        {sub && <p className="text-[10px] text-slate-500 mt-1">{sub}</p>}
+      </div>
+    </Card>
+  );
+}
 
 export default function TopupsManagementPage() {
   return (
@@ -72,6 +100,7 @@ export default function TopupsManagementPage() {
 }
 
 function TopupsManagementContent() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<Topup[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
@@ -79,7 +108,7 @@ function TopupsManagementContent() {
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all");
   const [methodFilter, setMethodFilter] = useState<string>("all");
 
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -122,14 +151,9 @@ function TopupsManagementContent() {
   );
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const search = params.get("search");
-      if (search) {
-        setSearchQuery(search);
-      }
-    }
-  }, []);
+    const search = searchParams.get("search");
+    if (search) setSearchQuery(search);
+  }, [searchParams]);
 
   const formatDateTime = (dateStr: string) => {
     try {
@@ -238,6 +262,24 @@ function TopupsManagementContent() {
   const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
   const paginatedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const summary = useMemo(() => {
+    const successful = data.filter((item) =>
+      ["success", "completed", "accepted"].includes(normalizeTopupStatus(item.tk_status))
+    );
+    const topupKoin = successful
+      .filter((item) => item.tk_metode_bayar !== "bonus")
+      .reduce((sum, item) => sum + Number(item.tk_jumlah || 0), 0);
+    const bonusKoin = successful
+      .filter((item) => item.tk_metode_bayar === "bonus")
+      .reduce((sum, item) => sum + Number(item.tk_jumlah || 0), 0);
+
+    return {
+      topupKoin,
+      bonusKoin,
+      totalKoinKeluar: topupKoin + bonusKoin,
+    };
+  }, [data]);
+
   const resetFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
@@ -297,7 +339,7 @@ function TopupsManagementContent() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <ExportExcelButton
             data={topupExportRows}
             filename="topups_report"
@@ -342,9 +384,33 @@ function TopupsManagementContent() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <KpiCard
+          label="Total Koin Top Up"
+          sub="Akumulasi koin dari top up yang sukses"
+          value={loading ? "—" : summary.topupKoin.toLocaleString("id-ID")}
+          icon={Wallet2}
+          color="bg-orange-50 text-primary"
+        />
+        <KpiCard
+          label="Total Koin Bonus"
+          sub="Akumulasi koin bonus yang sudah dialokasikan"
+          value={loading ? "—" : summary.bonusKoin.toLocaleString("id-ID")}
+          icon={Gift}
+          color="bg-violet-50 text-violet-600"
+        />
+        <KpiCard
+          label="Total Koin Keluar"
+          sub="Gabungan top up sukses dan bonus"
+          value={loading ? "—" : summary.totalKoinKeluar.toLocaleString("id-ID")}
+          icon={ShieldCheck}
+          color="bg-emerald-50 text-emerald-600"
+        />
+      </div>
+
       {/* FILTER & SEARCH COMMAND BAR */}
       <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-1">
+        <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
@@ -355,9 +421,10 @@ function TopupsManagementContent() {
             />
           </div>
           
-          <div className="h-5 w-px bg-slate-100 hidden lg:block" />
+          <div className="h-px w-full bg-slate-100 xl:hidden" />
+          <div className="hidden h-5 w-px bg-slate-100 xl:block" />
 
-          <div className="flex items-center gap-1 p-1 lg:p-0">
+          <div className="flex flex-wrap items-center gap-1 p-1 xl:p-0">
             <Popover open={openOutlet} onOpenChange={setOpenOutlet}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-2 text-slate-600">

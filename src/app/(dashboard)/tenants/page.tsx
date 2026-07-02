@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   Store,
@@ -54,6 +55,7 @@ export default function TenantsPage() {
 }
 
 function TenantsPageContent() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const { data: tenantsResponse, isLoading } = useSWR<ApiResponse<Tenant[]>>(
@@ -80,8 +82,8 @@ function TenantsPageContent() {
 
   const [open, setOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [koinThreshold, setKoinThreshold] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState(searchParams.get("status") || "all");
+  const [koinThreshold, setKoinThreshold] = useState(searchParams.get("koin") || "all");
   const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
 
   const filteredTenants = useMemo(() => {

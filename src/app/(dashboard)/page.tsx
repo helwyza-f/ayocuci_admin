@@ -97,12 +97,12 @@ function RecentOwnerRow({ owner }: { owner: Owner }) {
 
 // ─── KPI Card (gaya analytics) ────────────────────────────
 function KpiCard({
-  label, value, sub, icon: Icon, color,
+  label, value, sub, icon: Icon, color, href,
 }: {
   label: string; value: string | number; sub?: string;
-  icon: React.ElementType; color: string;
+  icon: React.ElementType; color: string; href?: string;
 }) {
-  return (
+  const card = (
     <Card className="relative overflow-hidden border border-slate-200/60 bg-white/80 backdrop-blur-xl rounded-2xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group">
       <div className="absolute -top-4 -right-4 p-4 opacity-[0.03] group-hover:scale-150 group-hover:rotate-12 transition-all duration-700 pointer-events-none">
          <Icon className="w-32 h-32" />
@@ -116,6 +116,14 @@ function KpiCard({
         {sub && <p className="text-[10px] text-slate-500 mt-1.5 line-clamp-1">{sub}</p>}
       </div>
     </Card>
+  );
+
+  if (!href) return card;
+
+  return (
+    <Link href={href} className="block">
+      {card}
+    </Link>
   );
 }
 
@@ -308,6 +316,7 @@ export default function DashboardPage() {
             value={isLoading ? "—" : dashboardStats.newUsersToday.toLocaleString("id-ID")}
             icon={UserPlus}
             color="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-fuchsia-200"
+            href="/users?date_preset=today"
           />
           <KpiCard
             label="Total Transaksi Hari Ini"
@@ -347,6 +356,7 @@ export default function DashboardPage() {
             value={isLoading ? "—" : dashboardStats.totalOutlets.toLocaleString("id-ID")}
             icon={Store}
             color="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 shadow-slate-100"
+            href="/tenants"
           />
           <KpiCard
             label="Outlet Aktif"
@@ -354,6 +364,7 @@ export default function DashboardPage() {
             value={isLoading ? "—" : dashboardStats.activeOutlets.toLocaleString("id-ID")}
             icon={Zap}
             color="bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-emerald-200"
+            href="/tenants?status=outlet_active"
           />
           <KpiCard
             label="Outlet Tidak Aktif"
@@ -361,6 +372,7 @@ export default function DashboardPage() {
             value={isLoading ? "—" : dashboardStats.inactiveOutlets.toLocaleString("id-ID")}
             icon={AlertCircle}
             color="bg-gradient-to-br from-rose-400 to-rose-500 text-white shadow-rose-200"
+            href="/tenants?status=outlet_inactive"
           />
           <KpiCard
             label="Outlet Expired"
@@ -368,6 +380,7 @@ export default function DashboardPage() {
             value={isLoading ? "—" : dashboardStats.expiredOutlets.toLocaleString("id-ID")}
             icon={Clock}
             color="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-indigo-200"
+            href="/tenants?status=expired"
           />
         </div>
 
@@ -386,6 +399,7 @@ export default function DashboardPage() {
             value={isLoading ? "—" : dashboardStats.totalKoinPurchased.toLocaleString("id-ID")}
             icon={Coins}
             color="bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-orange-200"
+            href="/topups?status=success"
           />
           <KpiCard
             label="Koin Mengendap"
