@@ -58,6 +58,7 @@ export const adminMenus: MenuGroup[] = [
     items: [
       { label: "Aktivasi Lisensi",  href: "/subscriptions", icon: ShieldCheck, module: "subscriptions" },
       { label: "Top Up & Penagihan",  href: "/topups",        icon: Wallet2,     module: "topups" },
+      { label: "Ledger Koin",       href: "/coin-ledger",  icon: Coins,       module: "topups" },
       { label: "Paket Koin (SKU)",   href: "/packages",      icon: Package,     module: "packages" },
       { label: "Katalog Addon", href: "/addons",      icon: Zap,         module: "packages" },
     ],
