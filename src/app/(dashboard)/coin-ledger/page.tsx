@@ -16,7 +16,7 @@ import TableSkeleton from "@/components/shared/table-skeleton";
 import DateRangeFilter, { DateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { ApiResponse } from "@/types/api";
-import { Owner, Tenant } from "@/types/domain";
+import { Tenant } from "@/types/tenant";
 import { apiFetcher } from "@/lib/fetcher";
 import { coinLedgerService, CoinLedgerEntry } from "@/services/coin-ledger.service";
 
