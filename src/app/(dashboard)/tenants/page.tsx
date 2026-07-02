@@ -80,6 +80,8 @@ function TenantsPageContent() {
 
   const [open, setOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [koinThreshold, setKoinThreshold] = useState("all");
   const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
 
   const filteredTenants = useMemo(() => {
@@ -90,10 +92,21 @@ function TenantsPageContent() {
         t.ot_id.toLowerCase().includes(cleanSearch);
       const matchesOwner =
         selectedOwner === "all" || String(t.owner_id) === selectedOwner;
-      return matchesSearch && matchesOwner;
+      const subscriptionStatus = String(t.subscription_status || "").toUpperCase();
+      const matchesStatus =
+        selectedStatus === "all" ||
+        (selectedStatus === "outlet_active" && Number(t.ot_status) === 1) ||
+        (selectedStatus === "outlet_inactive" && Number(t.ot_status) !== 1) ||
+        (selectedStatus === "pro" && subscriptionStatus === "PRO") ||
+        (selectedStatus === "trial" && subscriptionStatus === "TRIAL") ||
+        (selectedStatus === "expired" && subscriptionStatus === "EXPIRED");
+      const matchesKoin =
+        koinThreshold === "all" ||
+        Number(t.ot_koin || 0) < Number(koinThreshold);
+      return matchesSearch && matchesOwner && matchesStatus && matchesKoin;
     });
     return filterByDateRange(byFilter, (t) => t.ot_created, dateRange);
-  }, [search, selectedOwner, dateRange, tenants]);
+  }, [search, selectedOwner, selectedStatus, koinThreshold, dateRange, tenants]);
 
   const tenantExportRows = useMemo(
     () =>
@@ -127,12 +140,22 @@ function TenantsPageContent() {
 
   const handleSearch = (val: string) => { setSearch(val); setPage(1); };
   const handleOwnerFilter = (val: string) => { setSelectedOwner(val); setPage(1); };
+  const handleStatusFilter = (val: string) => { setSelectedStatus(val); setPage(1); };
+  const handleKoinThreshold = (val: string) => { setKoinThreshold(val); setPage(1); };
   const handleDateRange = (r: DateRange) => { setDateRange(r); setPage(1); };
-  const handleReset = () => { setSearch(""); handleOwnerFilter("all"); setDateRange({ start: "", end: "" }); setPage(1); };
-  const isFiltered = search || selectedOwner !== "all" || dateRange.start || dateRange.end;
+  const handleReset = () => {
+    setSearch("");
+    handleOwnerFilter("all");
+    handleStatusFilter("all");
+    handleKoinThreshold("all");
+    setDateRange({ start: "", end: "" });
+    setPage(1);
+  };
+  const isFiltered =
+    search || selectedOwner !== "all" || selectedStatus !== "all" || koinThreshold !== "all" || dateRange.start || dateRange.end;
 
   const ownerLabel = useMemo(() => {
-    if (selectedOwner === "all") return "All Owners";
+    if (selectedOwner === "all") return "Semua Owner";
     const found = owners.find((o) => String(o.id) === selectedOwner);
     return found ? found.name : selectedOwner;
   }, [selectedOwner, owners]);
@@ -160,21 +183,24 @@ function TenantsPageContent() {
         <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2 font-heading">
             <Store className="h-5 w-5 text-primary" />
-            Direktori Tenant
+            Direktori Outlet
           </h1>
           <p className="text-xs font-medium text-slate-500">
             Database operasional seluruh outlet yang terdaftar.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="h-8 px-3 rounded-md font-bold text-[10px] uppercase tracking-wider text-slate-500 border-slate-200 bg-white">
-            {filteredTenants.length} / {tenants.length} Tenants
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge
+            variant="outline"
+            className="h-10 rounded-lg border-slate-200 bg-white px-4 text-xs font-extrabold uppercase tracking-[0.18em] text-slate-600"
+          >
+            {filteredTenants.length} / {tenants.length} Outlet
           </Badge>
           <ExportExcelButton
             data={tenantExportRows}
-            filename="tenants_directory"
-            sheetName="Tenants"
+            filename="outlets_directory"
+            sheetName="Outlets"
             disabled={regionNames.isLoading}
             columns={[
               { header: "ID Owner", key: "owner_id", width: 12 },
@@ -207,7 +233,7 @@ function TenantsPageContent() {
 
       {/* SEARCH & FILTER COMMAND BAR */}
       <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-1">
+        <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
@@ -218,9 +244,10 @@ function TenantsPageContent() {
             />
           </div>
           
-          <div className="h-5 w-px bg-slate-100 hidden lg:block" />
+          <div className="h-px w-full bg-slate-100 xl:hidden" />
+          <div className="hidden h-5 w-px bg-slate-100 xl:block" />
 
-          <div className="flex items-center gap-1 p-1 lg:p-0">
+          <div className="flex flex-wrap items-center gap-1 p-1 xl:p-0">
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-2 text-slate-600">
@@ -247,6 +274,39 @@ function TenantsPageContent() {
                 </Command>
               </PopoverContent>
             </Popover>
+
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <div className="relative flex items-center">
+              <select
+                value={selectedStatus}
+                onChange={(e) => handleStatusFilter(e.target.value)}
+                className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
+              >
+                <option value="all">Semua Status</option>
+                <option value="outlet_active">Outlet Aktif</option>
+                <option value="outlet_inactive">Outlet Nonaktif</option>
+                <option value="pro">PRO</option>
+                <option value="trial">Trial</option>
+                <option value="expired">Expired</option>
+              </select>
+              <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
+
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <div className="relative flex items-center">
+              <select
+                value={koinThreshold}
+                onChange={(e) => handleKoinThreshold(e.target.value)}
+                className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
+              >
+                <option value="all">Semua Koin</option>
+                <option value="10">Sisa &lt; 10</option>
+                <option value="20">Sisa &lt; 20</option>
+                <option value="50">Sisa &lt; 50</option>
+                <option value="100">Sisa &lt; 100</option>
+              </select>
+              <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
 
             <div className="h-4 w-px bg-slate-100 mx-0.5" />
             <DateRangeFilter value={dateRange} onChange={handleDateRange} />
@@ -291,20 +351,20 @@ function TenantsPageContent() {
                           <Store className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900 text-xs">{tenant.ot_nama}</p>
+                          <p className="font-bold text-slate-900 text-sm">{tenant.ot_nama}</p>
                           <div className="flex items-center gap-2">
-                             <p className="text-[9px] font-medium text-slate-400">#{tenant.ot_id}</p>
+                             <p className="text-[10px] font-medium text-slate-500">#{tenant.ot_id}</p>
                              <span className="text-slate-200 text-[8px]">•</span>
-                             <p className="text-[9px] font-medium text-slate-400">{format(new Date(tenant.ot_created), "dd MMM yy, HH:mm")}</p>
+                             <p className="text-[10px] font-medium text-slate-500">{format(new Date(tenant.ot_created), "dd MMM yy, HH:mm")}</p>
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-5 py-3">
                           <Link href={`/users/${tenant.owner_id}`} className="group inline-block">
-                          <div className="font-bold text-slate-800 text-xs group-hover:text-primary transition-colors">{tenant.owner_name}</div>
-                          <div className="text-[9px] font-mono text-slate-400">Kode: #{tenant.owner_id}</div>
-                          <div className="text-[10px] font-medium text-slate-500">{tenant.owner_email}</div>
+                          <div className="font-bold text-slate-800 text-sm group-hover:text-primary transition-colors">{tenant.owner_name}</div>
+                          <div className="text-[10px] font-mono text-slate-500">Kode: #{tenant.owner_id}</div>
+                          <div className="text-[11px] font-medium text-slate-500">{tenant.owner_email}</div>
                        </Link>
                     </td>
                     <td className="px-5 py-3 text-center">
