@@ -40,6 +40,7 @@ function CoinLedgerContent() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [jenis, setJenis] = useState(searchParams.get("jenis") || "all");
+  const [sourceType, setSourceType] = useState(searchParams.get("source_type") || "all");
   const [dateRange, setDateRange] = useState<DateRange>(
     initialPreset === "today" ? { start: todayStr, end: todayStr } : { start: "", end: "" },
   );
@@ -57,6 +58,7 @@ function CoinLedgerContent() {
     try {
       const params = new URLSearchParams();
       if (jenis !== "all") params.set("jenis", jenis);
+      if (sourceType !== "all") params.set("source_type", sourceType);
       if (dateRange.start) params.set("start_date", dateRange.start);
       if (dateRange.end) params.set("end_date", dateRange.end);
       if (search.trim()) params.set("search", search.trim());
@@ -65,7 +67,7 @@ function CoinLedgerContent() {
     } finally {
       setLoading(false);
     }
-  }, [jenis, dateRange, search]);
+  }, [jenis, sourceType, dateRange, search]);
 
   useEffect(() => {
     fetchLedger();
@@ -90,7 +92,7 @@ function CoinLedgerContent() {
     );
   }, [filtered]);
 
-  const isFiltered = search || jenis !== "all" || outletFilter !== "all" || dateRange.start || dateRange.end;
+  const isFiltered = search || jenis !== "all" || sourceType !== "all" || outletFilter !== "all" || dateRange.start || dateRange.end;
 
   return (
     <div className="space-y-6">
@@ -176,6 +178,22 @@ function CoinLedgerContent() {
             <div className="h-4 w-px bg-slate-100 mx-0.5" />
             <div className="relative flex items-center">
               <select
+                value={sourceType}
+                onChange={(e) => { setSourceType(e.target.value); setPage(1); }}
+                className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
+              >
+                <option value="all">Semua Sumber</option>
+                <option value="transaksi_laundry">Transaksi Laundry</option>
+                <option value="addon_koin">Addon via Koin</option>
+                <option value="referral">Referral</option>
+                <option value="bonus_pendaftaran">Bonus Pendaftaran</option>
+                <option value="manual">Manual</option>
+                <option value="lainnya">Lainnya</option>
+              </select>
+            </div>
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <div className="relative flex items-center">
+              <select
                 value={outletFilter}
                 onChange={(e) => { setOutletFilter(e.target.value); setPage(1); }}
                 className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
@@ -197,6 +215,7 @@ function CoinLedgerContent() {
               onClick={() => {
                 setSearch("");
                 setJenis("all");
+                setSourceType("all");
                 setOutletFilter("all");
                 setDateRange({ start: "", end: "" });
                 setPage(1);

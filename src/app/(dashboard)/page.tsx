@@ -416,6 +416,7 @@ export default function DashboardPage() {
             value={isLoading ? "—" : dashboardStats.totalKoinUsed.toLocaleString("id-ID")}
             icon={ArrowUpRight}
             color="bg-gradient-to-br from-fuchsia-500 to-pink-500 text-white shadow-fuchsia-200"
+            href="/coin-ledger?jenis=keluar"
           />
           <KpiCard
             label="GMV Hari Ini"
