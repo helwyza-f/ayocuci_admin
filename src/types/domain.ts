@@ -99,6 +99,8 @@ export interface ReferralAdminReward {
   rr_created: string;
   rr_coin_amount?: number;
   rr_coin_status?: string | null;
+  payout_id?: string | null;
+  payout_status?: string | null;
   topup_coin_amount?: number;
   topup_amount_rp?: number;
   rr_referred_outlet: string;

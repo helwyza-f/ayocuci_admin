@@ -23,13 +23,33 @@ const currency = (value: number | string | null | undefined) =>
     minimumFractionDigits: 0,
   }).format(Number(value || 0));
 
-const getPayoutMethod = (reward: Pick<ReferralAdminReward, "rr_coin_amount" | "rr_coin_status">) =>
-  reward.rr_coin_status === "claimed" || Number(reward.rr_coin_amount || 0) > 0
-    ? "Koin"
-    : "Cash";
+const getPayoutMethod = (
+  reward: Pick<
+    ReferralAdminReward,
+    "rr_coin_amount" | "rr_coin_status" | "payout_id" | "payout_status" | "rr_status"
+  >,
+) => {
+  if (reward.rr_coin_status === "claimed" || Number(reward.rr_coin_amount || 0) > 0) {
+    return "Koin";
+  }
+
+  if (
+    reward.payout_id ||
+    reward.payout_status ||
+    reward.rr_status === "paid" ||
+    reward.rr_status === "done"
+  ) {
+    return "Cash";
+  }
+
+  return "Belum Ditentukan";
+};
 
 const getSettlementStatus = (
-  reward: Pick<ReferralAdminReward, "rr_status" | "rr_coin_amount" | "rr_coin_status">,
+  reward: Pick<
+    ReferralAdminReward,
+    "rr_status" | "rr_coin_amount" | "rr_coin_status" | "payout_id" | "payout_status"
+  >,
 ) => {
   const payoutMethod = getPayoutMethod(reward);
 
@@ -47,6 +67,15 @@ const getSettlementStatus = (
       label: "Belum Ditukar",
       className:
         "border-orange-100 bg-orange-50 text-orange-600",
+      bucket: "pending" as const,
+    };
+  }
+
+  if (payoutMethod === "Belum Ditentukan") {
+    return {
+      label: "Belum Dipilih",
+      className:
+        "border-slate-200 bg-slate-50 text-slate-500",
       bucket: "pending" as const,
     };
   }
@@ -72,6 +101,9 @@ const getPayoutMethodFromRow = (row: Record<string, unknown> | undefined) =>
   getPayoutMethod({
     rr_coin_amount: Number(row?.rr_coin_amount || 0),
     rr_coin_status: String(row?.rr_coin_status || ""),
+    payout_id: row?.payout_id ? String(row.payout_id) : "",
+    payout_status: row?.payout_status ? String(row.payout_status) : "",
+    rr_status: String(row?.rr_status || ""),
   });
 
 const formatCoin = (value: number | string | null | undefined) =>
@@ -360,7 +392,9 @@ function ReferralRewardsContent() {
                             "rounded px-1.5 py-0 text-[8px] font-bold uppercase shadow-none",
                             getPayoutMethod(r) === "Koin"
                               ? "border-sky-100 bg-sky-50 text-sky-600"
-                              : "border-emerald-100 bg-emerald-50 text-emerald-600",
+                              : getPayoutMethod(r) === "Cash"
+                                ? "border-emerald-100 bg-emerald-50 text-emerald-600"
+                                : "border-slate-200 bg-slate-50 text-slate-500",
                           )}
                         >
                           {getPayoutMethod(r)}
