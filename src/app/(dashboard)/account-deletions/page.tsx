@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Search, Trash2, ShieldAlert, FilterX, Eye, User, CalendarRange, FileText } from "lucide-react";
+import { Search, Trash2, ShieldAlert, FilterX, Eye, User, CalendarRange, FileText, Mail, Phone, Building2, Users, Coins, BadgeInfo } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,30 @@ const REASON_LABELS: Record<string, string> = {
 
 const ACTOR_LABELS: Record<string, string> = {
   user: "Owner",
+  pegawai: "Pegawai",
   admin: "Admin",
 };
+
+function getSnapshotValue<T = unknown>(snapshot: Record<string, unknown> | null | undefined, key: string): T | undefined {
+  if (!snapshot || typeof snapshot !== "object") return undefined;
+  return snapshot[key] as T | undefined;
+}
+
+function formatSnapshotList(value: unknown) {
+  if (!Array.isArray(value)) return "-";
+  const items = value
+    .map((item) => String(item ?? "").trim())
+    .filter(Boolean);
+  return items.length > 0 ? items.join(", ") : "-";
+}
+
+function formatSnapshotNumber(value: unknown) {
+  if (typeof value === "number") return value.toLocaleString("id-ID");
+  if (typeof value === "string" && value.trim() !== "" && !Number.isNaN(Number(value))) {
+    return Number(value).toLocaleString("id-ID");
+  }
+  return "0";
+}
 
 function getReasonLabel(reason: string) {
   return REASON_LABELS[reason] || reason;
@@ -72,6 +94,8 @@ function AccountDeletionsContent() {
         !q ||
         row.actor_id.toLowerCase().includes(q) ||
         (row.actor_name || "").toLowerCase().includes(q) ||
+        (row.actor_email || "").toLowerCase().includes(q) ||
+        (row.actor_phone || "").toLowerCase().includes(q) ||
         row.reason.toLowerCase().includes(q) ||
         (row.reason_detail || "").toLowerCase().includes(q);
       return matchesActorType && matchesSearch;
@@ -99,12 +123,20 @@ function AccountDeletionsContent() {
         header: "Actor Type",
         key: "actor_type",
         width: 14,
-        format: (value) => (value === "user" ? "Owner" : value === "admin" ? "Admin" : String(value ?? "")),
+        format: (value) => ACTOR_LABELS[String(value ?? "")] || String(value ?? ""),
       },
       { header: "Actor Name", key: "actor_name", width: 24 },
+      { header: "Actor Email", key: "actor_email", width: 28 },
+      { header: "Actor Phone", key: "actor_phone", width: 20 },
       { header: "Actor ID", key: "actor_id", width: 24 },
       { header: "Alasan", key: "reason", width: 20, format: (value) => getReasonLabel(String(value ?? "")) },
       { header: "Detail Alasan", key: "reason_detail", width: 48 },
+      {
+        header: "Snapshot",
+        key: "snapshot",
+        width: 60,
+        format: (value) => (value && typeof value === "object" ? JSON.stringify(value) : ""),
+      },
     ],
     [],
   );
@@ -139,7 +171,7 @@ function AccountDeletionsContent() {
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
             <Input
-              placeholder="Cari actor, alasan, atau detail alasan..."
+              placeholder="Cari actor, email, no hp, alasan, atau detail..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-9 border-none pl-9 text-xs shadow-none focus-visible:ring-0"
@@ -211,13 +243,14 @@ function AccountDeletionsContent() {
               <tr className="border-b border-slate-200 bg-slate-50/60">
                 <th className="px-5 py-3 text-[9px] font-bold uppercase tracking-wider text-slate-400">Waktu</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase tracking-wider text-slate-400">Actor</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase tracking-wider text-slate-400">Snapshot</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase tracking-wider text-slate-400">Alasan</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase tracking-wider text-slate-400">Detail</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <TableSkeleton columns={4} rows={8} />
+                <TableSkeleton columns={5} rows={8} />
               ) : filtered.length > 0 ? (
                 filtered.map((row: AccountDeletionRow) => (
                   <tr key={row.id} className="align-top hover:bg-slate-50/40">
@@ -241,7 +274,35 @@ function AccountDeletionsContent() {
                             {row.actor_name || "Tanpa nama"}
                           </span>
                         </div>
+                        {row.actor_email ? (
+                          <p className="text-[11px] text-slate-600">{row.actor_email}</p>
+                        ) : null}
+                        {row.actor_phone ? (
+                          <p className="text-[11px] text-slate-500">{row.actor_phone}</p>
+                        ) : null}
                         <p className="font-mono text-[10px] text-slate-400">{row.actor_id}</p>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="space-y-1 text-[11px] text-slate-600">
+                        <p>
+                          Outlet:{" "}
+                          <span className="font-semibold text-slate-800">
+                            {formatSnapshotNumber(getSnapshotValue(row.snapshot, "outlet_count"))}
+                          </span>
+                        </p>
+                        <p>
+                          Pegawai:{" "}
+                          <span className="font-semibold text-slate-800">
+                            {formatSnapshotNumber(getSnapshotValue(row.snapshot, "pegawai_count"))}
+                          </span>
+                        </p>
+                        <p>
+                          Koin:{" "}
+                          <span className="font-semibold text-slate-800">
+                            {formatSnapshotNumber(getSnapshotValue(row.snapshot, "total_koin"))}
+                          </span>
+                        </p>
                       </div>
                     </td>
                     <td className="px-5 py-4">
@@ -270,7 +331,7 @@ function AccountDeletionsContent() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="py-24 text-center">
+                  <td colSpan={5} className="py-24 text-center">
                     <Trash2 className="mx-auto mb-3 h-8 w-8 text-slate-200" />
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                       Belum ada histori hapus akun
@@ -307,6 +368,18 @@ function AccountDeletionsContent() {
                     </span>
                   </div>
                   <p className="mt-1 font-mono text-[10px] text-slate-400">{selectedRow.actor_id}</p>
+                  {selectedRow.actor_email ? (
+                    <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-600">
+                      <Mail className="h-3.5 w-3.5 text-slate-400" />
+                      <span>{selectedRow.actor_email}</span>
+                    </div>
+                  ) : null}
+                  {selectedRow.actor_phone ? (
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-600">
+                      <Phone className="h-3.5 w-3.5 text-slate-400" />
+                      <span>{selectedRow.actor_phone}</span>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
@@ -337,11 +410,76 @@ function AccountDeletionsContent() {
                 </p>
               </div>
 
-              <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
-                <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">Actor Type</p>
-                <p className="text-sm font-semibold text-slate-900">
-                  {ACTOR_LABELS[selectedRow.actor_type] || selectedRow.actor_type}
-                </p>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+                  <p className="mb-2 text-[9px] font-bold uppercase tracking-wider text-slate-400">Konteks akun</p>
+                  <div className="space-y-2 text-[12px] text-slate-700">
+                    <div className="flex items-start gap-2">
+                      <BadgeInfo className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
+                      <div>
+                        <p className="font-semibold text-slate-900">Tipe actor</p>
+                        <p>{ACTOR_LABELS[selectedRow.actor_type] || selectedRow.actor_type}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <User className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
+                      <div>
+                        <p className="font-semibold text-slate-900">Role / tipe akun</p>
+                        <p>{String(getSnapshotValue(selectedRow.snapshot, "role_name") || getSnapshotValue(selectedRow.snapshot, "account_type") || "-")}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CalendarRange className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
+                      <div>
+                        <p className="font-semibold text-slate-900">Registrasi akun</p>
+                        <p>{String(getSnapshotValue(selectedRow.snapshot, "actor_created_at") || "-")}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <BadgeInfo className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
+                      <div>
+                        <p className="font-semibold text-slate-900">Lead source / referral</p>
+                        <p>
+                          {String(getSnapshotValue(selectedRow.snapshot, "lead_source") || getSnapshotValue(selectedRow.snapshot, "referral_code") || "-")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+                  <p className="mb-2 text-[9px] font-bold uppercase tracking-wider text-slate-400">Dampak data bisnis</p>
+                  <div className="space-y-2 text-[12px] text-slate-700">
+                    <div className="flex items-start gap-2">
+                      <Building2 className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
+                      <div>
+                        <p className="font-semibold text-slate-900">Jumlah outlet</p>
+                        <p>{formatSnapshotNumber(getSnapshotValue(selectedRow.snapshot, "outlet_count"))}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Users className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
+                      <div>
+                        <p className="font-semibold text-slate-900">Jumlah pegawai terdampak</p>
+                        <p>{formatSnapshotNumber(getSnapshotValue(selectedRow.snapshot, "pegawai_count"))}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Coins className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
+                      <div>
+                        <p className="font-semibold text-slate-900">Saldo koin saat hapus</p>
+                        <p>{formatSnapshotNumber(getSnapshotValue(selectedRow.snapshot, "total_koin"))} koin</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Building2 className="mt-0.5 h-3.5 w-3.5 text-slate-400" />
+                      <div>
+                        <p className="font-semibold text-slate-900">Outlet terkait</p>
+                        <p>{formatSnapshotList(getSnapshotValue(selectedRow.snapshot, "outlet_names"))}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
