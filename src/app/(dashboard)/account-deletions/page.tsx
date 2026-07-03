@@ -53,7 +53,13 @@ function AccountDeletionsContent() {
   const { data, isLoading, mutate } = useSWR<ApiResponse<AccountDeletion[]>>(
     "/account-deletions?limit=200",
     apiFetcher,
-    { dedupingInterval: 30_000, keepPreviousData: true, revalidateOnFocus: false },
+    {
+      dedupingInterval: 2_000,
+      keepPreviousData: true,
+      revalidateOnFocus: true,
+      revalidateIfStale: true,
+      revalidateOnReconnect: true,
+    },
   );
 
   const rows = useMemo(() => data?.data || [], [data]);
