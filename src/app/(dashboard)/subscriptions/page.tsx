@@ -101,6 +101,7 @@ function SubscriptionsContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [methodFilter, setMethodFilter] = useState<string>("all");
+  const [licenseTypeFilter, setLicenseTypeFilter] = useState<string>("all");
 
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -199,12 +200,23 @@ function SubscriptionsContent() {
     setPage(1);
   }, [fetchTransactions]);
 
+  const resolveLicenseType = useCallback((item: AddonTransaction) => {
+    const itemNames = (item.item_names || "").toUpperCase();
+    const trxId = (item.ha_id || "").toUpperCase();
+    if (itemNames.includes("AKTIVASI LISENSI PRO") || trxId.startsWith("PRO-")) {
+      return "pro";
+    }
+    return "addon";
+  }, []);
+
   const stats = useMemo(() => {
     const total = data.length;
     const pending = data.filter(d => d.ha_status === 'PENDING_VALIDATION').length;
     const success = data.filter(d => d.ha_status === 'SUCCESS').length;
-    return { total, pending, success };
-  }, [data]);
+    const proTotal = data.filter((d) => resolveLicenseType(d) === "pro").length;
+    const addonTotal = data.filter((d) => resolveLicenseType(d) === "addon").length;
+    return { total, pending, success, proTotal, addonTotal };
+  }, [data, resolveLicenseType]);
 
   const uniqueOutlets = useMemo(
     () =>
@@ -227,10 +239,12 @@ function SubscriptionsContent() {
         item.item_names.toLowerCase().includes(cleanSearch);
       const matchesOutlet =
         outletFilter === "all" || item.outlet_name === outletFilter;
-      return matchesSearch && matchesOutlet;
+      const matchesType =
+        licenseTypeFilter === "all" || resolveLicenseType(item) === licenseTypeFilter;
+      return matchesSearch && matchesOutlet && matchesType;
     });
     return filterByDateRange(byFilter, (item) => item.ha_created, dateRange);
-  }, [data, searchQuery, outletFilter, dateRange]);
+  }, [data, searchQuery, outletFilter, dateRange, licenseTypeFilter, resolveLicenseType]);
 
   const tenants = useMemo(() => tenantsResponse?.data || [], [tenantsResponse]);
   const regionNames = useRegionNames(tenants);
@@ -252,17 +266,17 @@ function SubscriptionsContent() {
 
   const subscriptionExportRows = useMemo(
     () =>
-      filteredData.map((item) => {
+      filteredData.flatMap((item) => {
         const tenant = item.ha_outlet ? tenantMap.get(item.ha_outlet) : undefined;
         const owner = tenant?.owner_id != null
           ? ownerMap.get(String(tenant.owner_id))
           : ownerByNameMap.get(item.owner_name || "");
 
-        return {
+        const baseRow = {
+          transaction_date: item.ha_created ?? "",
           ha_id: item.ha_id ?? "",
           owner_id: tenant?.owner_id ?? owner?.id ?? "",
           owner_name: item.owner_name ?? tenant?.owner_name ?? owner?.name ?? "",
-          owner_code: tenant?.owner_code ?? owner?.owner_code ?? "",
           owner_email: tenant?.owner_email ?? owner?.email ?? "",
           owner_nohp: tenant?.owner_nohp ?? owner?.nohp ?? "",
           ha_outlet: item.ha_outlet ?? "",
@@ -271,10 +285,27 @@ function SubscriptionsContent() {
           outlet_province: regionNames.provinceName(tenant?.ot_provinsi),
           join_date: tenant?.ot_created ?? owner?.created_at ?? "",
           outlet_koin: tenant?.ot_koin ?? "",
-          ha_total: item.ha_total ?? 0,
           ha_metode_bayar: item.ha_metode_bayar ?? "",
-          item_names: item.item_names ?? "",
+          transaction_status: item.ha_status ?? "",
         };
+
+        if (item.details && item.details.length > 0) {
+          return item.details.map((detail) => ({
+            ...baseRow,
+            item_name: detail.item_name ?? item.item_names ?? "",
+            item_price: detail.dha_harga ?? item.ha_total ?? 0,
+            expired_at: detail.ha_berakhir ?? "",
+            feature_status: detail.feature_status ?? "",
+          }));
+        }
+
+        return [{
+          ...baseRow,
+          item_name: item.item_names ?? "",
+          item_price: item.ha_total ?? 0,
+          expired_at: "",
+          feature_status: "",
+        }];
       }),
     [filteredData, ownerByNameMap, ownerMap, regionNames, tenantMap],
   );
@@ -286,6 +317,7 @@ function SubscriptionsContent() {
     setSearchQuery("");
     setStatusFilter("all");
     setMethodFilter("all");
+    setLicenseTypeFilter("all");
     setOutletFilter("all");
     setStartDate(undefined);
     setEndDate(undefined);
@@ -333,7 +365,7 @@ function SubscriptionsContent() {
       case "PENDING_VALIDATION":
         return { label: "Menunggu Validasi", class: "bg-orange-50 text-orange-600 border-orange-100 animate-pulse" };
       case "SUCCESS":
-        return { label: "Aktif", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
+        return { label: "Sukses", class: "bg-emerald-50 text-emerald-600 border-emerald-100" };
       case "FAILED":
         return { label: "Ditolak", class: "bg-rose-50 text-rose-600 border-rose-100" };
       case "CANCELED":
@@ -357,7 +389,7 @@ function SubscriptionsContent() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <PermissionGate module="subscriptions" action="export">
             <ExportExcelButton
               data={subscriptionExportRows}
@@ -365,10 +397,10 @@ function SubscriptionsContent() {
               sheetName="Subscriptions"
               disabled={regionNames.isLoading || !canExportSubscriptions}
               columns={[
+                { header: "Tanggal Transaksi", key: "transaction_date", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
                 { header: "ID", key: "ha_id", width: 22 },
                 { header: "ID Owner", key: "owner_id", width: 12 },
                 { header: "Nama Owner", key: "owner_name", width: 25 },
-                { header: "Kode Owner", key: "owner_code", width: 14 },
                 { header: "Email", key: "owner_email", width: 30 },
                 { header: "No HP Owner", key: "owner_nohp", width: 18 },
                 { header: "ID Outlet", key: "ha_outlet", width: 14 },
@@ -377,13 +409,19 @@ function SubscriptionsContent() {
                 { header: "Provinsi", key: "outlet_province", width: 18 },
                 { header: "Tanggal Bergabung", key: "join_date", width: 18, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
                 { header: "Koin", key: "outlet_koin", width: 12 },
-                { header: "Harga", key: "ha_total", width: 15, format: (v, item) => {
+                { header: "Harga", key: "item_price", width: 15, format: (v, item) => {
                    if (v == null) return "Rp 0";
                    if (item.ha_metode_bayar === "KOIN") return `Rp ${(Number(v) * pricePerCoin).toLocaleString()}`;
                    return `Rp ${Number(v).toLocaleString()}`;
                 }},
                 { header: "Metode Pembayaran", key: "ha_metode_bayar", width: 20 },
-                { header: "Item", key: "item_names", width: 45 },
+                { header: "Item", key: "item_name", width: 45 },
+                { header: "EXP", key: "expired_at", width: 20, format: (v, item) => {
+                  if (v) return format(new Date(String(v)), "dd/MM/yyyy HH:mm");
+                  if (item.item_name === "Aktivasi Lisensi PRO" && item.transaction_status === "SUCCESS") return "Permanen";
+                  return "";
+                }},
+                { header: "Status", key: "transaction_status", width: 16 },
               ]}
             />
           </PermissionGate>
@@ -401,7 +439,7 @@ function SubscriptionsContent() {
       </div>
 
       {/* OPERATIONAL METRICS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Total Permintaan"
           sub="Semua transaksi langganan masuk"
@@ -417,17 +455,24 @@ function SubscriptionsContent() {
           color="bg-orange-50 text-primary"
         />
         <KpiCard
-          label="Lisensi Aktif"
-          sub="Lisensi PRO yang berhasil aktif"
-          value={loading ? "—" : stats.success}
+          label="Total Aktivasi PRO"
+          sub="Permintaan aktivasi lisensi PRO"
+          value={loading ? "—" : stats.proTotal}
+          icon={ShieldCheck}
+          color="bg-blue-50 text-blue-600"
+        />
+        <KpiCard
+          label="Total Add-on"
+          sub="Permintaan layanan add-on"
+          value={loading ? "—" : stats.addonTotal}
           icon={Check}
-          color="bg-emerald-50 text-emerald-600"
+          color="bg-violet-50 text-violet-600"
         />
       </div>
 
       {/* FILTER & SEARCH COMMAND BAR */}
       <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-1">
+        <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
@@ -438,9 +483,10 @@ function SubscriptionsContent() {
             />
           </div>
           
-          <div className="h-5 w-px bg-slate-100 hidden lg:block" />
+          <div className="h-px w-full bg-slate-100 xl:hidden" />
+          <div className="hidden h-5 w-px bg-slate-100 xl:block" />
 
-          <div className="flex items-center gap-1 p-1 lg:p-0 flex-wrap">
+          <div className="flex flex-wrap items-center gap-1 p-1 xl:p-0">
             <Popover open={openOutlet} onOpenChange={setOpenOutlet}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-1.5 text-slate-600">
@@ -495,6 +541,19 @@ function SubscriptionsContent() {
                 <option value="MIDTRANS">Midtrans</option>
                 <option value="KOIN">Koin</option>
                 <option value="FREE">Gratis</option>
+              </select>
+              <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
+
+            <div className="relative flex items-center">
+              <select
+                value={licenseTypeFilter}
+                onChange={(e) => { setLicenseTypeFilter(e.target.value); setPage(1); }}
+                className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
+              >
+                <option value="all">Semua Item</option>
+                <option value="pro">Aktivasi Pro</option>
+                <option value="addon">Add-on</option>
               </select>
               <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
             </div>
@@ -576,13 +635,26 @@ function SubscriptionsContent() {
                         )}
                       </td>
                       <td className="px-5 py-3 max-w-[220px]">
-                        <Badge
-                          variant="outline"
-                          className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-slate-200 bg-slate-50 max-w-full block truncate"
-                          title={item.item_names}
-                        >
-                          {item.item_names}
-                        </Badge>
+                        <div className="space-y-1.5">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none w-fit",
+                              resolveLicenseType(item) === "pro"
+                                ? "border-blue-200 bg-blue-50 text-blue-700"
+                                : "border-violet-200 bg-violet-50 text-violet-700"
+                            )}
+                          >
+                            {resolveLicenseType(item) === "pro" ? "Aktivasi PRO" : "Add-on"}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-slate-200 bg-slate-50 max-w-full block truncate"
+                            title={item.item_names}
+                          >
+                            {item.item_names}
+                          </Badge>
+                        </div>
                       </td>
                       <td className="px-5 py-3 text-right">
                         {item.ha_metode_bayar === "KOIN" ? (
