@@ -699,7 +699,7 @@ export default function TenantDetailPage() {
                                 { label: "Tipe Lokasi", value: profile?.ot_tipe_lokasi_usaha, icon: MapPin },
                                 { label: "Skala Modal", value: profile?.ot_modal_usaha, icon: Coins },
                                 { label: "Jumlah Pegawai", value: `${String(profile?.ot_jumlah_karyawan || "0").replace(/orang/i, "").trim()} Orang`, icon: Users },
-                                { label: "Populasi Mesin", value: `${String(profile?.ot_jumlah_mesin_cuci || "0").replace(/unit/i, "").trim()} Unit`, icon: Layers },
+                                { label: "Populasi Mesin", value: `${String(profile?.ot_jumlah_mesin || "0").replace(/unit/i, "").trim()} Unit`, icon: Layers },
                                 { label: "Zona Waktu", value: (profile as any)?.ot_timezone, icon: Clock },
                                 {
                                   label: "Usia Bisnis",
