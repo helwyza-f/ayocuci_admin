@@ -12,6 +12,9 @@ import {
   Plus,
   ArrowUpRight,
   Database,
+  Zap,
+  AlertCircle,
+  Clock,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,38 @@ import { useRegionNames } from "@/hooks/use-region-names";
 import PermissionGate from "@/components/shared/permission-gate";
 
 const PAGE_SIZE = 20;
+
+function KpiCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  color,
+  href,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon: React.ElementType;
+  color: string;
+  href?: string;
+}) {
+  const card = (
+    <Card className="border border-slate-200 bg-white rounded-2xl p-5 flex flex-col gap-3 shadow-sm">
+      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${color}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{value}</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
+        {sub && <p className="text-[10px] text-slate-500 mt-1">{sub}</p>}
+      </div>
+    </Card>
+  );
+
+  if (!href) return card;
+  return <Link href={href} className="block">{card}</Link>;
+}
 
 export default function TenantsPage() {
   return (
@@ -184,6 +219,14 @@ function TenantsPageContent() {
     }
   };
 
+  const outletSummary = useMemo(() => {
+    const total = tenants.length;
+    const active = tenants.filter((tenant) => Number(tenant.ot_status) === 1).length;
+    const inactive = tenants.filter((tenant) => Number(tenant.ot_status) !== 1).length;
+    const expired = tenants.filter((tenant) => String(tenant.subscription_status || "").toUpperCase() === "EXPIRED").length;
+    return { total, active, inactive, expired };
+  }, [tenants]);
+
   return (
     <div className="space-y-6">
       {/* COMMAND BAR HEADER */}
@@ -237,6 +280,41 @@ function TenantsPageContent() {
             <Plus className="h-4 w-4" /> Daftar Baru
           </Button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          label="Total Outlet"
+          sub="Seluruh outlet yang pernah terdaftar"
+          value={isLoading ? "—" : outletSummary.total.toLocaleString("id-ID")}
+          icon={Store}
+          color="bg-slate-100 text-slate-600"
+          href="/tenants"
+        />
+        <KpiCard
+          label="Outlet Aktif"
+          sub="Status outlet aktif dan siap beroperasi"
+          value={isLoading ? "—" : outletSummary.active.toLocaleString("id-ID")}
+          icon={Zap}
+          color="bg-emerald-100 text-emerald-700"
+          href="/tenants?status=outlet_active"
+        />
+        <KpiCard
+          label="Outlet Tidak Aktif"
+          sub="Dinonaktifkan atau belum aktif"
+          value={isLoading ? "—" : outletSummary.inactive.toLocaleString("id-ID")}
+          icon={AlertCircle}
+          color="bg-rose-100 text-rose-700"
+          href="/tenants?status=outlet_inactive"
+        />
+        <KpiCard
+          label="Outlet Expired"
+          sub="Lisensi outlet sudah berakhir"
+          value={isLoading ? "—" : outletSummary.expired.toLocaleString("id-ID")}
+          icon={Clock}
+          color="bg-indigo-100 text-indigo-700"
+          href="/tenants?status=expired"
+        />
       </div>
 
       {/* SEARCH & FILTER COMMAND BAR */}
