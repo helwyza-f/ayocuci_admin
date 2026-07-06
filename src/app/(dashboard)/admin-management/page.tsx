@@ -408,7 +408,7 @@ function AdminManagementContent() {
                   onChange={(e) => setNewAdmin({ ...newAdmin, role_id: e.target.value })}
                   className="w-full md:w-64 h-9 text-sm border border-slate-200 rounded-md px-3 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
-                  <option value="">— Tanpa Role (Akses Terbatas) —</option>
+                  <option value="">— Role belum dipilih (akses terbatas) —</option>
                   {roles.map((r) => (
                     <option key={r.id} value={r.id}>{r.nama}</option>
                   ))}
@@ -473,7 +473,7 @@ function AdminManagementContent() {
                             onChange={(e) => handleAssignRole(admin.adm_id, e.target.value || null)}
                             className="text-[10px] font-bold border border-slate-200 rounded-md px-2 py-1 text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-primary/20"
                           >
-                            <option value="">— Tanpa Role —</option>
+                            <option value="">— Role belum dipilih —</option>
                             {roles.map((r) => (
                               <option key={r.id} value={r.id}>{r.nama}</option>
                             ))}

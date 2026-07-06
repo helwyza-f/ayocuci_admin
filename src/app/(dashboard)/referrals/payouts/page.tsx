@@ -197,7 +197,7 @@ function ReferralPayoutsContent() {
             </div>
         </div>
 
-        <div className="flex items-center gap-1 justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <DateRangeFilter value={dateRange} onChange={(r) => { setDateRange(r); setPage(1); }} />
           <ExportExcelButton
             data={filteredPayouts}

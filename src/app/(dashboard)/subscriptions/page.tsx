@@ -267,24 +267,24 @@ function SubscriptionsContent() {
   const subscriptionExportRows = useMemo(
     () =>
       filteredData.flatMap((item) => {
-        const tenant = item.ha_outlet ? tenantMap.get(item.ha_outlet) : undefined;
-        const owner = tenant?.owner_id != null
-          ? ownerMap.get(String(tenant.owner_id))
+        const outlet = item.ha_outlet ? tenantMap.get(item.ha_outlet) : undefined;
+        const owner = outlet?.owner_id != null
+          ? ownerMap.get(String(outlet.owner_id))
           : ownerByNameMap.get(item.owner_name || "");
 
         const baseRow = {
           transaction_date: item.ha_created ?? "",
           ha_id: item.ha_id ?? "",
-          owner_id: tenant?.owner_id ?? owner?.id ?? "",
-          owner_name: item.owner_name ?? tenant?.owner_name ?? owner?.name ?? "",
-          owner_email: tenant?.owner_email ?? owner?.email ?? "",
-          owner_nohp: tenant?.owner_nohp ?? owner?.nohp ?? "",
+          owner_id: outlet?.owner_id ?? owner?.id ?? "",
+          owner_name: item.owner_name ?? outlet?.owner_name ?? owner?.name ?? "",
+          owner_email: outlet?.owner_email ?? owner?.email ?? "",
+          owner_nohp: outlet?.owner_nohp ?? owner?.nohp ?? "",
           ha_outlet: item.ha_outlet ?? "",
-          outlet_name: item.outlet_name ?? tenant?.ot_nama ?? "",
-          outlet_city: regionNames.cityName(tenant?.ot_kota),
-          outlet_province: regionNames.provinceName(tenant?.ot_provinsi),
-          join_date: tenant?.ot_created ?? owner?.created_at ?? "",
-          outlet_koin: tenant?.ot_koin ?? "",
+          outlet_name: item.outlet_name ?? outlet?.ot_nama ?? "",
+          outlet_city: regionNames.cityName(outlet?.ot_kota),
+          outlet_province: regionNames.provinceName(outlet?.ot_provinsi),
+          join_date: outlet?.ot_created ?? owner?.created_at ?? "",
+          outlet_koin: outlet?.ot_koin ?? "",
           ha_metode_bayar: item.ha_metode_bayar ?? "",
           transaction_status: item.ha_status ?? "",
         };
@@ -329,13 +329,13 @@ function SubscriptionsContent() {
     try {
       const res = await addonService.approve(id);
       if (res.status) {
-        toast.success("Transaction verified successfully");
+        toast.success("Transaksi berhasil diverifikasi");
         setIsPreviewOpen(false);
         fetchTransactions();
       }
     } catch (err) {
       const error = err as AxiosError<ApiErrorResponse>;
-      toast.error(error.response?.data?.message || "Verification failed");
+      toast.error(error.response?.data?.message || "Gagal memverifikasi transaksi");
     } finally {
       setConfirming(false);
     }
@@ -346,13 +346,13 @@ function SubscriptionsContent() {
     try {
       const res = await addonService.reject(id);
       if (res.status) {
-        toast.success("Transaction rejected");
+        toast.success("Transaksi berhasil ditolak");
         setIsPreviewOpen(false);
         fetchTransactions();
       }
     } catch (err) {
       const error = err as AxiosError<ApiErrorResponse>;
-      toast.error(error.response?.data?.message || "Rejection failed");
+      toast.error(error.response?.data?.message || "Gagal menolak transaksi");
     } finally {
       setConfirming(false);
     }
@@ -497,7 +497,7 @@ function SubscriptionsContent() {
               </PopoverTrigger>
               <PopoverContent className="w-56 p-0 rounded-md">
                 <Command>
-                  <CommandInput placeholder="Search outlet..." className="text-xs" />
+                  <CommandInput placeholder="Cari outlet..." className="text-xs" />
                   <CommandList>
                     <CommandEmpty className="text-[10px] p-2">Tidak ditemukan.</CommandEmpty>
                     <CommandGroup>
@@ -825,7 +825,7 @@ function SubscriptionsContent() {
               </div>
             )}
             <p className="text-[8px] text-center font-medium text-slate-400 italic">
-               Perubahan akses tenant akan langsung berlaku.
+               Perubahan akses outlet akan langsung berlaku.
             </p>
           </div>
         </DialogContent>

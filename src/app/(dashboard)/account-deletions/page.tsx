@@ -271,7 +271,7 @@ function AccountDeletionsContent() {
                             {ACTOR_LABELS[row.actor_type] || row.actor_type}
                           </Badge>
                           <span className="text-xs font-semibold text-slate-900">
-                            {row.actor_name || "Tanpa nama"}
+                            {row.actor_name || "Nama tidak tersedia"}
                           </span>
                         </div>
                         {row.actor_email ? (
@@ -364,7 +364,7 @@ function AccountDeletionsContent() {
                   <div className="flex items-center gap-2">
                     <User className="h-3.5 w-3.5 text-slate-500" />
                     <span className="text-sm font-semibold text-slate-900">
-                      {selectedRow.actor_name || "Tanpa nama"}
+                      {selectedRow.actor_name || "Nama tidak tersedia"}
                     </span>
                   </div>
                   <p className="mt-1 font-mono text-[10px] text-slate-400">{selectedRow.actor_id}</p>

@@ -530,7 +530,7 @@ export default function TenantDetailPage() {
                                   className="h-8 px-4 text-[10px] font-bold uppercase bg-amber-500 hover:bg-amber-600"
                                   onClick={() => { setSelectedKoin(tk); setIsKoinModalOpen(true); }}
                                 >
-                                   Process
+                                   Tinjau
                                 </Button>
                              </div>
                           ))}
@@ -953,7 +953,7 @@ export default function TenantDetailPage() {
                         <td className="px-6 py-4">
                           <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5">
                             <Briefcase className="h-3 w-3 text-slate-400" />
-                            <span className="text-[10px] font-bold uppercase text-slate-700">{staff.role_name || "Tanpa Role"}</span>
+                            <span className="text-[10px] font-bold uppercase text-slate-700">{staff.role_name || "Role belum diatur"}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -1515,7 +1515,7 @@ export default function TenantDetailPage() {
                                           onClick={() => { setSelectedKoin(topup); setIsKoinModalOpen(true); }}
                                           className="h-7 px-2 font-bold text-[9px] uppercase tracking-wider text-primary hover:bg-primary/10 transition-colors"
                                        >
-                                          {isActionable ? "Process" : "Detail"} <ArrowUpRight className="h-3 w-3 ml-1" />
+                                          {isActionable ? "Tinjau" : "Detail"} <ArrowUpRight className="h-3 w-3 ml-1" />
                                        </Button>
                                     </div>
                                  </td>
@@ -1606,7 +1606,7 @@ export default function TenantDetailPage() {
              <h3 className="text-lg font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading uppercase">
                 Topup {selectedKoin?.tk_jumlah?.toLocaleString()} Koin
              </h3>
-             <p className="text-xs font-medium text-slate-500">Permintaan isi ulang saldo dari tenant.</p>
+             <p className="text-xs font-medium text-slate-500">Permintaan isi ulang saldo dari outlet.</p>
           </div>
 
           <div className="p-5 space-y-5 bg-slate-50/30">

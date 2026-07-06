@@ -11,7 +11,7 @@ interface PermissionGateProps {
   children: React.ReactNode;
   /** Konten fallback jika tidak punya permission (default: null) */
   fallback?: React.ReactNode;
-  /** Jika true, hanya tampilkan untuk Master Admin */
+  /** Jika true, hanya tampilkan untuk admin dengan akses penuh */
   masterOnly?: boolean;
 }
 
@@ -36,12 +36,12 @@ export default function PermissionGate({
 }: PermissionGateProps) {
   const { isMaster, hasPermission } = useAuthStore();
 
-  // Jika masterOnly: hanya tampilkan untuk master admin
+  // Jika masterOnly: hanya tampilkan untuk admin dengan akses penuh
   if (masterOnly) {
     return isMaster() ? <>{children}</> : <>{fallback}</>;
   }
 
-  // Master admin selalu punya akses
+  // Admin dengan akses penuh selalu punya akses
   if (isMaster()) return <>{children}</>;
 
   // Cek permission spesifik

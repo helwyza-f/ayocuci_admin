@@ -28,7 +28,7 @@ export interface MenuItem {
   icon: React.ElementType;
   /** Kunci modul untuk permission check (harus cocok dengan key di permissions JSON) */
   module: string;
-  /** Jika true, item ini hanya tampil untuk Master Admin */
+  /** Jika true, item ini hanya tampil untuk akun admin penuh */
   masterOnly?: boolean;
 }
 
@@ -48,7 +48,7 @@ export const adminMenus: MenuGroup[] = [
   {
     group: "Ekosistem Bisnis",
     items: [
-      { label: "Daftar Tenant",    href: "/tenants",   icon: Store,       module: "tenants" },
+      { label: "Direktori Outlet", href: "/tenants",   icon: Store,       module: "tenants" },
       { label: "Pemilik Usaha",    href: "/users",     icon: UserCircle,  module: "users" },
       { label: "Database Pelanggan", href: "/customers", icon: Users,       module: "customers" },
     ],

@@ -512,7 +512,7 @@ export default function DashboardPage() {
             </p>
             {[
               { label: "Manajemen Topup", href: "/topups", icon: Coins },
-              { label: "Outlet & Tenant", href: "/tenants", icon: Store },
+              { label: "Outlet & Pemilik", href: "/tenants", icon: Store },
               { label: "Analytics Lengkap", href: "/analytics", icon: TrendingUp },
             ].filter(({ href }) => {
               if (href === "/topups") return canReadTopups;

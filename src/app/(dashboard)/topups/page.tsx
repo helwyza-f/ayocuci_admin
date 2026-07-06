@@ -429,12 +429,12 @@ function TopupsManagementContent() {
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-2 text-slate-600">
                   <Store className="h-3 w-3" />
-                  {outletFilter === "all" ? "Outlets" : outletFilter}
+                  {outletFilter === "all" ? "Semua Outlet" : outletFilter}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-56 p-0 rounded-md">
                 <Command>
-                  <CommandInput placeholder="Search outlet..." className="text-xs" />
+                  <CommandInput placeholder="Cari outlet..." className="text-xs" />
                   <CommandList>
                     <CommandEmpty className="text-[10px] p-2">Tidak ditemukan.</CommandEmpty>
                     <CommandGroup>
@@ -763,7 +763,7 @@ function TopupsManagementContent() {
               </div>
             )}
              <p className="text-[8px] text-center font-medium text-slate-400 italic">
-                Saldo tenant akan langsung diperbarui.
+                Saldo outlet akan langsung diperbarui.
              </p>
           </div>
         </DialogContent>

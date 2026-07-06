@@ -89,7 +89,7 @@ export default function LoginPage() {
               Pertumbuhan bisnis dimulai dari eksekusi yang rapi dan konsisten.
             </h1>
             <p className="max-w-lg text-base leading-7 text-slate-600">
-              Masuk untuk memantau tenant, billing, konten, analitik, dan kontrol admin pusat dalam satu dashboard yang ringkas.
+              Masuk untuk memantau outlet, billing, konten, analitik, dan kontrol admin pusat dalam satu dashboard yang ringkas.
             </p>
           </div>
 
