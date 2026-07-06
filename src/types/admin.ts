@@ -109,6 +109,12 @@ export const ADMIN_PERMISSIONS: AdminPermissionResource[] = [
     actions: ["read", "export"],
   },
   {
+    key: "lead-ops",
+    label: "Lead Ops Internal",
+    description: "Distribusi lead baru ke sales/marketing, ledger assignment, dan histori follow-up.",
+    actions: ["read", "create", "update", "export"],
+  },
+  {
     key: "topups",
     label: "Top Up & Penagihan",
     description: "Validasi, batalkan, dan pantau transaksi top up.",
