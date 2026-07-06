@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import PermissionGate from "@/components/shared/permission-gate";
 import {
   LegalDocument,
   LegalDocumentType,
@@ -42,7 +43,7 @@ const emptyForm: FormState = {
   body: "",
 };
 
-export default function LegalDocumentsPage() {
+function LegalDocumentsContent() {
   const [docs, setDocs] = useState<Record<LegalDocumentType, LegalDocument | null>>({
     TERMS: null,
     PRIVACY: null,
@@ -126,19 +127,21 @@ export default function LegalDocumentsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            onClick={handleSave}
-            disabled={loading || saving}
-            size="sm"
-            className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none"
-          >
-            {saving ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Save className="h-3.5 w-3.5" />
-            )}
-            Save Changes
-          </Button>
+          <PermissionGate module="legal" action="update">
+            <Button
+              onClick={handleSave}
+              disabled={loading || saving}
+              size="sm"
+              className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none"
+            >
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              Save Changes
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -230,5 +233,13 @@ export default function LegalDocumentsPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function LegalDocumentsPage() {
+  return (
+    <PermissionGate module="legal" action="read">
+      <LegalDocumentsContent />
+    </PermissionGate>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import useSWR from "swr";
-import { ShieldAlert, UserPlus, Shield, Check, X, Key, Users, Plus, Edit3, Trash2 } from "lucide-react";
+import { ShieldAlert, UserPlus, Shield, Check, X, Key, Users, Plus, Edit3, Trash2, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetcher } from "@/lib/fetcher";
 import { ApiResponse } from "@/types/api";
-import { Admin, AdminRole, ADMIN_MODULES, ADMIN_ACTIONS, AdminPermissions } from "@/types/admin";
+import { Admin, AdminRole, ADMIN_PERMISSIONS, ADMIN_ROLE_PRESETS, AdminPermissions, AdminPermissionResource, PermissionKey } from "@/types/admin";
 import { useAuthStore } from "@/store/use-auth-store";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -30,6 +30,80 @@ function getErrorMessage(error: unknown) {
 // ============================================================
 // PERMISSION MATRIX EDITOR
 // ============================================================
+function PermissionCard({
+  resource,
+  value,
+  onChange,
+}: {
+  resource: AdminPermissionResource;
+  value: AdminPermissions;
+  onChange: (v: AdminPermissions) => void;
+}) {
+  const current = value[resource.key] || [];
+  const enabledCount = current.filter((item) => resource.actions.includes(item as PermissionKey)).length;
+
+  const toggle = (actionKey: PermissionKey) => {
+    const has = current.includes(actionKey);
+    onChange({
+      ...value,
+      [resource.key]: has ? current.filter((a) => a !== actionKey) : [...current, actionKey],
+    });
+  };
+
+  const toggleAll = () => {
+    const hasAll = resource.actions.every((a) => current.includes(a));
+    onChange({ ...value, [resource.key]: hasAll ? [] : [...resource.actions] });
+  };
+
+  return (
+    <Card className={`rounded-2xl border p-4 shadow-sm transition-all ${resource.masterOnly ? "border-amber-200 bg-amber-50/40" : "border-slate-200 bg-white"}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-bold text-slate-900">{resource.label}</h4>
+            {resource.masterOnly && <Badge className="border-none bg-amber-100 text-[9px] font-bold text-amber-700">Master only</Badge>}
+          </div>
+          <p className="text-xs leading-5 text-slate-500">{resource.description}</p>
+        </div>
+        <button
+          type="button"
+          onClick={toggleAll}
+          className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition-all ${
+            resource.actions.every((a) => current.includes(a))
+              ? "border-slate-900 bg-slate-900 text-white"
+              : "border-slate-200 bg-white text-slate-300 hover:border-slate-400"
+          }`}
+          aria-label={`Pilih semua hak akses untuk ${resource.label}`}
+        >
+          <Check className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {resource.actions.map((action) => {
+          const active = current.includes(action);
+          const label = action.replace(/_/g, " ");
+          return (
+            <button
+              key={action}
+              type="button"
+              onClick={() => toggle(action)}
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                active
+                  ? "border-primary bg-primary text-white"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-primary/30 hover:text-primary"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-white" : "bg-slate-300"}`} />
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 function PermissionMatrix({
   value,
   onChange,
@@ -37,80 +111,31 @@ function PermissionMatrix({
   value: AdminPermissions;
   onChange: (v: AdminPermissions) => void;
 }) {
-  const toggle = (moduleKey: string, actionKey: string) => {
-    const current = value[moduleKey] || [];
-    const has = current.includes(actionKey);
-    onChange({
-      ...value,
-      [moduleKey]: has ? current.filter((a) => a !== actionKey) : [...current, actionKey],
-    });
-  };
-
-  const toggleAll = (moduleKey: string) => {
-    const allActions = ADMIN_ACTIONS.map((a) => a.key);
-    const current = value[moduleKey] || [];
-    const hasAll = allActions.every((a) => current.includes(a));
-    onChange({ ...value, [moduleKey]: hasAll ? [] : [...allActions] });
+  const applyPreset = (preset: AdminPermissions) => {
+    onChange(preset);
   };
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200">
-      <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="bg-slate-50 border-b border-slate-200">
-            <th className="px-4 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider w-48">Modul</th>
-            {ADMIN_ACTIONS.map((action) => (
-              <th key={action.key} className="px-4 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">
-                {action.label}
-              </th>
-            ))}
-            <th className="px-4 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Semua</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {ADMIN_MODULES.map((mod) => {
-            const current = value[mod.key] || [];
-            const allActions = ADMIN_ACTIONS.map((a) => a.key);
-            const hasAll = allActions.every((a) => current.includes(a));
-            return (
-              <tr key={mod.key} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-4 py-3 text-xs font-bold text-slate-700">{mod.label}</td>
-                {ADMIN_ACTIONS.map((action) => {
-                  const has = current.includes(action.key);
-                  return (
-                    <td key={action.key} className="px-4 py-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => toggle(mod.key, action.key)}
-                        className={`h-6 w-6 rounded flex items-center justify-center mx-auto transition-all border ${
-                          has
-                            ? "bg-primary border-primary text-white shadow-sm"
-                            : "bg-white border-slate-200 text-slate-300 hover:border-primary/50"
-                        }`}
-                      >
-                        {has && <Check className="h-3.5 w-3.5" />}
-                      </button>
-                    </td>
-                  );
-                })}
-                <td className="px-4 py-3 text-center">
-                  <button
-                    type="button"
-                    onClick={() => toggleAll(mod.key)}
-                    className={`h-6 w-6 rounded flex items-center justify-center mx-auto transition-all border ${
-                      hasAll
-                        ? "bg-slate-900 border-slate-900 text-white"
-                        : "bg-white border-slate-200 text-slate-300 hover:border-slate-400"
-                    }`}
-                  >
-                    {hasAll && <Check className="h-3.5 w-3.5" />}
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-2">
+        {ADMIN_ROLE_PRESETS.map((preset) => (
+          <button
+            key={preset.key}
+            type="button"
+            onClick={() => applyPreset(preset.permissions)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 transition-colors hover:border-primary/30 hover:text-primary"
+            title={preset.description}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid gap-4">
+        {ADMIN_PERMISSIONS.map((resource) => (
+          <PermissionCard key={resource.key} resource={resource} value={value} onChange={onChange} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -153,13 +178,13 @@ function RoleFormPanel({
   return (
     <Card className="border border-primary/20 bg-white rounded-xl p-6 space-y-5 shadow-lg shadow-primary/5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-            <Shield className="h-5 w-5" />
+            <Sparkles className="h-5 w-5" />
           </div>
           <div>
             <p className="text-xs font-bold text-slate-900">{existing ? "Edit Role" : "Buat Role Baru"}</p>
-            <p className="text-[10px] text-slate-400">Tentukan nama dan permission yang dimiliki role ini</p>
+            <p className="text-[10px] text-slate-400">Tentukan nama dan kemampuan bisnis yang dimiliki role ini</p>
           </div>
         </div>
         <Button variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8"><X className="h-4 w-4" /></Button>
@@ -383,7 +408,7 @@ function AdminManagementContent() {
                   onChange={(e) => setNewAdmin({ ...newAdmin, role_id: e.target.value })}
                   className="w-full md:w-64 h-9 text-sm border border-slate-200 rounded-md px-3 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
-                  <option value="">— Tanpa Role (Akses Terbatas) —</option>
+                  <option value="">— Role belum dipilih (akses terbatas) —</option>
                   {roles.map((r) => (
                     <option key={r.id} value={r.id}>{r.nama}</option>
                   ))}
@@ -448,7 +473,7 @@ function AdminManagementContent() {
                             onChange={(e) => handleAssignRole(admin.adm_id, e.target.value || null)}
                             className="text-[10px] font-bold border border-slate-200 rounded-md px-2 py-1 text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-primary/20"
                           >
-                            <option value="">— Tanpa Role —</option>
+                            <option value="">— Role belum dipilih —</option>
                             {roles.map((r) => (
                               <option key={r.id} value={r.id}>{r.nama}</option>
                             ))}
@@ -502,7 +527,7 @@ function AdminManagementContent() {
           )}
 
           <Card className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/30">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/30">
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{roles.length} Role Terdaftar</p>
               {!showRoleForm && (
                 <Button size="sm" onClick={() => { setEditingRole(undefined); setShowRoleForm(true); }} className="h-7 px-3 text-[10px] font-bold uppercase bg-primary hover:bg-primary/90 text-white gap-1.5">
@@ -536,7 +561,7 @@ function AdminManagementContent() {
                         <div>
                           <p className="font-bold text-slate-900 text-sm">{role.nama}</p>
                           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                            Akses ke {moduleCount} modul
+                            Akses ke {moduleCount} area
                           </p>
                         </div>
                       </div>

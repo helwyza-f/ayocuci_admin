@@ -15,6 +15,8 @@ export interface ActivityFeedItem {
   tk_metode_bayar: string;
   tk_bukti?: string | null;
   outlet_name?: string;
+  owner_name?: string;
+  owner_code?: string;
   type: "koin" | "addon";
   item_names?: string;
 }
@@ -41,7 +43,7 @@ export default function ActivityFeed({ activities, isLoading, onVerify }: Activi
       <div className="flex flex-col items-center justify-center h-[400px] text-slate-300">
         <Activity className="h-10 w-10 mb-3 opacity-20" />
         <p className="text-[10px] font-black uppercase tracking-widest italic text-slate-400">
-          No live transactions detected
+          Belum ada aktivitas transaksi terbaru
         </p>
       </div>
     );
@@ -67,7 +69,7 @@ export default function ActivityFeed({ activities, isLoading, onVerify }: Activi
             </div>
             <div>
               <p className="text-xs font-bold text-slate-900 tracking-tight leading-none mb-1.5 group-hover:text-primary transition-colors">
-                {item.type === 'addon' ? item.item_names : (item.outlet_name || "Unknown Outlet")}
+                {item.type === 'addon' ? item.item_names : (item.outlet_name || "Outlet tidak tersedia")}
               </p>
               <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
                  <span className={cn("px-1.5 py-0.5 rounded-md", item.type === 'addon' ? "bg-orange-50 text-orange-600" : "bg-primary/10 text-primary")}>
@@ -105,7 +107,7 @@ export default function ActivityFeed({ activities, isLoading, onVerify }: Activi
                 onClick={() => onVerify(item)}
                className="h-8 px-3 font-bold text-[10px] uppercase text-primary bg-primary/5 hover:bg-primary/10 border border-primary/10 shadow-sm"
                >
-                 {isActionable ? "Process" : "Detail"}
+                 {isActionable ? "Tinjau" : "Detail"}
                </Button>
              )}
           </div>

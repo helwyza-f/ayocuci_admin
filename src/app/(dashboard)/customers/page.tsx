@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   Search,
   Phone,
@@ -31,7 +32,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { Customer } from "@/types/domain";
 import { Tenant } from "@/types/tenant";
 import { ApiResponse } from "@/types/api";
@@ -107,7 +107,7 @@ export default function CustomersPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
            <Badge variant="outline" className="h-8 px-3 rounded-md font-bold text-[10px] uppercase tracking-wider text-slate-500 border-slate-200 bg-white shadow-none">
               {filtered.length} Total Data
            </Badge>
@@ -141,7 +141,7 @@ export default function CustomersPage() {
           
           <div className="h-5 w-px bg-slate-100 hidden lg:block" />
 
-          <div className="flex items-center gap-1 p-1 lg:p-0">
+          <div className="flex flex-wrap items-center gap-1 p-1 lg:p-0">
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-2 text-slate-600">
@@ -188,7 +188,7 @@ export default function CustomersPage() {
 
       {/* OPERATIONAL DATA TABLE */}
       <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white min-h-[400px] shadow-none">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
@@ -216,10 +216,20 @@ export default function CustomersPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                      <div className="flex items-center gap-2 text-slate-800 font-bold text-xs tracking-tight">
-                        <Store className="h-3 w-3 text-primary/60 group-hover:scale-110 transition-transform" />
-                        {customer.outlet_name}
-                      </div>
+                      {customer.outlet_id ? (
+                        <Link
+                          href={`/tenants/${customer.outlet_id}`}
+                          className="inline-flex items-center gap-2 text-slate-800 font-bold text-xs tracking-tight hover:text-primary hover:underline"
+                        >
+                          <Store className="h-3 w-3 text-primary/60 transition-transform group-hover:scale-110" />
+                          {customer.outlet_name || "-"}
+                        </Link>
+                      ) : (
+                        <div className="flex items-center gap-2 text-slate-800 font-bold text-xs tracking-tight">
+                          <Store className="h-3 w-3 text-primary/60 group-hover:scale-110 transition-transform" />
+                          {customer.outlet_name || "-"}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-center">
                       <div className="inline-flex items-center gap-1.5 font-bold text-slate-600 text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100/50 group-hover:bg-white transition-colors">
@@ -243,6 +253,61 @@ export default function CustomersPage() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="space-y-3 p-4 md:hidden">
+          {isLoading ? (
+            <TableSkeleton columns={1} rows={6} />
+          ) : filtered.length > 0 ? (
+            paginated.map((customer) => (
+              <div key={`mobile-${customer.id}`} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-slate-100 bg-slate-50 text-slate-400">
+                      <UserRound className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-900">{customer.name}</p>
+                      <p className="text-[11px] font-medium text-slate-400">{customer.nohp}</p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-100 bg-white p-3">
+                    <p className="text-[9px] font-bold uppercase text-slate-400">Outlet Utama</p>
+                    {customer.outlet_id ? (
+                      <Link
+                        href={`/tenants/${customer.outlet_id}`}
+                        className="mt-1 inline-flex items-center gap-2 text-sm font-bold text-slate-800 hover:text-primary hover:underline"
+                      >
+                        <Store className="h-3 w-3 text-primary/60" />
+                        {customer.outlet_name || "-"}
+                      </Link>
+                    ) : (
+                      <p className="mt-1 inline-flex items-center gap-2 text-sm font-bold text-slate-800">
+                        <Store className="h-3 w-3 text-primary/60" />
+                        {customer.outlet_name || "-"}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg border border-slate-100 bg-white p-3">
+                      <p className="text-[9px] font-bold uppercase text-slate-400">Aktivitas</p>
+                      <p className="mt-1 text-sm font-black text-slate-700">{customer.total_transaksi || 0} Tx</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-100 bg-white p-3">
+                      <p className="text-[9px] font-bold uppercase text-slate-400">Bergabung</p>
+                      <p className="mt-1 text-sm font-black text-slate-700">
+                        {customer.created_at ? format(new Date(customer.created_at), "dd/MM/yy") : "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-16 text-center">
+              <Activity className="mx-auto mb-2 h-8 w-8 text-slate-200" />
+              <p className="text-[10px] font-bold uppercase tracking-widest italic text-slate-400">Belum ada data pelanggan</p>
+            </div>
+          )}
         </div>
         <Pagination
           page={page}

@@ -26,8 +26,17 @@ import {
 import { ContentBanner, contentService } from "@/services/content.service";
 import { cn } from "@/lib/utils";
 import { resolveImageVariantUrl } from "@/lib/upload-url";
+import PermissionGate from "@/components/shared/permission-gate";
 
 export default function DashboardContentPage() {
+  return (
+    <PermissionGate module="content" action="read">
+      <DashboardContentContent />
+    </PermissionGate>
+  );
+}
+
+function DashboardContentContent() {
   const [items, setItems] = useState<ContentBanner[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -110,11 +119,13 @@ export default function DashboardContentPage() {
         </div>
 
         <div className="flex items-center gap-2">
-           <Button asChild size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
-              <Link href="/content/new">
-                <Plus className="h-3.5 w-3.5" /> Buat Baru
-              </Link>
-           </Button>
+          <PermissionGate module="content" action="create">
+            <Button asChild size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
+                <Link href="/content/new">
+                  <Plus className="h-3.5 w-3.5" /> Buat Baru
+                </Link>
+             </Button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -214,31 +225,37 @@ export default function DashboardContentPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 md:justify-end">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleToggle(item.id)}
-                    className={cn(
-                      "h-8 px-3 font-bold text-[9px] uppercase gap-1.5 active:scale-95 transition-all",
-                      item.is_active ? "text-slate-500 hover:text-amber-600 hover:bg-amber-50" : "text-emerald-600 hover:bg-emerald-50"
-                    )}
-                  >
-                    <Eye className="h-3 w-3" />
-                    {item.is_active ? "Nonaktifkan" : "Aktifkan"}
-                  </Button>
-                  <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-primary active:scale-95 transition-all border border-transparent hover:border-slate-100">
-                    <Link href={`/content/${item.id}/edit`}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleDelete(item.id)}
-                    className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600 active:scale-95 transition-all border border-transparent hover:border-rose-100"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <PermissionGate module="content" action="update">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleToggle(item.id)}
+                      className={cn(
+                        "h-8 px-3 font-bold text-[9px] uppercase gap-1.5 active:scale-95 transition-all",
+                        item.is_active ? "text-slate-500 hover:text-amber-600 hover:bg-amber-50" : "text-emerald-600 hover:bg-emerald-50"
+                      )}
+                    >
+                      <Eye className="h-3 w-3" />
+                      {item.is_active ? "Nonaktifkan" : "Aktifkan"}
+                    </Button>
+                  </PermissionGate>
+                  <PermissionGate module="content" action="update">
+                    <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-primary active:scale-95 transition-all border border-transparent hover:border-slate-100">
+                      <Link href={`/content/${item.id}/edit`}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  </PermissionGate>
+                  <PermissionGate module="content" action="delete">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(item.id)}
+                      className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600 active:scale-95 transition-all border border-transparent hover:border-rose-100"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </PermissionGate>
                 </div>
               </div>
             ))}

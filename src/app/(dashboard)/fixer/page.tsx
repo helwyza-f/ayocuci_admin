@@ -3,8 +3,17 @@
 import { Wrench, ShieldAlert, AlertTriangle, Construction } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import PermissionGate from "@/components/shared/permission-gate";
 
 export default function TransactionFixerPage() {
+  return (
+    <PermissionGate module="fixer" action="read">
+      <TransactionFixerContent />
+    </PermissionGate>
+  );
+}
+
+function TransactionFixerContent() {
   return (
     <div className="space-y-6">
       {/* COMMAND BAR HEADER */}

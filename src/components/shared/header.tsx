@@ -14,6 +14,13 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   const pathname = usePathname();
   const { logout, admin, _hasHydrated } = useAuthStore();
 
+  const getRoleLabel = () => {
+    if (admin?.adm_is_master) return "Master Admin";
+    if (admin?.role?.nama?.trim()) return admin.role.nama.trim();
+    if (admin?.adm_role?.trim()) return admin.adm_role.trim();
+    return "Admin";
+  };
+
   const getTitle = () => {
     const segment = pathname.split("/").pop();
     if (!segment || segment === "" || segment === "dashboard")
@@ -29,7 +36,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       notifications: "Siaran Notifikasi",
       "otp-logs": "Log OTP",
       packages: "Paket Layanan",
-      subscriptions: "Riwayat Langganan",
+      subscriptions: "Aktivasi Lisensi",
     };
 
     return (
@@ -46,50 +53,50 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
   };
 
   return (
-    <header className="h-14 border-b border-slate-200 bg-white flex items-center px-4 md:px-8 justify-between sticky top-0 z-40">
-      <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200/70 bg-white/80 px-3 backdrop-blur-xl md:px-6">
+      <div className="flex min-w-0 items-center gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
-          className="hidden md:flex h-8 w-8 text-slate-400 hover:text-primary"
+          className="hidden h-9 w-9 text-slate-400 hover:bg-slate-100 hover:text-primary md:flex"
         >
           <LayoutGrid className="h-4 w-4" />
         </Button>
 
         {/* Title Section */}
-        <div className="flex flex-col">
-          <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+        <div className="flex min-w-0 flex-col">
+          <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-slate-400 mb-0.5 truncate">
             AyoCuci <span className="opacity-50">Control Hub</span>
           </p>
-          <h1 className="text-sm font-bold text-slate-900 tracking-tight leading-none font-heading">
+          <h1 className="truncate text-sm font-bold text-slate-900 tracking-tight leading-none font-heading md:text-base">
             {getTitle()}
           </h1>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-slate-400 hover:text-primary relative"
+          className="relative h-9 w-9 text-slate-400 hover:bg-slate-100 hover:text-primary"
         >
           <Bell className="h-4 w-4" />
           <span className="absolute top-2 right-2 h-1 w-1 bg-primary rounded-full" />
         </Button>
 
-        <div className="h-4 w-px bg-slate-100 mx-1" />
+        <div className="hidden h-4 w-px bg-slate-200 mx-1 md:block" />
 
         {/* Admin Info & Logout */}
         <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block leading-none">
+          <div className="hidden max-w-[180px] text-right leading-none sm:block">
             {_hasHydrated ? (
               <>
-                <p className="text-xs font-bold text-slate-900 tracking-tight">
+                <p className="truncate text-xs font-bold text-slate-900 tracking-tight">
                   {admin?.adm_nama || "Administrator"}
                 </p>
-                <p className="text-[9px] font-medium text-primary uppercase tracking-tight">
-                  {admin?.adm_is_master ? "Master Admin" : "Superadmin"}
+                <p className="truncate text-[9px] font-medium text-primary uppercase tracking-tight">
+                  {getRoleLabel()}
                 </p>
               </>
             ) : (
@@ -104,8 +111,8 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
             onClick={handleLogout}
             variant="ghost"
             className={cn(
-              "text-slate-400 hover:text-rose-600 hover:bg-rose-50",
-              "font-bold text-[10px] uppercase h-8 px-2 gap-2",
+              "h-9 gap-2 text-slate-500 hover:bg-rose-50 hover:text-rose-600",
+              "font-bold text-[10px] uppercase px-3",
             )}
           >
             <LogOut className="h-3.5 w-3.5" />

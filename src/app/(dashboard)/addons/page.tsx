@@ -28,8 +28,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Addon, EconomyConfig } from "@/types/domain";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import PermissionGate from "@/components/shared/permission-gate";
 
-export default function AddonCatalogPage() {
+function AddonCatalogContent() {
   const [addons, setAddons] = useState<Addon[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -182,9 +183,11 @@ export default function AddonCatalogPage() {
             Segarkan
           </Button>
 
-          <Button onClick={handleOpenCreate} className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2">
-            <PlusCircle className="h-3.5 w-3.5" /> Buat Fitur Baru
-          </Button>
+          <PermissionGate module="economy" action="create">
+            <Button onClick={handleOpenCreate} className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2">
+              <PlusCircle className="h-3.5 w-3.5" /> Buat Fitur Baru
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -222,22 +225,26 @@ export default function AddonCatalogPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-slate-300 hover:text-primary transition-colors"
-                    onClick={() => handleOpenEdit(addon)}
-                  >
-                    <Edit className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-slate-300 hover:text-rose-600 transition-colors"
-                    onClick={() => handleDelete(addon.ad_id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <PermissionGate module="economy" action="update">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-slate-300 hover:text-primary transition-colors"
+                      onClick={() => handleOpenEdit(addon)}
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                  </PermissionGate>
+                  <PermissionGate module="economy" action="delete">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-slate-300 hover:text-rose-600 transition-colors"
+                      onClick={() => handleDelete(addon.ad_id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </PermissionGate>
                 </div>
               </div>
 
@@ -274,17 +281,19 @@ export default function AddonCatalogPage() {
                       {addon.ad_status === 1 ? "Aktif" : "Nonaktif"}
                     </span>
                  </div>
-                 <Button
-                    onClick={() => toggleStatus(addon)}
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "h-6 px-2 text-[8px] font-bold uppercase rounded-md",
-                      addon.ad_status === 1 ? "text-slate-400" : "text-emerald-600"
-                    )}
-                 >
-                    {addon.ad_status === 1 ? "Nonaktifkan" : "Aktifkan"}
-                 </Button>
+                 <PermissionGate module="economy" action="update">
+                   <Button
+                      onClick={() => toggleStatus(addon)}
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-6 px-2 text-[8px] font-bold uppercase rounded-md",
+                        addon.ad_status === 1 ? "text-slate-400" : "text-emerald-600"
+                      )}
+                   >
+                      {addon.ad_status === 1 ? "Nonaktifkan" : "Aktifkan"}
+                   </Button>
+                 </PermissionGate>
               </div>
             </Card>
           ))
@@ -397,20 +406,30 @@ export default function AddonCatalogPage() {
             >
               Batal
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="flex-[2] h-10 rounded font-bold text-[10px] uppercase tracking-wider"
-            >
-              {isSubmitting ? (
-                <LoaderIcon className="animate-spin h-4 w-4" />
-              ) : (
-                editingAddon ? "Simpan Perubahan" : "Terbitkan Layanan"
-              )}
-            </Button>
+            <PermissionGate module="economy" action="create">
+              <Button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="flex-[2] h-10 rounded font-bold text-[10px] uppercase tracking-wider"
+              >
+                {isSubmitting ? (
+                  <LoaderIcon className="animate-spin h-4 w-4" />
+                ) : (
+                  editingAddon ? "Simpan Perubahan" : "Terbitkan Layanan"
+                )}
+              </Button>
+            </PermissionGate>
           </div>
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function AddonCatalogPage() {
+  return (
+    <PermissionGate module="economy" action="read">
+      <AddonCatalogContent />
+    </PermissionGate>
   );
 }

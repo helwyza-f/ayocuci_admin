@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Search, UserCircle, Activity, Users, ExternalLink, FilterX,
 } from "lucide-react";
@@ -18,13 +19,29 @@ import Pagination from "@/components/shared/pagination";
 import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shared/date-range-filter";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { format } from "date-fns";
+import PermissionGate from "@/components/shared/permission-gate";
 
 const PAGE_SIZE = 20;
 
 export default function OwnersPage() {
+  return (
+    <PermissionGate module="users" action="read">
+      <OwnersPageContent />
+    </PermissionGate>
+  );
+}
+
+function OwnersPageContent() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
+  const initialDatePreset = searchParams.get("date_preset");
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const [dateRange, setDateRange] = useState<DateRange>(
+    initialDatePreset === "today"
+      ? { start: todayStr, end: todayStr }
+      : { start: "", end: "" },
+  );
 
   const { data, isLoading } = useSWR<ApiResponse<Owner[]>>(
     "/users", apiFetcher,
@@ -73,7 +90,7 @@ export default function OwnersPage() {
             filename="owners_directory"
             sheetName="Owners"
             columns={[
-              { header: "ID", key: "id", width: 10 },
+              { header: "Kode Owner", key: "id", width: 14, format: (v) => v ? `#${String(v)}` : "-" },
               { header: "Nama", key: "name", width: 25 },
               { header: "Email", key: "email", width: 30 },
               { header: "No. HP", key: "nohp", width: 18 },
@@ -123,6 +140,7 @@ export default function OwnersPage() {
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Profil Owner</th>
+                <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Kode Owner</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Portofolio</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Tgl Daftar</th>
                 <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Aksi</th>
@@ -130,7 +148,7 @@ export default function OwnersPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <TableSkeleton columns={4} rows={10} />
+                <TableSkeleton columns={5} rows={10} />
               ) : paginated.length > 0 ? (
                 paginated.map((owner) => (
                   <tr key={owner.id} className="hover:bg-slate-50/30 transition-colors">
@@ -140,13 +158,15 @@ export default function OwnersPage() {
                           <UserCircle className="h-4 w-4" />
                         </div>
                         <div>
-                           <p className="font-bold text-slate-900 text-xs">{owner.name}</p>
-                           <p className="text-[9px] font-medium text-slate-400">{owner.email}</p>
-                           <span className="inline-block mt-0.5 bg-slate-100 border border-slate-200 text-slate-500 font-mono font-semibold text-[9px] px-1.5 py-0.5 rounded">
-                             #{owner.id}
-                           </span>
+                           <p className="font-bold text-slate-900 text-sm">{owner.name}</p>
+                           <p className="text-[11px] font-medium text-slate-500">{owner.email}</p>
                          </div>
                       </div>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[10px] font-bold text-slate-600">
+                        #{owner.id}
+                      </span>
                     </td>
                     <td className="px-5 py-3 text-center">
                       <div className="inline-flex items-center gap-1 font-bold text-slate-700 text-[10px]">
@@ -169,7 +189,7 @@ export default function OwnersPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="py-24 text-center">
+                  <td colSpan={5} className="py-24 text-center">
                     <Activity className="h-8 w-8 text-slate-200 mx-auto mb-2" />
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Belum ada data owner</p>
                   </td>

@@ -19,5 +19,13 @@ export const userService = {
   ) => {
     const response = await api.patch(`/users/${id}`, payload);
     return response.data;
+  },
+
+  deleteOwner: async (
+    id: string,
+    payload?: { reason?: string; reason_detail?: string }
+  ) => {
+    const response = await api.delete(`/users/${id}`, { data: payload });
+    return response.data;
   }
 };

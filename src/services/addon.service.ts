@@ -3,6 +3,18 @@ import { ApiResponse } from "@/types/api";
 
 export type AddonStatus = "PENDING" | "PENDING_VALIDATION" | "SUCCESS" | "FAILED" | "CANCELED";
 
+export interface AddonTransactionDetail {
+  dha_id: string;
+  dha_transaksi: string;
+  dha_addons: string;
+  item_name: string;
+  item_desc: string;
+  dha_harga: number;
+  dha_target_id: string;
+  ha_berakhir?: string | null;
+  feature_status: string;
+}
+
 export interface AddonTransaction {
   ha_id: string;
   ha_outlet: string;
@@ -17,6 +29,7 @@ export interface AddonTransaction {
   item_names: string;
   ha_created: string;
   ha_tanggal_validasi: string | null;
+  details?: AddonTransactionDetail[];
 }
 
 export const addonService = {

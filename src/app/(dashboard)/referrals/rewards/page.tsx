@@ -23,15 +23,87 @@ const currency = (value: number | string | null | undefined) =>
     minimumFractionDigits: 0,
   }).format(Number(value || 0));
 
-const getPayoutMethod = (reward: Pick<ReferralAdminReward, "rr_coin_amount" | "rr_coin_status">) =>
-  reward.rr_coin_status === "claimed" || Number(reward.rr_coin_amount || 0) > 0
-    ? "Koin"
-    : "Cash";
+const getPayoutMethod = (
+  reward: Pick<
+    ReferralAdminReward,
+    "rr_coin_amount" | "rr_coin_status" | "payout_id" | "payout_status" | "rr_status"
+  >,
+) => {
+  if (reward.rr_coin_status === "claimed" || Number(reward.rr_coin_amount || 0) > 0) {
+    return "Koin";
+  }
+
+  if (
+    reward.payout_id ||
+    reward.payout_status ||
+    reward.rr_status === "paid" ||
+    reward.rr_status === "done"
+  ) {
+    return "Cash";
+  }
+
+  return "Belum Ditentukan";
+};
+
+const getSettlementStatus = (
+  reward: Pick<
+    ReferralAdminReward,
+    "rr_status" | "rr_coin_amount" | "rr_coin_status" | "payout_id" | "payout_status"
+  >,
+) => {
+  const payoutMethod = getPayoutMethod(reward);
+
+  if (payoutMethod === "Koin") {
+    if (reward.rr_coin_status === "claimed") {
+      return {
+        label: "Masuk ke Koin",
+        className:
+          "border-sky-100 bg-sky-50 text-sky-600",
+        bucket: "paid" as const,
+      };
+    }
+
+    return {
+      label: "Belum Ditukar",
+      className:
+        "border-orange-100 bg-orange-50 text-orange-600",
+      bucket: "pending" as const,
+    };
+  }
+
+  if (payoutMethod === "Belum Ditentukan") {
+    return {
+      label: "Belum Dipilih",
+      className:
+        "border-slate-200 bg-slate-50 text-slate-500",
+      bucket: "pending" as const,
+    };
+  }
+
+  if (reward.rr_status === "paid" || reward.rr_status === "done") {
+    return {
+      label: "Sudah Dicairkan",
+      className:
+        "border-emerald-100 bg-emerald-50 text-emerald-600",
+      bucket: "paid" as const,
+    };
+  }
+
+  return {
+    label: "Menunggu",
+    className:
+      "border-orange-100 bg-orange-50 text-orange-600",
+    bucket: "pending" as const,
+  };
+};
 
 const getPayoutMethodFromRow = (row: Record<string, unknown> | undefined) =>
   getPayoutMethod({
     rr_coin_amount: Number(row?.rr_coin_amount || 0),
     rr_coin_status: String(row?.rr_coin_status || ""),
+    payout_id: row?.payout_id ? String(row.payout_id) : "",
+    payout_status: row?.payout_status ? String(row.payout_status) : "",
+    rr_status: String(row?.rr_status || ""),
   });
 
 const formatCoin = (value: number | string | null | undefined) =>
@@ -106,10 +178,7 @@ function ReferralRewardsContent() {
     }
     
     if (rewardStatusFilter !== "all") {
-      r = r.filter((rw) => {
-        if (rewardStatusFilter === "pending") return rw.rr_status === "credited" || rw.rr_status === "pending";
-        return rw.rr_status === "paid" || rw.rr_status === "done";
-      });
+      r = r.filter((rw) => getSettlementStatus(rw).bucket === rewardStatusFilter);
     }
 
     if (rewardSearch.trim()) {
@@ -176,7 +245,7 @@ function ReferralRewardsContent() {
               onChange={(e) => setRewardSearch(e.target.value)}
               className="h-8 text-[10px] rounded border-slate-200 shadow-none w-48 bg-white"
             />
-            <div className="flex gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
+            <div className="flex flex-wrap gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
               {(["all", "first", "monthly"] as const).map((t) => (
                 <button
                   key={t}
@@ -190,7 +259,7 @@ function ReferralRewardsContent() {
                 </button>
               ))}
             </div>
-            <div className="flex gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
+            <div className="flex flex-wrap gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
               {(["all", "pending", "paid"] as const).map((t) => (
                 <button
                   key={t}
@@ -221,7 +290,11 @@ function ReferralRewardsContent() {
                 { header: "Nominal Top Up (Rp)", key: "topup_amount_rp", width: 18, format: (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}` },
                 { header: "Komisi", key: "rr_reward_amount", width: 15, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
                 { header: "Metode Pencairan", key: "payout_method", width: 16, format: (_, r) => getPayoutMethodFromRow(r) },
-                { header: "Status", key: "rr_status", width: 15 },
+                { header: "Status Realisasi", key: "rr_status", width: 18, format: (_, row) => getSettlementStatus({
+                  rr_status: String(row?.rr_status || ""),
+                  rr_coin_amount: Number(row?.rr_coin_amount || 0),
+                  rr_coin_status: String(row?.rr_coin_status || ""),
+                }).label },
               ]}
             />
             {(rewardSearch || rewardTypeFilter !== "all" || rewardStatusFilter !== "all" || rewardDateRange.start) && (
@@ -237,7 +310,7 @@ function ReferralRewardsContent() {
           </div>
         </div>
         <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-none">
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-200">
@@ -249,7 +322,7 @@ function ReferralRewardsContent() {
                   <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Nominal Top Up</th>
                   <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Komisi</th>
                   <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-center">Metode Pencairan</th>
-                  <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Status Pencairan</th>
+                  <th className="px-5 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Status Realisasi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -319,28 +392,105 @@ function ReferralRewardsContent() {
                             "rounded px-1.5 py-0 text-[8px] font-bold uppercase shadow-none",
                             getPayoutMethod(r) === "Koin"
                               ? "border-sky-100 bg-sky-50 text-sky-600"
-                              : "border-emerald-100 bg-emerald-50 text-emerald-600",
+                              : getPayoutMethod(r) === "Cash"
+                                ? "border-emerald-100 bg-emerald-50 text-emerald-600"
+                                : "border-slate-200 bg-slate-50 text-slate-500",
                           )}
                         >
                           {getPayoutMethod(r)}
                         </Badge>
                       </td>
                       <td className="px-5 py-3 text-right">
-                        {(r.rr_status === "paid" || r.rr_status === "done") ? (
-                          <Badge variant="outline" className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-emerald-100 bg-emerald-50 text-emerald-600 shadow-none">
-                            Sudah Dicairkan
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="rounded px-1.5 py-0 text-[8px] font-bold uppercase border-orange-100 bg-orange-50 text-orange-600 shadow-none">
-                            Menunggu
-                          </Badge>
-                        )}
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "rounded px-1.5 py-0 text-[8px] font-bold uppercase shadow-none",
+                            getSettlementStatus(r).className,
+                          )}
+                        >
+                          {getSettlementStatus(r).label}
+                        </Badge>
                       </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="space-y-3 p-4 md:hidden">
+            {loading ? (
+              <div className="py-12 text-center">
+                <Loader2 className="mx-auto h-5 w-5 animate-spin text-slate-300" />
+              </div>
+            ) : filteredRewards.length === 0 ? (
+              <div className="py-16 text-center">
+                <GitBranch className="mx-auto mb-2 h-7 w-7 text-slate-200" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Belum ada riwayat komisi</p>
+              </div>
+            ) : (
+              filteredRewards.map((r) => {
+                const settlement = getSettlementStatus(r);
+                const payoutMethod = getPayoutMethod(r);
+                return (
+                  <div key={`mobile-${r.rr_id}`} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                    <div className="space-y-3">
+                      <p className="text-[11px] font-medium text-slate-400">
+                        {new Date(r.rr_created).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="rounded-lg border border-slate-100 bg-white p-3">
+                          <p className="text-[9px] font-bold uppercase text-slate-400">Referrer</p>
+                          <Link href={`/users/${r.referrer_id}`} className="mt-1 block hover:text-primary hover:underline">
+                            <p className="text-sm font-bold text-slate-900">{r.referrer_nama}</p>
+                            <p className="text-[11px] text-slate-400 break-all">{r.referrer_email}</p>
+                          </Link>
+                        </div>
+                        <div className="rounded-lg border border-slate-100 bg-white p-3">
+                          <p className="text-[9px] font-bold uppercase text-slate-400">Referred</p>
+                          <Link href={`/users/${r.referred_id}`} className="mt-1 block hover:text-primary hover:underline">
+                            <p className="text-sm font-bold text-slate-900">{r.referred_nama}</p>
+                            <p className="text-[11px] text-slate-400 break-all">{r.referred_email}</p>
+                          </Link>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className="border-blue-100 bg-blue-50 text-[8px] font-bold uppercase text-blue-600 shadow-none">
+                          {r.rr_type === "topup" && r.rr_percent >= 10 ? "Top Up Pertama" : r.rr_type === "topup" ? "Top Up Bulanan" : r.rr_type}
+                        </Badge>
+                        <Badge className="border-slate-200 bg-white text-[8px] font-bold uppercase text-slate-600 shadow-none">
+                          {payoutMethod}
+                        </Badge>
+                        <Badge className={cn("text-[8px] font-bold uppercase shadow-none", settlement.className)}>
+                          {settlement.label}
+                        </Badge>
+                      </div>
+                      <div className="rounded-lg border border-slate-100 bg-white p-3">
+                        <p className="text-[9px] font-bold uppercase text-slate-400">Outlet Utama</p>
+                        {r.rr_referred_outlet ? (
+                          <Link href={`/tenants/${r.rr_referred_outlet}`} className="mt-1 block hover:text-primary hover:underline">
+                            <p className="text-sm font-bold text-slate-900">{r.referred_outlet_name || r.rr_referred_outlet}</p>
+                            <p className="text-[10px] font-mono text-slate-400">{r.rr_referred_outlet}</p>
+                          </Link>
+                        ) : (
+                          <p className="mt-1 text-sm font-bold text-slate-900">{r.referred_outlet_name || "-"}</p>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-lg border border-slate-100 bg-white p-3">
+                          <p className="text-[9px] font-bold uppercase text-slate-400">Nominal Top Up</p>
+                          <p className="mt-1 text-sm font-black text-slate-900">{currency(r.topup_amount_rp)}</p>
+                          <p className="text-[10px] font-bold text-slate-400">{formatCoin(r.topup_coin_amount)}</p>
+                        </div>
+                        <div className="rounded-lg border border-slate-100 bg-white p-3">
+                          <p className="text-[9px] font-bold uppercase text-slate-400">Komisi</p>
+                          <p className="mt-1 text-sm font-black text-primary">{currency(r.rr_reward_amount)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </Card>
       </div>

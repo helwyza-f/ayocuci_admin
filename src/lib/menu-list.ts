@@ -28,7 +28,7 @@ export interface MenuItem {
   icon: React.ElementType;
   /** Kunci modul untuk permission check (harus cocok dengan key di permissions JSON) */
   module: string;
-  /** Jika true, item ini hanya tampil untuk Master Admin */
+  /** Jika true, item ini hanya tampil untuk akun admin penuh */
   masterOnly?: boolean;
 }
 
@@ -48,7 +48,7 @@ export const adminMenus: MenuGroup[] = [
   {
     group: "Ekosistem Bisnis",
     items: [
-      { label: "Daftar Tenant",    href: "/tenants",   icon: Store,       module: "tenants" },
+      { label: "Direktori Outlet", href: "/tenants",   icon: Store,       module: "tenants" },
       { label: "Pemilik Usaha",    href: "/users",     icon: UserCircle,  module: "users" },
       { label: "Database Pelanggan", href: "/customers", icon: Users,       module: "customers" },
     ],
@@ -56,8 +56,9 @@ export const adminMenus: MenuGroup[] = [
   {
     group: "Keuangan & Pendapatan",
     items: [
-      { label: "Riwayat Berlangganan",  href: "/subscriptions", icon: ShieldCheck, module: "subscriptions" },
+      { label: "Aktivasi Lisensi",  href: "/subscriptions", icon: ShieldCheck, module: "subscriptions" },
       { label: "Top Up & Penagihan",  href: "/topups",        icon: Wallet2,     module: "topups" },
+      { label: "Ledger Koin",       href: "/coin-ledger",  icon: Coins,       module: "topups" },
       { label: "Paket Koin (SKU)",   href: "/packages",      icon: Package,     module: "packages" },
       { label: "Katalog Addon", href: "/addons",      icon: Zap,         module: "packages" },
     ],
@@ -97,7 +98,7 @@ export const adminMenus: MenuGroup[] = [
         label: "Histori Hapus Akun",
         href: "/account-deletions",
         icon: Trash2,
-        module: "users",
+        module: "account-deletions",
       },
     ],
   },

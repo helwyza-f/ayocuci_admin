@@ -11,7 +11,6 @@ import {
   Gift,
   Calendar,
   Coins,
-  ShieldCheck,
   MapPin,
   Phone,
   Settings2,
@@ -73,11 +72,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import PermissionGate from "@/components/shared/permission-gate";
 
 export default function TenantDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("dashboard");
   
   // Real Data State
   const [profile, setProfile] = useState<Tenant | null>(null);
@@ -85,6 +86,7 @@ export default function TenantDetailPage() {
   const [topupHistory, setTopupHistory] = useState<any[]>([]);
   const [addonHistory, setAddonHistory] = useState<any[]>([]);
   const [trxHistory, setTrxHistory] = useState<any[]>([]);
+  const [staffAccounts, setStaffAccounts] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any>({
     today_orders: 0,
     today_revenue: 0,
@@ -105,7 +107,6 @@ export default function TenantDetailPage() {
     topups: 1
   });
   const [koinFilter, setKoinFilter] = useState<'all' | 'masuk' | 'keluar'>('all');
-
   const filteredKoinHistory = useMemo(() => {
     return koinHistory.filter(tx => {
       if (koinFilter === 'all') return true;
@@ -145,6 +146,7 @@ export default function TenantDetailPage() {
         setTopupHistory(res.data.topup_history || []);
         setAddonHistory(res.data.addon_history || []);
         setTrxHistory(res.data.trx_history || []);
+        setStaffAccounts(res.data.staff_accounts || []);
         setMetrics(res.data.metrics || { today_orders: 0, today_revenue: 0, active_staff: 0 });
       }
     } catch (error) {
@@ -190,6 +192,96 @@ export default function TenantDetailPage() {
 
     if (profile) resolveRegions();
   }, [profile]);
+
+  const handleDeleteStaff = async (staff: any) => {
+    if (!profile?.ot_id || !staff?.id) return;
+    if (!confirm(`Hapus akun karyawan ${staff.nama || staff.id}?`)) return;
+
+    try {
+      await api.delete(`/tenants/${profile.ot_id}/staff-accounts/${staff.id}`);
+      toast.success("Akun karyawan berhasil dihapus");
+      fetchDetail();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Gagal menghapus akun karyawan");
+    }
+  };
+
+  const getStaffAddonStatus = (staff: any) => {
+    if (staff.type !== "addon") {
+      return {
+        label: "Slot Gratis Bawaan",
+        className: "bg-sky-50 text-sky-700 border-sky-200",
+      };
+    }
+
+    if (!staff.active_until) {
+      return {
+        label: "Addon Belum Aktif",
+        className: "bg-slate-100 text-slate-700 border-slate-200",
+      };
+    }
+
+    const remainingDays = differenceInDays(new Date(staff.active_until), new Date());
+    if (remainingDays < 0) {
+      return {
+        label: "Addon Expired",
+        className: "bg-rose-50 text-rose-700 border-rose-200",
+      };
+    }
+    if (remainingDays <= 7) {
+      return {
+        label: `Expired ${remainingDays} Hari Lagi`,
+        className: "bg-amber-50 text-amber-700 border-amber-200",
+      };
+    }
+    return {
+      label: "Addon Aktif",
+      className: "bg-violet-50 text-violet-700 border-violet-200",
+    };
+  };
+
+  const getStaffAccessStatus = (staff: any) => {
+    const isActive = Number(staff.status) === 1;
+
+    if (isActive) {
+      return {
+        label: "Login Aktif",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        description: "Akun bisa login ke aplikasi.",
+      };
+    }
+
+    if (staff.type === "addon") {
+      if (!staff.active_until) {
+        return {
+          label: "Belum Bisa Login",
+          className: "bg-amber-50 text-amber-700 border-amber-200",
+          description: "Addon pegawai belum diaktifkan atau belum dibeli.",
+        };
+      }
+
+      const remainingDays = differenceInDays(new Date(staff.active_until), new Date());
+      if (remainingDays < 0) {
+        return {
+          label: "Addon Habis",
+          className: "bg-rose-50 text-rose-700 border-rose-200",
+          description: "Masa aktif addon habis, akun tidak bisa login.",
+        };
+      }
+
+      return {
+        label: "Login Nonaktif",
+        className: "bg-slate-100 text-slate-700 border-slate-200",
+        description: "Akun dinonaktifkan manual walau addon masih tersimpan.",
+      };
+    }
+
+    return {
+      label: "Login Nonaktif",
+      className: "bg-slate-100 text-slate-700 border-slate-200",
+      description: "Slot gratis tetap ada, tetapi akun pegawai tidak bisa login.",
+    };
+  };
 
   const handleValidateAddon = async (ha_id: string, status: "confirm" | "cancel") => {
     setConfirming(true);
@@ -289,6 +381,100 @@ export default function TenantDetailPage() {
     return resolveImageVariantUrl(profile.ot_gambar, { width: 640 });
   }, [profile]);
 
+  const identityRows = useMemo(() => ([
+    { label: "Nama Outlet", value: profile?.ot_nama, icon: Store },
+    { label: "Nomor Kontak", value: profile?.ot_nohp || "-", icon: Phone, isPhone: true },
+    { label: "Kode Owner", value: `#${profile?.owner_id}`, icon: User, isMono: true },
+    { label: "Nama Owner", value: profile?.owner_name, icon: User, isLink: true, href: `/users/${profile?.owner_id}` },
+    { label: "Email Owner", value: profile?.owner_email || "-", icon: Mail, isLink: !!profile?.owner_email, href: profile?.owner_email ? `mailto:${profile.owner_email}` : undefined },
+    { label: "Sumber Informasi", value: profile?.owner_lead_source || "-", icon: Target },
+    { label: "Tipe Lokasi", value: profile?.ot_tipe_lokasi_usaha, icon: MapPin },
+    { label: "Skala Modal", value: profile?.ot_modal_usaha, icon: Coins },
+    { label: "Jumlah Pegawai", value: `${String(profile?.ot_jumlah_karyawan || "0").replace(/orang/i, "").trim()} Orang`, icon: Users },
+    { label: "Populasi Mesin", value: `${String(profile?.ot_jumlah_mesin || "0").replace(/unit/i, "").trim()} Unit`, icon: Layers },
+    { label: "Zona Waktu", value: (profile as any)?.ot_timezone, icon: Clock },
+    {
+      label: "Usia Bisnis",
+      value: (() => {
+        const rawDate = profile?.ot_tanggal_berjalan;
+        if (!rawDate) return "BELUM DIATUR";
+
+        try {
+          let baseDate;
+
+          const matchDash = rawDate.match(/^(\d{1,4})[-/](\d{1,4})$/);
+          if (matchDash) {
+            const p1 = parseInt(matchDash[1]);
+            const p2 = parseInt(matchDash[2]);
+            const year = p1 > 1000 ? p1 : (p2 > 1000 ? p2 : null);
+            const month = p1 <= 12 ? p1 : (p2 <= 12 ? p2 : null);
+
+            if (year !== null && month !== null) {
+              baseDate = new Date(year, month - 1, 1);
+            }
+          }
+
+          if (!baseDate) {
+            const indonesianMonths: Record<string, number> = {
+              "januari": 0, "februari": 1, "maret": 2, "april": 3, "mei": 4, "juni": 5,
+              "juli": 6, "agustus": 7, "september": 8, "oktober": 9, "november": 10, "desember": 11,
+              "january": 0, "february": 1, "march": 2, "may": 4, "june": 5, "july": 6, "august": 7, "october": 9, "december": 11
+            };
+            const parts = rawDate.toLowerCase().trim().split(/\s+/);
+            if (parts.length >= 2) {
+              let m = indonesianMonths[parts[0]];
+              let y = parseInt(parts[1]);
+              if (m !== undefined && !isNaN(y)) {
+                baseDate = new Date(y, m, 1);
+              } else {
+                m = indonesianMonths[parts[1]];
+                y = parseInt(parts[0]);
+                if (m !== undefined && !isNaN(y)) {
+                  baseDate = new Date(y, m, 1);
+                }
+              }
+            }
+          }
+
+          if (!baseDate || isNaN(baseDate.getTime())) {
+            baseDate = new Date(rawDate);
+          }
+
+          if (isNaN(baseDate.getTime())) {
+            if (profile?.ot_created) {
+              baseDate = new Date(profile.ot_created);
+            } else {
+              return "BELUM DIATUR";
+            }
+          }
+
+          const now = new Date();
+          let years = now.getFullYear() - baseDate.getFullYear();
+          let months = now.getMonth() - baseDate.getMonth();
+          const days = now.getDate() - baseDate.getDate();
+
+          if (days < 0) {
+            months -= 1;
+          }
+
+          if (months < 0) {
+            years -= 1;
+            months += 12;
+          }
+
+          const partsText = [];
+          if (years > 0) partsText.push(`${years} TAHUN`);
+          if (months > 0) partsText.push(`${months} BULAN`);
+
+          return partsText.length > 0 ? partsText.join(" ") : "KURANG DARI 1 BULAN";
+        } catch {
+          return "BELUM DIATUR";
+        }
+      })(),
+      icon: Calendar
+    },
+  ] as { label: string; value?: string; icon: ElementType; isPhone?: boolean; isMono?: boolean; isLink?: boolean; href?: string }[]), [profile]);
+
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-[400px] gap-3">
@@ -307,21 +493,22 @@ export default function TenantDetailPage() {
     );
 
   return (
-    <div className="space-y-6">
+    <PermissionGate module="tenants" action="read">
+      <div className="space-y-6">
       {/* HEADER / ACTION BAR */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-3 md:items-center md:gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.back()}
-            className="h-9 w-9 text-slate-500 border border-slate-200 hover:bg-white active:scale-95 transition-all shadow-sm"
+            className="h-9 w-9 shrink-0 text-slate-500 border border-slate-200 hover:bg-white active:scale-95 transition-all shadow-sm"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 font-heading uppercase">
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="break-words text-lg font-bold tracking-tight text-slate-900 font-heading uppercase md:text-xl">
                 {profile?.ot_nama}
               </h1>
               <Badge variant="outline" className={cn(
@@ -334,7 +521,7 @@ export default function TenantDetailPage() {
                 <Badge variant="outline" className="rounded px-2 py-0 text-[8px] font-bold uppercase border-orange-100 bg-orange-50 text-orange-600 shadow-none">PRO</Badge>
               )}
             </div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <p className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                ID ENTITAS: <span className="text-slate-600 font-mono">{profile?.ot_id}</span>
                <span className="h-1 w-1 rounded-full bg-slate-200" />
                <span className={cn(profile?.ot_status === 1 ? "text-emerald-500" : "text-rose-500")}>
@@ -346,7 +533,7 @@ export default function TenantDetailPage() {
 
         <div className="flex items-center gap-2">
            <Link href={`/users/${profile.owner_id}`}>
-             <Button variant="outline" size="sm" className="h-9 px-4 font-bold text-[10px] uppercase tracking-wider gap-2 border-slate-200 shadow-sm hover:bg-slate-50 active:scale-95 transition-all">
+             <Button variant="outline" size="sm" className="h-9 w-full px-4 font-bold text-[10px] uppercase tracking-wider gap-2 border-slate-200 shadow-sm hover:bg-slate-50 active:scale-95 transition-all sm:w-auto">
                 <User className="h-3.5 w-3.5" /> Profil Owner
              </Button>
            </Link>
@@ -381,27 +568,32 @@ export default function TenantDetailPage() {
         />
       </div>
 
-      <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="bg-white border border-slate-200 p-0.5 rounded-lg mb-4 flex flex-wrap md:flex-nowrap w-full md:w-fit h-9 shadow-none gap-0.5">
-          <TabsTrigger value="dashboard" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="sticky top-3 z-20 mb-4 flex h-auto w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white/95 p-0.5 shadow-none backdrop-blur">
+          <TabsTrigger value="dashboard" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <LayoutGrid className="h-3 w-3" /> Dashboard
           </TabsTrigger>
-          <TabsTrigger value="identitas" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="identitas" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Building2 className="h-3 w-3" /> Identitas
           </TabsTrigger>
-          <TabsTrigger value="transaksi" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="transaksi" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <History className="h-3 w-3" /> Transaksi
           </TabsTrigger>
-          <TabsTrigger value="addons" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <PermissionGate module="staff-accounts" action="read">
+            <TabsTrigger value="staff" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+              <Users className="h-3 w-3" /> Akun Karyawan
+            </TabsTrigger>
+          </PermissionGate>
+          <TabsTrigger value="addons" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Zap className="h-3 w-3" /> Layanan Add-on
           </TabsTrigger>
-          <TabsTrigger value="koin" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="koin" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Coins className="h-3 w-3" /> Ekonomi Koin
           </TabsTrigger>
-          <TabsTrigger value="topups" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="topups" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Receipt className="h-3 w-3" /> Riwayat Top Up
           </TabsTrigger>
-          <TabsTrigger value="data-management" className="rounded px-5 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="data-management" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Trash2 className="h-3 w-3" /> Reset Data
           </TabsTrigger>
         </TabsList>
@@ -422,17 +614,17 @@ export default function TenantDetailPage() {
                        </div>
                        <div className="divide-y divide-amber-100">
                           {topupHistory.filter(t => isTopupActionable(t.tk_status)).map((tk, i) => (
-                             <div key={i} className="p-4 flex items-center justify-between bg-white/50">
+                             <div key={i} className="flex flex-col gap-3 bg-white/50 p-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                    <p className="text-xs font-bold text-slate-900 uppercase">{tk.tk_jumlah} Koin • Rp {tk.tk_total?.toLocaleString()}</p>
                                    <p className="text-[10px] text-slate-500 font-medium">{tk.tk_metode_bayar} • {format(new Date(tk.tk_created), "dd/MM/yy HH:mm")}</p>
                                 </div>
                                 <Button 
                                   size="sm" 
-                                  className="h-8 px-4 text-[10px] font-bold uppercase bg-amber-500 hover:bg-amber-600"
+                                  className="h-8 w-full px-4 text-[10px] font-bold uppercase bg-amber-500 hover:bg-amber-600 sm:w-auto"
                                   onClick={() => { setSelectedKoin(tk); setIsKoinModalOpen(true); }}
                                 >
-                                   Process
+                                   Tinjau
                                 </Button>
                              </div>
                           ))}
@@ -452,14 +644,14 @@ export default function TenantDetailPage() {
                        </div>
                        <div className="divide-y divide-orange-100">
                           {addonHistory.filter(a => a.ha_status === 'PENDING_VALIDATION').map((ha, i) => (
-                             <div key={i} className="p-4 flex items-center justify-between bg-white/50">
+                             <div key={i} className="flex flex-col gap-3 bg-white/50 p-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                    <p className="text-xs font-bold text-slate-900 uppercase line-clamp-1">{ha.ha_item_names}</p>
                                    <p className="text-[10px] text-slate-500 font-medium">Rp {ha.ha_total?.toLocaleString()} • {format(new Date(ha.ha_created), "dd/MM/yy HH:mm")}</p>
                                 </div>
                                 <Button 
                                   size="sm" 
-                                  className="h-8 px-4 text-[10px] font-bold uppercase bg-orange-500 hover:bg-orange-600"
+                                  className="h-8 w-full px-4 text-[10px] font-bold uppercase bg-orange-500 hover:bg-orange-600 sm:w-auto"
                                   onClick={() => { setSelectedAddon(ha); setIsAddonModalOpen(true); }}
                                 >
                                    Review
@@ -480,12 +672,12 @@ export default function TenantDetailPage() {
                     </div>
                     <div className="divide-y divide-slate-100">
                         {trxHistory.length > 0 ? trxHistory.slice(0, 5).map((trx, i) => (
-                          <div key={i} className="px-4 py-3 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                             <div>
-                                <p className="text-xs font-bold text-slate-900">{trx.id}</p>
+                          <div key={i} className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-slate-50/50 sm:flex-row sm:items-center sm:justify-between">
+                             <div className="min-w-0">
+                                <p className="break-all text-xs font-bold text-slate-900">{trx.id}</p>
                                 <p className="text-[9px] text-slate-400 font-medium mt-0.5">{trx.cust || 'Tanpa Nama'} · {format(new Date(trx.date), "dd/MM/yy HH:mm")}</p>
                              </div>
-                             <div className="text-right">
+                             <div className="text-left sm:text-right">
                                 <p className="text-xs font-bold text-slate-900 tabular-nums">Rp {trx.total?.toLocaleString()}</p>
                                 <Badge variant="outline" className={cn(
                                   "text-[8px] px-1.5 py-0 border-none font-bold uppercase mt-0.5",
@@ -588,108 +780,33 @@ export default function TenantDetailPage() {
                        <Building2 className="h-3.5 w-3.5 text-[#FF5F4E]" />
                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Detail Profil Operasional</p>
                     </div>
-                    <div className="p-0">
+                    <div className="block md:hidden p-4 space-y-3">
+                      {identityRows.map((item, idx) => (
+                        <div key={idx} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                          <div className="mb-2 flex items-center gap-2">
+                            <item.icon className="h-3.5 w-3.5 text-slate-400" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{item.label}</span>
+                          </div>
+                          {item.isLink ? (
+                            <Link href={item.href!} className="text-sm font-bold uppercase tracking-tight text-primary break-words hover:underline">
+                              {item.value || "—"}
+                            </Link>
+                          ) : (
+                            <span className={cn(
+                              "block text-sm font-bold uppercase tracking-tight text-slate-900 break-words",
+                              item.isPhone && "text-primary",
+                              item.isMono && "font-mono text-slate-600"
+                            )}>
+                              {item.value || "Belum diatur"}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="hidden md:block p-0">
                        <table className="w-full text-left border-collapse">
                           <tbody className="divide-y divide-slate-100">
-                             {([
-                                { label: "Nama Outlet", value: profile?.ot_nama, icon: Store },
-                                { label: "Nomor Kontak", value: profile?.ot_nohp || "-", icon: Phone, isPhone: true },
-                                { label: "Kode Owner", value: `#${profile?.owner_id}`, icon: User, isMono: true },
-                                { label: "Nama Owner", value: profile?.owner_name, icon: User, isLink: true, href: `/users/${profile?.owner_id}` },
-                                { label: "Email Owner", value: profile?.owner_email || "-", icon: Mail, isLink: !!profile?.owner_email, href: profile?.owner_email ? `mailto:${profile.owner_email}` : undefined },
-                                { label: "Sumber Informasi", value: profile?.owner_lead_source || "-", icon: Target },
-                                { label: "Tipe Lokasi", value: profile?.ot_tipe_lokasi_usaha, icon: MapPin },
-                                { label: "Skala Modal", value: profile?.ot_modal_usaha, icon: Coins },
-                                { label: "Jumlah Pegawai", value: `${String(profile?.ot_jumlah_karyawan || "0").replace(/orang/i, "").trim()} Orang`, icon: Users },
-                                { label: "Populasi Mesin", value: `${String(profile?.ot_jumlah_mesin_cuci || "0").replace(/unit/i, "").trim()} Unit`, icon: Layers },
-                                { label: "Zona Waktu", value: (profile as any)?.ot_timezone, icon: Clock },
-                                {
-                                  label: "Usia Bisnis",
-                                  value: (() => {
-                                    // Usia bisnis = berdasarkan input tanggal berjalan dari nasabah
-                                    const rawDate = profile?.ot_tanggal_berjalan;
-                                    if (!rawDate) return "BELUM DIATUR";
-
-                                    try {
-                                      let baseDate;
-                                      
-                                      // Coba parse format "MM-YYYY", "YYYY-MM", "MM/YYYY", "YYYY/MM"
-                                      const matchDash = rawDate.match(/^(\d{1,4})[-/](\d{1,4})$/);
-                                      if (matchDash) {
-                                        let p1 = parseInt(matchDash[1]);
-                                        let p2 = parseInt(matchDash[2]);
-                                        let year = p1 > 1000 ? p1 : (p2 > 1000 ? p2 : null);
-                                        let month = p1 <= 12 ? p1 : (p2 <= 12 ? p2 : null);
-                                        
-                                        if (year !== null && month !== null) {
-                                           baseDate = new Date(year, month - 1, 1);
-                                        }
-                                      } 
-                                      
-                                      // Coba parse format "Bulan Tahun" e.g. "Maret 2023"
-                                      if (!baseDate) {
-                                        const indonesianMonths: Record<string, number> = {
-                                          "januari": 0, "februari": 1, "maret": 2, "april": 3, "mei": 4, "juni": 5,
-                                          "juli": 6, "agustus": 7, "september": 8, "oktober": 9, "november": 10, "desember": 11,
-                                          "january": 0, "february": 1, "march": 2, "may": 4, "june": 5, "july": 6, "august": 7, "october": 9, "december": 11
-                                        };
-                                        const parts = rawDate.toLowerCase().trim().split(/\s+/);
-                                        if (parts.length >= 2) {
-                                           let m = indonesianMonths[parts[0]];
-                                           let y = parseInt(parts[1]);
-                                           if (m !== undefined && !isNaN(y)) {
-                                              baseDate = new Date(y, m, 1);
-                                           } else {
-                                              // reverse check "2023 Maret"
-                                              m = indonesianMonths[parts[1]];
-                                              y = parseInt(parts[0]);
-                                              if (m !== undefined && !isNaN(y)) {
-                                                 baseDate = new Date(y, m, 1);
-                                              }
-                                           }
-                                        }
-                                      }
-
-                                      // Fallback ke native Date parsing
-                                      if (!baseDate || isNaN(baseDate.getTime())) {
-                                        baseDate = new Date(rawDate);
-                                      }
-
-                                      if (isNaN(baseDate.getTime())) {
-                                        // Fallback ke ot_created jika seluruh parsing gagal
-                                        if (profile?.ot_created) {
-                                           baseDate = new Date(profile.ot_created);
-                                        } else {
-                                           return "BELUM DIATUR";
-                                        }
-                                      }
-
-                                      const now = new Date();
-                                      let years = now.getFullYear() - baseDate.getFullYear();
-                                      let months = now.getMonth() - baseDate.getMonth();
-                                      let days = now.getDate() - baseDate.getDate();
-
-                                      if (days < 0) {
-                                        months -= 1;
-                                      }
-
-                                      if (months < 0) {
-                                        years -= 1;
-                                        months += 12;
-                                      }
-
-                                      const partsText = [];
-                                      if (years > 0) partsText.push(`${years} TAHUN`);
-                                      if (months > 0) partsText.push(`${months} BULAN`);
-                                      
-                                      return partsText.length > 0 ? partsText.join(" ") : "KURANG DARI 1 BULAN";
-                                    } catch (e) {
-                                      return "BELUM DIATUR";
-                                    }
-                                  })(),
-                                  icon: Calendar
-                                },
-                              ] as { label: string; value?: string; icon: ElementType; isPhone?: boolean; isMono?: boolean; isLink?: boolean; href?: string }[]).map((item, idx) => (
+                             {identityRows.map((item, idx) => (
                                 <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
                                    <td className="px-6 py-4 w-48">
                                       <div className="flex items-center gap-3">
@@ -807,6 +924,246 @@ export default function TenantDetailPage() {
            </div>
         </TabsContent>
 
+        <PermissionGate module="staff-accounts" action="read">
+        <TabsContent value="staff" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
+            <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
+              <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Akun Karyawan Outlet</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">Status login, tipe slot, dan masa aktif setiap akun pegawai outlet.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="rounded-md border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase shadow-none">
+                    {staffAccounts.length} Akun
+                  </Badge>
+                  <PermissionGate module="staff-accounts" action="create">
+                    <Button
+                      size="sm"
+                      className="h-8 px-3 text-[10px] font-bold uppercase shadow-none"
+                      onClick={() => router.push(`/tenants/${params.id}/staff-accounts/new`)}
+                    >
+                      <Plus className="mr-1 h-3.5 w-3.5" /> Tambah
+                    </Button>
+                  </PermissionGate>
+                </div>
+              </div>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/30 border-b border-slate-100">
+                      <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Karyawan</th>
+                      <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Role Outlet</th>
+                      <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Tipe</th>
+                      <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Status Login</th>
+                      <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Status Slot</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {staffAccounts.length > 0 ? staffAccounts.map((staff, index) => (
+                      <tr key={staff.id || index} className="hover:bg-slate-50/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold text-slate-900">{staff.nama || "-"}</p>
+                            <p className="text-[10px] font-medium text-slate-500">{staff.email || "-"}</p>
+                            <p className="text-[10px] font-mono text-slate-400">{staff.nohp || "-"}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5">
+                            <Briefcase className="h-3 w-3 text-slate-400" />
+                            <span className="text-[10px] font-bold uppercase text-slate-700">{staff.role_name || "Role belum diatur"}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col items-start gap-2">
+                            <Badge className={cn(
+                              "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
+                              staff.type === "addon"
+                                ? "bg-violet-50 text-violet-700 border-violet-200"
+                                : "bg-sky-50 text-sky-700 border-sky-200"
+                            )}>
+                              {staff.type === "addon" ? "Addon Staff" : "Base Staff"}
+                            </Badge>
+                            <Badge className={cn(
+                              "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
+                              getStaffAddonStatus(staff).className
+                            )}>
+                              {getStaffAddonStatus(staff).label}
+                            </Badge>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-1">
+                            <Badge className={cn(
+                              "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
+                              getStaffAccessStatus(staff).className
+                            )}>
+                              {getStaffAccessStatus(staff).label}
+                            </Badge>
+                            <p className="text-[10px] font-medium text-slate-400">
+                              {getStaffAccessStatus(staff).description}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold uppercase text-slate-700">
+                              {staff.active_until ? format(new Date(staff.active_until), "dd MMM yyyy") : "Slot permanen"}
+                            </p>
+                            <p className="text-[9px] font-medium text-slate-400">
+                              {staff.type === "addon"
+                                ? Number(staff.status) === 1
+                                  ? "Addon berbayar aktif"
+                                  : !staff.active_until
+                                    ? "Addon belum diaktifkan"
+                                    : differenceInDays(new Date(staff.active_until), new Date()) < 0
+                                      ? "Addon sudah habis"
+                                      : "Addon masih tersimpan"
+                                : "Slot gratis bawaan outlet"}
+                            </p>
+                            <p className="text-[9px] font-medium text-slate-400">
+                              Dibuat {staff.created_at ? format(new Date(staff.created_at), "dd/MM/yy") : "-"}
+                            </p>
+                            <div className="flex items-center justify-end gap-1 pt-1">
+                              <PermissionGate module="staff-accounts" action="update">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-[9px] font-bold uppercase text-slate-600 hover:bg-slate-100"
+                                  onClick={() => router.push(`/tenants/${params.id}/staff-accounts/${staff.id}`)}
+                                >
+                                  Edit
+                                </Button>
+                              </PermissionGate>
+                              <PermissionGate module="staff-accounts" action="delete">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-[9px] font-bold uppercase text-rose-600 hover:bg-rose-50"
+                                  onClick={() => handleDeleteStaff(staff)}
+                                >
+                                  Hapus
+                                </Button>
+                              </PermissionGate>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={5} className="py-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                          Belum ada akun karyawan di outlet ini
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="space-y-3 p-4 md:hidden">
+                {staffAccounts.length > 0 ? staffAccounts.map((staff, index) => (
+                  <div key={staff.id || index} className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-900">{staff.nama || "-"}</p>
+                        <p className="break-all text-[11px] font-medium text-slate-500">{staff.email || "-"}</p>
+                        <p className="text-[11px] font-mono text-slate-400">{staff.nohp || "-"}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className="border border-slate-200 bg-white text-[9px] font-extrabold uppercase tracking-wide text-slate-700 shadow-none">
+                          {staff.role_name || "Role belum diatur"}
+                        </Badge>
+                        <Badge className={cn(
+                          "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
+                          staff.type === "addon"
+                            ? "bg-violet-50 text-violet-700 border-violet-200"
+                            : "bg-sky-50 text-sky-700 border-sky-200"
+                        )}>
+                          {staff.type === "addon" ? "Addon Staff" : "Base Staff"}
+                        </Badge>
+                        <Badge className={cn(
+                          "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
+                          getStaffAddonStatus(staff).className
+                        )}>
+                          {getStaffAddonStatus(staff).label}
+                        </Badge>
+                        <Badge className={cn(
+                          "border shadow-none text-[9px] font-extrabold uppercase tracking-wide",
+                          getStaffAccessStatus(staff).className
+                        )}>
+                          {getStaffAccessStatus(staff).label}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1 rounded-lg border border-slate-100 bg-white p-3">
+                        <p className="text-[10px] font-bold uppercase text-slate-400">Status Slot</p>
+                        <p className="text-xs font-bold uppercase text-slate-700">
+                          {staff.active_until ? format(new Date(staff.active_until), "dd MMM yyyy") : "Slot permanen"}
+                        </p>
+                        <p className="text-[11px] font-medium text-slate-500">{getStaffAccessStatus(staff).description}</p>
+                        <p className="text-[10px] font-medium text-slate-400">
+                          Dibuat {staff.created_at ? format(new Date(staff.created_at), "dd/MM/yy") : "-"}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <PermissionGate module="staff-accounts" action="update">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 flex-1 min-w-[120px] text-[10px] font-bold uppercase"
+                            onClick={() => router.push(`/tenants/${params.id}/staff-accounts/${staff.id}`)}
+                          >
+                            Edit
+                          </Button>
+                        </PermissionGate>
+                        <PermissionGate module="staff-accounts" action="delete">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 flex-1 min-w-[120px] border-rose-200 text-[10px] font-bold uppercase text-rose-600 hover:bg-rose-50"
+                            onClick={() => handleDeleteStaff(staff)}
+                          >
+                            Hapus
+                          </Button>
+                        </PermissionGate>
+                      </div>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="py-10 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Belum ada akun karyawan di outlet ini
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
+              <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Ringkasan SDM Outlet</p>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Slot Dasar</p>
+                  <p className="mt-2 text-2xl font-black text-slate-900">{profile?.ot_max_pegawai_base || 0}</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">Kuota bawaan gratis untuk akun pegawai aktif.</p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Pegawai Aktif</p>
+                  <p className="mt-2 text-2xl font-black text-emerald-700">{metrics.active_staff || 0}</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">Total akun pegawai dengan status aktif saat ini.</p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Addon Staff</p>
+                  <p className="mt-2 text-2xl font-black text-violet-700">
+                    {staffAccounts.filter((staff) => staff.type === "addon").length}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">Akun tambahan di luar slot dasar outlet.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </TabsContent>
+        </PermissionGate>
+
         {/* TAB: TRANSAKSI (WITH PAGINATION) */}
         <TabsContent value="transaksi" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
            <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
@@ -834,7 +1191,7 @@ export default function TenantDetailPage() {
                     </Button>
                  </div>
               </div>
-              <div className="overflow-x-auto">
+              <div className="hidden overflow-x-auto md:block">
                  <table className="w-full text-left border-collapse">
                     <thead>
                        <tr className="bg-slate-50/30 border-b border-slate-100">
@@ -849,7 +1206,14 @@ export default function TenantDetailPage() {
                        {trxHistory.length > 0 ? trxHistory.slice((pages.transactions - 1) * itemsPerPage, pages.transactions * itemsPerPage).map((trx, i) => (
                           <tr key={i} className="hover:bg-slate-50/30 transition-colors">
                              <td className="px-6 py-4 font-bold text-[11px] text-slate-900 uppercase font-mono">{trx.id}</td>
-                             <td className="px-6 py-4 text-xs font-bold text-slate-700">{trx.cust || "-"}</td>
+                             <td className="px-6 py-4">
+                               <div className="space-y-1">
+                                 <p className="text-xs font-bold text-slate-700">{trx.cust || "-"}</p>
+                                 <p className="text-[9px] font-medium text-slate-400 uppercase">
+                                   {trx.kasir_name || (trx.actor_type === "pegawai" ? "Pegawai" : "User")}
+                                 </p>
+                               </div>
+                             </td>
                              <td className="px-6 py-4 text-xs font-bold text-primary">Rp {trx.total?.toLocaleString()}</td>
                              <td className="px-6 py-4">
                                 <Badge variant="outline" className={cn(
@@ -864,6 +1228,39 @@ export default function TenantDetailPage() {
                        )}
                     </tbody>
                  </table>
+              </div>
+              <div className="space-y-3 p-4 md:hidden">
+                {trxHistory.length > 0 ? trxHistory.slice((pages.transactions - 1) * itemsPerPage, pages.transactions * itemsPerPage).map((trx, i) => (
+                  <div key={i} className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="break-all font-mono text-[11px] font-black uppercase text-slate-900">{trx.id}</p>
+                          <p className="mt-1 text-sm font-bold text-slate-700">{trx.cust || "-"}</p>
+                          <p className="text-[10px] font-medium uppercase text-slate-400">
+                            {trx.kasir_name || (trx.actor_type === "pegawai" ? "Pegawai" : "User")}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className={cn(
+                          "shrink-0 border-none px-2 py-0.5 text-[8px] font-bold uppercase",
+                          trx.status === "Selesai" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                        )}>
+                          {trx.status}
+                        </Badge>
+                      </div>
+                      <div className="rounded-lg border border-slate-100 bg-white p-3">
+                        <p className="text-[10px] font-bold uppercase text-slate-400">Nominal</p>
+                        <p className="mt-1 text-base font-black text-primary">Rp {trx.total?.toLocaleString()}</p>
+                        <p className="mt-2 text-[10px] font-bold uppercase text-slate-400">Tanggal</p>
+                        <p className="mt-1 text-xs font-bold uppercase text-slate-600">{format(new Date(trx.date), "dd/MM/yyyy HH:mm")}</p>
+                      </div>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="py-10 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Data transaksi tidak ditemukan
+                  </div>
+                )}
               </div>
            </Card>
         </TabsContent>
@@ -896,8 +1293,8 @@ export default function TenantDetailPage() {
               </div>
               <div className="divide-y divide-slate-100">
                  {addonHistory.length > 0 ? addonHistory.slice((pages.addons - 1) * itemsPerPage, pages.addons * itemsPerPage).map((ha, i) => (
-                    <div key={i} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/30 transition-colors">
-                       <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div key={i} className="p-4 flex flex-col gap-4 transition-colors hover:bg-slate-50/30 sm:flex-row sm:items-center sm:justify-between">
+                       <div className="flex min-w-0 flex-1 items-start gap-3">
                           <div className={cn(
                              "h-9 w-9 rounded-xl border flex items-center justify-center transition-all",
                              ha.feature_status === "ACTIVE" ? "bg-emerald-50 text-emerald-600 border-emerald-100/80 shadow-sm shadow-emerald-50/50" :
@@ -915,7 +1312,7 @@ export default function TenantDetailPage() {
                        </div>
                        
                        {/* Lifecycle Dates */}
-                       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px]">
+                       <div className="grid grid-cols-1 gap-2 text-[11px] sm:flex sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
                           <div className="flex flex-col">
                              <span className="text-slate-400 font-bold uppercase tracking-wider text-[8px] mb-0.5">Tanggal Pembelian</span>
                              <span className="font-semibold text-slate-700">
@@ -943,7 +1340,7 @@ export default function TenantDetailPage() {
                        </div>
 
                        {/* Price and Statuses */}
-                       <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 sm:min-w-[145px]">
+                       <div className="flex flex-col gap-3 sm:min-w-[145px] sm:items-end sm:justify-center">
                           {ha.ha_metode_bayar === "PROMO_FREE" || ha.ha_metode_bayar === "FREE" ? (
                             <div className="flex flex-col items-end">
                               <p className="text-[12px] font-black text-slate-900">Rp 0</p>
@@ -958,7 +1355,7 @@ export default function TenantDetailPage() {
                               </p>
                             </div>
                           )}
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
                              {/* Transaction Status Badge */}
                              <Badge className={cn(
                                 "text-[8px] px-1.5 py-0.5 border font-extrabold uppercase shadow-none tracking-wider",
@@ -1084,11 +1481,11 @@ export default function TenantDetailPage() {
                            key={i} 
                            onClick={handleRowClick}
                            className={cn(
-                              "p-4 flex items-center justify-between transition-all duration-300 border-l-[3px] border-l-transparent",
+                              "border-l-[3px] border-l-transparent p-4 transition-all duration-300 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
                               isMasuk ? "hover:bg-emerald-50/20 hover:border-l-emerald-500 cursor-pointer" : "hover:bg-slate-50/30"
                            )}
                         >
-                           <div className="flex items-center gap-3">
+                           <div className="flex items-start gap-3">
                               <div className={cn(
                                 "h-9 w-9 rounded-xl flex items-center justify-center border shrink-0",
                                 isMasuk ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
@@ -1107,7 +1504,7 @@ export default function TenantDetailPage() {
                                  </p>
                               </div>
                            </div>
-                           <div className="text-right">
+                           <div className="text-left sm:text-right">
                               <p className={cn("text-xs font-bold font-heading", isMasuk ? "text-emerald-600" : "text-rose-600")}>
                                  {isMasuk ? '+' : '-'}{tx.hk_jumlah} Koin
                               </p>
@@ -1153,7 +1550,7 @@ export default function TenantDetailPage() {
                  </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="hidden overflow-x-auto md:block">
                  <table className="w-full text-left border-collapse">
                     <thead>
                        <tr className="bg-slate-50/30 border-b border-slate-100">
@@ -1244,7 +1641,7 @@ export default function TenantDetailPage() {
                                           onClick={() => { setSelectedKoin(topup); setIsKoinModalOpen(true); }}
                                           className="h-7 px-2 font-bold text-[9px] uppercase tracking-wider text-primary hover:bg-primary/10 transition-colors"
                                        >
-                                          {isActionable ? "Process" : "Detail"} <ArrowUpRight className="h-3 w-3 ml-1" />
+                                          {isActionable ? "Tinjau" : "Detail"} <ArrowUpRight className="h-3 w-3 ml-1" />
                                        </Button>
                                     </div>
                                  </td>
@@ -1260,6 +1657,89 @@ export default function TenantDetailPage() {
                     </tbody>
                  </table>
               </div>
+              <div className="space-y-3 p-4 md:hidden">
+                {topupHistory.length > 0 ? topupHistory.slice((pages.topups - 1) * itemsPerPage, pages.topups * itemsPerPage).map((topup, i) => {
+                  const statusConfig = getTopupStatusUi(topup.tk_status);
+                  const isActionable = isTopupActionable(topup.tk_status);
+                  const proofUrl = topup.tk_bukti ? resolveUploadUrl(topup.tk_bukti) : "";
+
+                  return (
+                    <div key={topup.tk_id || i} className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => { setSelectedKoin(topup); setIsKoinModalOpen(true); }}
+                              className="break-all text-left font-mono text-[11px] font-black uppercase text-slate-900 hover:text-primary"
+                            >
+                              {topup.tk_id || "-"}
+                            </button>
+                            <p className="mt-1 text-[10px] font-bold uppercase text-slate-500">
+                              {topup.tk_created ? format(new Date(topup.tk_created), "dd MMM yyyy HH:mm", { locale: localeId }) : "-"}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className={cn("shrink-0 px-2 py-0.5 text-[8px] font-bold uppercase border transition-colors", statusConfig.className, isActionable && "animate-pulse")}>
+                            {statusConfig.label}
+                          </Badge>
+                        </div>
+
+                        <div className="rounded-lg border border-slate-100 bg-white p-3">
+                          <p className="text-[10px] font-bold uppercase text-slate-400">Nominal</p>
+                          <p className="mt-1 text-base font-black text-slate-900">Rp {(topup.tk_total || 0).toLocaleString("id-ID")}</p>
+                          <p className="text-[10px] font-bold uppercase text-emerald-600">+{(topup.tk_jumlah || 0).toLocaleString("id-ID")} Koin</p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          {topup.tk_metode_bayar === "bonus" ? (
+                            <>
+                              <Badge className="border border-purple-100 bg-purple-50 text-[8px] font-bold uppercase text-purple-600 shadow-none">
+                                Bonus
+                              </Badge>
+                              {topup.keterangan && (
+                                <span className="text-[10px] font-medium text-slate-500">{topup.keterangan}</span>
+                              )}
+                            </>
+                          ) : (
+                            <Badge variant="outline" className="border-slate-100 bg-white text-[8px] font-bold uppercase text-slate-600">
+                              {topup.tk_metode_bayar || "-"}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {proofUrl ? (
+                            <a
+                              href={proofUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-[10px] font-bold uppercase text-primary"
+                            >
+                              Bukti <ExternalLink className="h-3 w-3" />
+                            </a>
+                          ) : (
+                            <span className="inline-flex h-8 items-center rounded-lg border border-slate-100 bg-white px-3 text-[10px] font-bold uppercase text-slate-300">
+                              Tidak ada bukti
+                            </span>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setSelectedKoin(topup); setIsKoinModalOpen(true); }}
+                            className="h-8 text-[10px] font-bold uppercase text-primary"
+                          >
+                            {isActionable ? "Tinjau" : "Detail"} <ArrowUpRight className="ml-1 h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <div className="py-10 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Belum ada riwayat top up
+                  </div>
+                )}
+              </div>
            </Card>
         </TabsContent>
         {/* TAB: DATA MANAGEMENT */}
@@ -1271,14 +1751,16 @@ export default function TenantDetailPage() {
               Reset Data Operasional
             </h2>
             {profile && (
-              <ResetDataForm 
-                outletId={profile.ot_id} 
-                outletName={profile.ot_nama}
-                onSuccess={() => {
-                  toast.success("Reset data berhasil. Halaman akan dimuat ulang.");
-                  setTimeout(() => window.location.reload(), 1500);
-                }}
-              />
+              <PermissionGate module="tenants" action="reset_data">
+                <ResetDataForm 
+                  outletId={profile.ot_id} 
+                  outletName={profile.ot_nama}
+                  onSuccess={() => {
+                    toast.success("Reset data berhasil. Halaman akan dimuat ulang.");
+                    setTimeout(() => window.location.reload(), 1500);
+                  }}
+                />
+              </PermissionGate>
             )}
           </div>
 
@@ -1298,21 +1780,22 @@ export default function TenantDetailPage() {
               Hapus Outlet
             </h2>
             {profile && (
-              <DeleteTenantAction
-                outletId={profile.ot_id}
-                outletName={profile.ot_nama}
-                onDeleted={() => {
-                  toast.success("Outlet berhasil dihapus. Anda akan diarahkan ke daftar outlet.");
-                  setTimeout(() => router.push("/tenants"), 1200);
-                }}
-              />
+              <PermissionGate module="tenants" action="delete">
+                <DeleteTenantAction
+                  outletId={profile.ot_id}
+                  outletName={profile.ot_nama}
+                  onDeleted={() => {
+                    toast.success("Outlet berhasil dihapus. Anda akan diarahkan ke daftar outlet.");
+                    setTimeout(() => router.push("/tenants"), 1200);
+                  }}
+                />
+              </PermissionGate>
             )}
           </div>
         </TabsContent>
 
       </Tabs>
     
-
       {/* KOIN TOPUP VALIDATION MODAL */}
       <Dialog open={isKoinModalOpen} onOpenChange={setIsKoinModalOpen}>
         <DialogContent className="max-w-md p-0 overflow-hidden border-none rounded-xl shadow-2xl bg-white">
@@ -1332,7 +1815,7 @@ export default function TenantDetailPage() {
              <h3 className="text-lg font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading uppercase">
                 Topup {selectedKoin?.tk_jumlah?.toLocaleString()} Koin
              </h3>
-             <p className="text-xs font-medium text-slate-500">Permintaan isi ulang saldo dari tenant.</p>
+             <p className="text-xs font-medium text-slate-500">Permintaan isi ulang saldo dari outlet.</p>
           </div>
 
           <div className="p-5 space-y-5 bg-slate-50/30">
@@ -1527,6 +2010,7 @@ export default function TenantDetailPage() {
             </div>
          </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PermissionGate>
   );
 }

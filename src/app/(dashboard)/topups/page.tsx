@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,13 +57,50 @@ import { Tenant } from "@/types/tenant";
 import { Owner } from "@/types/domain";
 import { apiFetcher } from "@/lib/fetcher";
 import { resolveUploadUrl } from "@/lib/upload-url";
-import { getTopupStatusUi, isTopupActionable } from "@/lib/topup-status";
+import { getTopupStatusUi, isTopupActionable, normalizeTopupStatus } from "@/lib/topup-status";
 import useSWR from "swr";
 import { useRegionNames } from "@/hooks/use-region-names";
+import PermissionGate from "@/components/shared/permission-gate";
 
 const PAGE_SIZE = 25;
 
+function KpiCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  color,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon: React.ElementType;
+  color: string;
+}) {
+  return (
+    <Card className="border border-slate-200 bg-white rounded-2xl p-5 flex flex-col gap-3 shadow-sm">
+      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${color}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{value}</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
+        {sub && <p className="text-[10px] text-slate-500 mt-1">{sub}</p>}
+      </div>
+    </Card>
+  );
+}
+
 export default function TopupsManagementPage() {
+  return (
+    <PermissionGate module="topups" action="read">
+      <TopupsManagementContent />
+    </PermissionGate>
+  );
+}
+
+function TopupsManagementContent() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<Topup[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
@@ -70,7 +108,7 @@ export default function TopupsManagementPage() {
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all");
   const [methodFilter, setMethodFilter] = useState<string>("all");
 
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -113,14 +151,9 @@ export default function TopupsManagementPage() {
   );
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const search = params.get("search");
-      if (search) {
-        setSearchQuery(search);
-      }
-    }
-  }, []);
+    const search = searchParams.get("search");
+    if (search) setSearchQuery(search);
+  }, [searchParams]);
 
   const formatDateTime = (dateStr: string) => {
     try {
@@ -229,6 +262,24 @@ export default function TopupsManagementPage() {
   const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
   const paginatedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const summary = useMemo(() => {
+    const successful = data.filter((item) =>
+      ["success", "completed", "accepted"].includes(normalizeTopupStatus(item.tk_status))
+    );
+    const topupKoin = successful
+      .filter((item) => item.tk_metode_bayar !== "bonus")
+      .reduce((sum, item) => sum + Number(item.tk_jumlah || 0), 0);
+    const bonusKoin = successful
+      .filter((item) => item.tk_metode_bayar === "bonus")
+      .reduce((sum, item) => sum + Number(item.tk_jumlah || 0), 0);
+
+    return {
+      topupKoin,
+      bonusKoin,
+      totalKoinKeluar: topupKoin + bonusKoin,
+    };
+  }, [data]);
+
   const resetFilters = () => {
     setSearchQuery("");
     setStatusFilter("all");
@@ -288,7 +339,7 @@ export default function TopupsManagementPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
           <ExportExcelButton
             data={topupExportRows}
             filename="topups_report"
@@ -333,9 +384,33 @@ export default function TopupsManagementPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <KpiCard
+          label="Total Koin Top Up"
+          sub="Akumulasi koin dari top up yang sukses"
+          value={loading ? "—" : summary.topupKoin.toLocaleString("id-ID")}
+          icon={Wallet2}
+          color="bg-orange-50 text-primary"
+        />
+        <KpiCard
+          label="Total Koin Bonus"
+          sub="Akumulasi koin bonus yang sudah dialokasikan"
+          value={loading ? "—" : summary.bonusKoin.toLocaleString("id-ID")}
+          icon={Gift}
+          color="bg-violet-50 text-violet-600"
+        />
+        <KpiCard
+          label="Total Koin Keluar"
+          sub="Gabungan top up sukses dan bonus"
+          value={loading ? "—" : summary.totalKoinKeluar.toLocaleString("id-ID")}
+          icon={ShieldCheck}
+          color="bg-emerald-50 text-emerald-600"
+        />
+      </div>
+
       {/* FILTER & SEARCH COMMAND BAR */}
       <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-1">
+        <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
@@ -346,19 +421,20 @@ export default function TopupsManagementPage() {
             />
           </div>
           
-          <div className="h-5 w-px bg-slate-100 hidden lg:block" />
+          <div className="h-px w-full bg-slate-100 xl:hidden" />
+          <div className="hidden h-5 w-px bg-slate-100 xl:block" />
 
-          <div className="flex items-center gap-1 p-1 lg:p-0">
+          <div className="flex flex-wrap items-center gap-2 p-1 xl:p-0">
             <Popover open={openOutlet} onOpenChange={setOpenOutlet}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-2 text-slate-600">
                   <Store className="h-3 w-3" />
-                  {outletFilter === "all" ? "Outlets" : outletFilter}
+                  {outletFilter === "all" ? "Semua Outlet" : outletFilter}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-56 p-0 rounded-md">
                 <Command>
-                  <CommandInput placeholder="Search outlet..." className="text-xs" />
+                  <CommandInput placeholder="Cari outlet..." className="text-xs" />
                   <CommandList>
                     <CommandEmpty className="text-[10px] p-2">Tidak ditemukan.</CommandEmpty>
                     <CommandGroup>
@@ -372,9 +448,9 @@ export default function TopupsManagementPage() {
               </PopoverContent>
             </Popover>
 
-            <div className="h-4 w-px bg-slate-100" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
 
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
                {["all", "pending", "success", "failed"].map(s => (
                  <Button
                     key={s}
@@ -391,9 +467,9 @@ export default function TopupsManagementPage() {
                ))}
             </div>
 
-            <div className="h-4 w-px bg-slate-100" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
 
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
                {["all", "transfer", "midtrans", "bonus"].map(m => (
                  <Button
                     key={m}
@@ -410,9 +486,9 @@ export default function TopupsManagementPage() {
                ))}
             </div>
 
-            <div className="h-4 w-px bg-slate-100" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
             <DateRangeFilter value={dateRange} onChange={handleDateRange} />
-            <div className="h-4 w-px bg-slate-100" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
 
             <Button
               variant="ghost"
@@ -428,7 +504,7 @@ export default function TopupsManagementPage() {
 
       {/* OPERATIONAL DATA TABLE */}
       <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white min-h-[400px]">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
@@ -546,6 +622,76 @@ export default function TopupsManagementPage() {
             </tbody>
           </table>
         </div>
+        <div className="space-y-3 p-4 md:hidden">
+          {filteredData.length === 0 && !loading ? (
+            <div className="py-16 text-center">
+              <History className="mx-auto mb-2 h-7 w-7 text-slate-200" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Tidak ada data yang sesuai</p>
+            </div>
+          ) : (
+            paginatedData.map((item) => {
+              const status = getTopupStatusUi(item.tk_status);
+              const isActionable = isTopupActionable(item.tk_status);
+              const dt = formatDateTime(item.tk_created);
+              return (
+                <div key={`mobile-${item.tk_id}`} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="break-all text-xs font-bold text-slate-900">#{item.tk_id}</p>
+                        <p className="mt-1 text-[10px] font-bold uppercase text-slate-400">{dt.display}</p>
+                      </div>
+                      <Badge className={cn("rounded-full px-2 py-0.5 text-[8px] font-bold uppercase border shadow-none", status.className, isActionable && "animate-pulse")}>
+                        {status.label}
+                      </Badge>
+                    </div>
+                    <div>
+                      {item.tk_outlet ? (
+                        <Link href={`/tenants/${item.tk_outlet}`} className="text-sm font-bold text-slate-800 hover:text-primary hover:underline">
+                          {item.outlet_name}
+                        </Link>
+                      ) : (
+                        <p className="text-sm font-bold text-slate-800">{item.outlet_name}</p>
+                      )}
+                      <p className="mt-1 text-[11px] font-medium text-slate-500">{item.owner_name}</p>
+                      {item.owner_code && (
+                        <p className="text-[10px] font-mono text-slate-400">Kode Referral: {item.owner_code}</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg border border-slate-100 bg-white p-3">
+                        <p className="text-[9px] font-bold uppercase text-slate-400">Koin</p>
+                        <p className="mt-1 text-sm font-black text-slate-900">{item.tk_jumlah?.toLocaleString()} Koin</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-100 bg-white p-3">
+                        <p className="text-[9px] font-bold uppercase text-slate-400">Nominal</p>
+                        <p className="mt-1 text-sm font-black text-primary">Rp {item.tk_total?.toLocaleString("id-ID")}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {item.tk_metode_bayar === "bonus" ? (
+                        <Badge className="border border-purple-100 bg-purple-50 text-[8px] font-bold uppercase text-purple-600 shadow-none">Bonus</Badge>
+                      ) : item.tk_metode_bayar === "transfer" ? (
+                        <Badge className="border border-orange-100 bg-orange-50 text-[8px] font-bold uppercase text-slate-600 shadow-none">Transfer</Badge>
+                      ) : (
+                        <Badge className="border border-amber-100 bg-amber-50 text-[8px] font-bold uppercase text-slate-600 shadow-none">Midtrans</Badge>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setSelectedTopup(item); setIsPreviewOpen(true); }}
+                      className="h-8 w-full text-[10px] font-bold uppercase text-primary"
+                    >
+                      {isActionable && item.tk_metode_bayar !== "bonus" ? "Verifikasi" : "Detail"}
+                      <ChevronRight className="ml-1 h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
         <Pagination
           page={page}
           totalPages={totalPages}
@@ -570,7 +716,7 @@ export default function TopupsManagementPage() {
             <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading">
               Topup {selectedTopup?.tk_jumlah?.toLocaleString()} Koin
             </h3>
-             <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+            <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
               <Store className="h-3 w-3" />
               {selectedTopup?.tk_outlet ? (
                 <Link
@@ -582,6 +728,12 @@ export default function TopupsManagementPage() {
               ) : (
                 selectedTopup?.outlet_name
               )}
+            </p>
+            <p className="mt-1 text-[10px] font-medium text-slate-400">
+              Owner: <span className="font-bold text-slate-600">{selectedTopup?.owner_name || "Nama tidak tersedia"}</span>
+              {selectedTopup?.owner_code ? (
+                <span className="ml-2 font-mono text-slate-500">#{selectedTopup.owner_code}</span>
+              ) : null}
             </p>
           </div>
 
@@ -646,31 +798,37 @@ export default function TopupsManagementPage() {
               <div className="flex flex-col gap-2">
                 {selectedTopup.tk_metode_bayar === 'transfer' ? (
                    <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      disabled={confirming || !selectedTopup.tk_bukti}
-                      onClick={() => handleAction(selectedTopup.tk_id, "success")}
-                      className="h-10 rounded font-bold text-[10px] uppercase tracking-wider"
-                    >
-                      Setujui
-                    </Button>
+                    <PermissionGate module="topups" action="confirm">
+                      <Button
+                        disabled={confirming || !selectedTopup.tk_bukti}
+                        onClick={() => handleAction(selectedTopup.tk_id, "success")}
+                        className="h-10 rounded font-bold text-[10px] uppercase tracking-wider"
+                      >
+                        Setujui
+                      </Button>
+                    </PermissionGate>
+                    <PermissionGate module="topups" action="cancel">
+                      <Button
+                        variant="outline"
+                        disabled={confirming}
+                        onClick={() => handleAction(selectedTopup.tk_id, "failed")}
+                        className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-rose-600 border-slate-200"
+                      >
+                        Tolak
+                      </Button>
+                    </PermissionGate>
+                  </div>
+                ) : (
+                  <PermissionGate module="topups" action="cancel">
                     <Button
                       variant="outline"
                       disabled={confirming}
-                      onClick={() => handleAction(selectedTopup.tk_id, "failed")}
-                      className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-rose-600 border-slate-200"
+                      onClick={() => handleCancelMidtrans(selectedTopup.tk_id)}
+                      className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-amber-600 border-amber-200 bg-amber-50/30"
                     >
-                      Tolak
+                      Batalkan Midtrans
                     </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    disabled={confirming}
-                    onClick={() => handleCancelMidtrans(selectedTopup.tk_id)}
-                    className="h-10 rounded font-bold text-[10px] uppercase tracking-wider text-amber-600 border-amber-200 bg-amber-50/30"
-                  >
-                    Batalkan Midtrans
-                  </Button>
+                  </PermissionGate>
                 )}
               </div>
             ) : (
@@ -681,7 +839,7 @@ export default function TopupsManagementPage() {
               </div>
             )}
              <p className="text-[8px] text-center font-medium text-slate-400 italic">
-                Saldo tenant akan langsung diperbarui.
+                Saldo outlet akan langsung diperbarui.
              </p>
           </div>
         </DialogContent>

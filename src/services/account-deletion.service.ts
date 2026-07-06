@@ -5,8 +5,11 @@ export interface AccountDeletionRow {
   actor_id: string;
   actor_type: string;
   actor_name?: string | null;
+  actor_email?: string | null;
+  actor_phone?: string | null;
   reason: string;
   reason_detail?: string | null;
+  snapshot?: Record<string, unknown> | null;
   created_at: string;
 }
 

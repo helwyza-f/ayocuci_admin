@@ -34,6 +34,7 @@ import {
   tutorialService,
   tutorialTypes,
 } from "@/services/tutorial.service";
+import PermissionGate from "@/components/shared/permission-gate";
 
 const typeIcons: Record<TutorialType, React.ElementType> = {
   VIDEO: PlayCircle,
@@ -47,7 +48,7 @@ const typeLabels: Record<TutorialType, string> = {
   FAQ: "FAQ",
 };
 
-export default function DashboardTutorialPage() {
+function DashboardTutorialContent() {
   const [items, setItems] = useState<TutorialItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -132,15 +133,17 @@ export default function DashboardTutorialPage() {
           </p>
         </div>
 
-        <Button
-          asChild
-          size="sm"
-          className="h-8 gap-2 px-3 text-[10px] font-bold uppercase tracking-wider shadow-none"
-        >
-          <Link href="/tutorials/new">
-            <Plus className="h-3.5 w-3.5" /> Buat Tutorial
-          </Link>
-        </Button>
+        <PermissionGate module="tutorials" action="create">
+          <Button
+            asChild
+            size="sm"
+            className="h-8 gap-2 px-3 text-[10px] font-bold uppercase tracking-wider shadow-none"
+          >
+            <Link href="/tutorials/new">
+              <Plus className="h-3.5 w-3.5" /> Buat Tutorial
+            </Link>
+          </Button>
+        </PermissionGate>
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
@@ -280,20 +283,22 @@ export default function DashboardTutorialPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 md:justify-end">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleToggle(item.id)}
-                      className={cn(
-                        "h-8 gap-1.5 px-3 text-[9px] font-bold uppercase transition-all active:scale-95",
-                        item.is_active
-                          ? "text-slate-500 hover:bg-amber-50 hover:text-amber-600"
-                          : "text-emerald-600 hover:bg-emerald-50",
-                      )}
-                    >
-                      <Eye className="h-3 w-3" />
-                      {item.is_active ? "Nonaktifkan" : "Aktifkan"}
-                    </Button>
+                    <PermissionGate module="tutorials" action="update">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleToggle(item.id)}
+                        className={cn(
+                          "h-8 gap-1.5 px-3 text-[9px] font-bold uppercase transition-all active:scale-95",
+                          item.is_active
+                            ? "text-slate-500 hover:bg-amber-50 hover:text-amber-600"
+                            : "text-emerald-600 hover:bg-emerald-50",
+                        )}
+                      >
+                        <Eye className="h-3 w-3" />
+                        {item.is_active ? "Nonaktifkan" : "Aktifkan"}
+                      </Button>
+                    </PermissionGate>
                     <Button
                       asChild
                       size="sm"
@@ -304,14 +309,16 @@ export default function DashboardTutorialPage() {
                         <Pencil className="h-3.5 w-3.5" />
                       </Link>
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDelete(item.id)}
-                      className="h-8 w-8 border border-transparent p-0 text-slate-400 transition-all hover:border-rose-100 hover:text-rose-600 active:scale-95"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <PermissionGate module="tutorials" action="delete">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(item.id)}
+                        className="h-8 w-8 border border-transparent p-0 text-slate-400 transition-all hover:border-rose-100 hover:text-rose-600 active:scale-95"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </PermissionGate>
                   </div>
                 </div>
               );
@@ -320,6 +327,14 @@ export default function DashboardTutorialPage() {
         )}
       </Card>
     </div>
+  );
+}
+
+export default function DashboardTutorialPage() {
+  return (
+    <PermissionGate module="tutorials" action="read">
+      <DashboardTutorialContent />
+    </PermissionGate>
   );
 }
 

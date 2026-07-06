@@ -18,7 +18,8 @@ export interface DateRange {
   end: string;   // yyyy-MM-dd
 }
 
-const toDateStr = (d: Date) => d.toISOString().split("T")[0];
+const toDateStr = (d: Date) => format(d, "yyyy-MM-dd");
+const parseDateStr = (value: string) => new Date(`${value}T12:00:00`);
 const today = () => toDateStr(new Date());
 const daysAgo = (n: number) => {
   const d = new Date();
@@ -69,21 +70,21 @@ function DatePickerButton({
   fromDate?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const selected = value ? new Date(value + "T00:00:00") : undefined;
+  const selected = value ? parseDateStr(value) : undefined;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "inline-flex h-7 items-center gap-1.5 rounded border px-2 text-[10px] font-bold transition-colors",
+            "inline-flex h-7 items-center gap-1.5 rounded border px-2 text-[10px] font-bold transition-colors whitespace-nowrap",
             value
               ? "border-primary/30 bg-primary/5 text-primary"
               : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
           )}
         >
           <CalendarDays className="h-3 w-3 shrink-0" />
-          <span>{value ? format(new Date(value + "T00:00:00"), "dd MMM yy", { locale: localeId }) : placeholder}</span>
+          <span>{value ? format(parseDateStr(value), "dd MMM yy", { locale: localeId }) : placeholder}</span>
           <ChevronDown className="h-2.5 w-2.5 opacity-50" />
         </button>
       </PopoverTrigger>
@@ -94,7 +95,7 @@ function DatePickerButton({
           onSelect={(d) => {
             if (d) { onChange(toDateStr(d)); setOpen(false); }
           }}
-          fromDate={fromDate ? new Date(fromDate + "T00:00:00") : undefined}
+          fromDate={fromDate ? parseDateStr(fromDate) : undefined}
           toDate={new Date()}
           initialFocus
         />

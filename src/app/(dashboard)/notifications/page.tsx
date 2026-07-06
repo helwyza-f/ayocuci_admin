@@ -44,6 +44,7 @@ import api from "@/lib/api-client";
 import StatCard from "@/components/modules/dashboard/stat-card";
 import { cn } from "@/lib/utils";
 import { VisuallyHidden } from "radix-ui";
+import PermissionGate from "@/components/shared/permission-gate";
 
 type NotificationLog = {
   id: string;
@@ -84,6 +85,14 @@ type PushTokenTrace = {
 };
 
 export default function NotificationsPage() {
+  return (
+    <PermissionGate module="notifications" action="read">
+      <NotificationsContent />
+    </PermissionGate>
+  );
+}
+
+function NotificationsContent() {
   const [logs, setLogs] = useState<NotificationLog[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -240,11 +249,13 @@ export default function NotificationsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-           <Button asChild size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
+          <PermissionGate module="notifications" action="broadcast">
+            <Button asChild size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
               <Link href="/notifications/new">
                 <Send className="h-3.5 w-3.5" /> Kirim Baru
               </Link>
-           </Button>
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -409,14 +420,16 @@ export default function NotificationsPage() {
                       >
                         Log Audit <ChevronRight className="h-3 w-3 group-hover/item:translate-x-0.5 transition-transform" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(log.id)}
-                        className="h-8 w-8 text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-all opacity-0 group-hover/item:opacity-100"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <PermissionGate module="notifications" action="delete">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(log.id)}
+                          className="h-8 w-8 text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-all opacity-0 group-hover/item:opacity-100"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </PermissionGate>
                     </div>
                   </div>
                 </div>
@@ -577,13 +590,15 @@ export default function NotificationsPage() {
                                     <span>Last seen: {item.last_seen_at ? format(new Date(item.last_seen_at), "dd MMM yyyy, HH:mm") : "-"}</span>
                                   </div>
                                   {item.token && item.is_active && (
-                                    <button
-                                      onClick={() => deactivateToken(item)}
-                                      className="mt-2 inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-600 hover:bg-rose-100"
-                                    >
-                                      <X className="h-3 w-3" />
-                                      Nonaktifkan
-                                    </button>
+                                    <PermissionGate module="notifications" action="delete">
+                                      <button
+                                        onClick={() => deactivateToken(item)}
+                                        className="mt-2 inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-600 hover:bg-rose-100"
+                                      >
+                                        <X className="h-3 w-3" />
+                                        Nonaktifkan
+                                      </button>
+                                    </PermissionGate>
                                   )}
                                 </div>
                               </div>
