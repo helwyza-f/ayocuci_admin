@@ -15,6 +15,8 @@ export interface ActivityFeedItem {
   tk_metode_bayar: string;
   tk_bukti?: string | null;
   outlet_name?: string;
+  owner_name?: string;
+  owner_code?: string;
   type: "koin" | "addon";
   item_names?: string;
 }

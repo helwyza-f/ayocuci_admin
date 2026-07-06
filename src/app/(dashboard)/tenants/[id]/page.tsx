@@ -569,7 +569,7 @@ export default function TenantDetailPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4 flex h-auto w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white p-0.5 shadow-none">
+        <TabsList className="sticky top-3 z-20 mb-4 flex h-auto w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white/95 p-0.5 shadow-none backdrop-blur">
           <TabsTrigger value="dashboard" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <LayoutGrid className="h-3 w-3" /> Dashboard
           </TabsTrigger>

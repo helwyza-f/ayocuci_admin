@@ -716,7 +716,7 @@ function TopupsManagementContent() {
             <h3 className="text-base font-bold text-slate-900 tracking-tight leading-none mb-1 font-heading">
               Topup {selectedTopup?.tk_jumlah?.toLocaleString()} Koin
             </h3>
-             <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
+            <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
               <Store className="h-3 w-3" />
               {selectedTopup?.tk_outlet ? (
                 <Link
@@ -728,6 +728,12 @@ function TopupsManagementContent() {
               ) : (
                 selectedTopup?.outlet_name
               )}
+            </p>
+            <p className="mt-1 text-[10px] font-medium text-slate-400">
+              Owner: <span className="font-bold text-slate-600">{selectedTopup?.owner_name || "Nama tidak tersedia"}</span>
+              {selectedTopup?.owner_code ? (
+                <span className="ml-2 font-mono text-slate-500">#{selectedTopup.owner_code}</span>
+              ) : null}
             </p>
           </div>
 

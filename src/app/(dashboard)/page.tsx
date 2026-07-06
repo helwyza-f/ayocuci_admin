@@ -219,6 +219,8 @@ export default function DashboardPage() {
       tk_created: a.ha_created,
       tk_bukti: a.ha_bukti,
       outlet_name: a.outlet_name,
+      owner_name: a.owner_name,
+      owner_code: a.owner_code,
       item_names: a.item_names,
       type: "addon",
       date: new Date(a.ha_created),
@@ -563,6 +565,12 @@ export default function DashboardPage() {
             </h3>
             <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
               <Store className="h-3 w-3" /> {selectedItem?.outlet_name}
+            </p>
+            <p className="mt-1 text-[10px] font-medium text-slate-400">
+              Owner: <span className="font-bold text-slate-600">{selectedItem?.owner_name || "Nama tidak tersedia"}</span>
+              {selectedItem?.owner_code ? (
+                <span className="ml-2 font-mono text-slate-500">#{selectedItem.owner_code}</span>
+              ) : null}
             </p>
           </div>
 

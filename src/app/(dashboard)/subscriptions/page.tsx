@@ -818,6 +818,12 @@ function SubscriptionsContent() {
                 selectedTrx?.outlet_name
               )}
             </p>
+            <p className="mt-1 text-[10px] font-medium text-slate-400">
+              Owner: <span className="font-bold text-slate-600">{selectedTrx?.owner_name || "Nama tidak tersedia"}</span>
+              {selectedTrx?.owner_code ? (
+                <span className="ml-2 font-mono text-slate-500">#{selectedTrx.owner_code}</span>
+              ) : null}
+            </p>
           </div>
 
           <div className="p-4 space-y-4 bg-slate-50/30">
