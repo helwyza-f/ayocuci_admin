@@ -245,7 +245,7 @@ function ReferralRewardsContent() {
               onChange={(e) => setRewardSearch(e.target.value)}
               className="h-8 text-[10px] rounded border-slate-200 shadow-none w-48 bg-white"
             />
-            <div className="flex gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
+            <div className="flex flex-wrap gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
               {(["all", "first", "monthly"] as const).map((t) => (
                 <button
                   key={t}
@@ -259,7 +259,7 @@ function ReferralRewardsContent() {
                 </button>
               ))}
             </div>
-            <div className="flex gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
+            <div className="flex flex-wrap gap-0.5 bg-slate-100/50 p-0.5 rounded border border-slate-200">
               {(["all", "pending", "paid"] as const).map((t) => (
                 <button
                   key={t}
@@ -310,7 +310,7 @@ function ReferralRewardsContent() {
           </div>
         </div>
         <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-none">
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-200">
@@ -416,6 +416,81 @@ function ReferralRewardsContent() {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="space-y-3 p-4 md:hidden">
+            {loading ? (
+              <div className="py-12 text-center">
+                <Loader2 className="mx-auto h-5 w-5 animate-spin text-slate-300" />
+              </div>
+            ) : filteredRewards.length === 0 ? (
+              <div className="py-16 text-center">
+                <GitBranch className="mx-auto mb-2 h-7 w-7 text-slate-200" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Belum ada riwayat komisi</p>
+              </div>
+            ) : (
+              filteredRewards.map((r) => {
+                const settlement = getSettlementStatus(r);
+                const payoutMethod = getPayoutMethod(r);
+                return (
+                  <div key={`mobile-${r.rr_id}`} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                    <div className="space-y-3">
+                      <p className="text-[11px] font-medium text-slate-400">
+                        {new Date(r.rr_created).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="rounded-lg border border-slate-100 bg-white p-3">
+                          <p className="text-[9px] font-bold uppercase text-slate-400">Referrer</p>
+                          <Link href={`/users/${r.referrer_id}`} className="mt-1 block hover:text-primary hover:underline">
+                            <p className="text-sm font-bold text-slate-900">{r.referrer_nama}</p>
+                            <p className="text-[11px] text-slate-400 break-all">{r.referrer_email}</p>
+                          </Link>
+                        </div>
+                        <div className="rounded-lg border border-slate-100 bg-white p-3">
+                          <p className="text-[9px] font-bold uppercase text-slate-400">Referred</p>
+                          <Link href={`/users/${r.referred_id}`} className="mt-1 block hover:text-primary hover:underline">
+                            <p className="text-sm font-bold text-slate-900">{r.referred_nama}</p>
+                            <p className="text-[11px] text-slate-400 break-all">{r.referred_email}</p>
+                          </Link>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className="border-blue-100 bg-blue-50 text-[8px] font-bold uppercase text-blue-600 shadow-none">
+                          {r.rr_type === "topup" && r.rr_percent >= 10 ? "Top Up Pertama" : r.rr_type === "topup" ? "Top Up Bulanan" : r.rr_type}
+                        </Badge>
+                        <Badge className="border-slate-200 bg-white text-[8px] font-bold uppercase text-slate-600 shadow-none">
+                          {payoutMethod}
+                        </Badge>
+                        <Badge className={cn("text-[8px] font-bold uppercase shadow-none", settlement.className)}>
+                          {settlement.label}
+                        </Badge>
+                      </div>
+                      <div className="rounded-lg border border-slate-100 bg-white p-3">
+                        <p className="text-[9px] font-bold uppercase text-slate-400">Outlet Utama</p>
+                        {r.rr_referred_outlet ? (
+                          <Link href={`/tenants/${r.rr_referred_outlet}`} className="mt-1 block hover:text-primary hover:underline">
+                            <p className="text-sm font-bold text-slate-900">{r.referred_outlet_name || r.rr_referred_outlet}</p>
+                            <p className="text-[10px] font-mono text-slate-400">{r.rr_referred_outlet}</p>
+                          </Link>
+                        ) : (
+                          <p className="mt-1 text-sm font-bold text-slate-900">{r.referred_outlet_name || "-"}</p>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-lg border border-slate-100 bg-white p-3">
+                          <p className="text-[9px] font-bold uppercase text-slate-400">Nominal Top Up</p>
+                          <p className="mt-1 text-sm font-black text-slate-900">{currency(r.topup_amount_rp)}</p>
+                          <p className="text-[10px] font-bold text-slate-400">{formatCoin(r.topup_coin_amount)}</p>
+                        </div>
+                        <div className="rounded-lg border border-slate-100 bg-white p-3">
+                          <p className="text-[9px] font-bold uppercase text-slate-400">Komisi</p>
+                          <p className="mt-1 text-sm font-black text-primary">{currency(r.rr_reward_amount)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </Card>
       </div>

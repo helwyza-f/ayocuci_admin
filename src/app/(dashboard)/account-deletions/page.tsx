@@ -237,7 +237,7 @@ function AccountDeletionsContent() {
       </Card>
 
       <Card className="overflow-hidden border border-slate-200 bg-white shadow-none">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/60">
@@ -341,6 +341,83 @@ function AccountDeletionsContent() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="space-y-3 p-4 md:hidden">
+          {isLoading ? (
+            <TableSkeleton columns={1} rows={6} />
+          ) : filtered.length > 0 ? (
+            filtered.map((row: AccountDeletionRow) => (
+              <div key={`mobile-${row.id}`} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {format(new Date(row.created_at), "dd MMM yyyy", { locale: id })}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        {format(new Date(row.created_at), "HH:mm:ss")}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="rounded-md border-slate-200 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {ACTOR_LABELS[row.actor_type] || row.actor_type}
+                    </Badge>
+                  </div>
+
+                  <div className="rounded-lg border border-slate-100 bg-white p-3">
+                    <p className="text-[9px] font-bold uppercase text-slate-400">Actor</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{row.actor_name || "Nama tidak tersedia"}</p>
+                    {row.actor_email ? <p className="text-[11px] text-slate-600 break-all">{row.actor_email}</p> : null}
+                    {row.actor_phone ? <p className="text-[11px] text-slate-500">{row.actor_phone}</p> : null}
+                    <p className="font-mono text-[10px] text-slate-400">{row.actor_id}</p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-lg border border-slate-100 bg-white p-3">
+                      <p className="text-[9px] font-bold uppercase text-slate-400">Outlet</p>
+                      <p className="mt-1 text-sm font-black text-slate-800">{formatSnapshotNumber(getSnapshotValue(row.snapshot, "outlet_count"))}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-100 bg-white p-3">
+                      <p className="text-[9px] font-bold uppercase text-slate-400">Pegawai</p>
+                      <p className="mt-1 text-sm font-black text-slate-800">{formatSnapshotNumber(getSnapshotValue(row.snapshot, "pegawai_count"))}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-100 bg-white p-3">
+                      <p className="text-[9px] font-bold uppercase text-slate-400">Koin</p>
+                      <p className="mt-1 text-sm font-black text-slate-800">{formatSnapshotNumber(getSnapshotValue(row.snapshot, "total_koin"))}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="rounded-md bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 hover:bg-amber-50">
+                      {getReasonLabel(row.reason)}
+                    </Badge>
+                  </div>
+
+                  <div className="rounded-lg border border-slate-100 bg-white p-3">
+                    <p className="text-[9px] font-bold uppercase text-slate-400">Detail</p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      {row.reason_detail?.trim() || "Tidak ada detail tambahan"}
+                    </p>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-full text-[10px] font-bold uppercase text-primary"
+                    onClick={() => setSelectedRow(row)}
+                  >
+                    <Eye className="mr-1 h-3.5 w-3.5" />
+                    Detail Snapshot
+                  </Button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-16 text-center">
+              <Trash2 className="mx-auto mb-2 h-8 w-8 text-slate-200" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Belum ada histori hapus akun</p>
+            </div>
+          )}
         </div>
       </Card>
 
