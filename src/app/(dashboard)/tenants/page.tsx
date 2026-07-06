@@ -367,19 +367,27 @@ function TenantsPageContent() {
                 paginatedTenants.map((tenant) => (
                   <tr key={tenant.ot_id} className="hover:bg-slate-50/30 transition-colors">
                     <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 bg-slate-50 rounded flex items-center justify-center text-slate-400 border border-slate-100">
-                          <Store className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm">{tenant.ot_nama}</p>
-                          <div className="flex items-center gap-2">
-                             <p className="text-[10px] font-medium text-slate-500">#{tenant.ot_id}</p>
-                             <span className="text-slate-200 text-[8px]">•</span>
-                             <p className="text-[10px] font-medium text-slate-500">{format(new Date(tenant.ot_created), "dd MMM yy, HH:mm")}</p>
+                      <Link
+                        href={`/tenants/${tenant.ot_id}`}
+                        className="group -m-2 flex rounded-lg p-2 transition-colors hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 bg-slate-50 rounded flex items-center justify-center text-slate-400 border border-slate-100 transition-colors group-hover:border-primary/20 group-hover:text-primary">
+                            <Store className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-slate-900 text-sm transition-colors group-hover:text-primary">{tenant.ot_nama}</p>
+                              <ArrowUpRight className="h-3.5 w-3.5 text-slate-300 transition-colors group-hover:text-primary" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                               <p className="text-[10px] font-medium text-slate-500">#{tenant.ot_id}</p>
+                               <span className="text-slate-200 text-[8px]">•</span>
+                               <p className="text-[10px] font-medium text-slate-500">{format(new Date(tenant.ot_created), "dd MMM yy, HH:mm")}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-5 py-3">
                           <Link href={`/users/${tenant.owner_id}`} className="group inline-block">

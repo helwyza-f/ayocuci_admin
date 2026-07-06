@@ -339,7 +339,7 @@ function TopupsManagementContent() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
           <ExportExcelButton
             data={topupExportRows}
             filename="topups_report"
@@ -424,7 +424,7 @@ function TopupsManagementContent() {
           <div className="h-px w-full bg-slate-100 xl:hidden" />
           <div className="hidden h-5 w-px bg-slate-100 xl:block" />
 
-          <div className="flex flex-wrap items-center gap-1 p-1 xl:p-0">
+          <div className="flex flex-wrap items-center gap-2 p-1 xl:p-0">
             <Popover open={openOutlet} onOpenChange={setOpenOutlet}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-2 text-slate-600">
@@ -448,9 +448,9 @@ function TopupsManagementContent() {
               </PopoverContent>
             </Popover>
 
-            <div className="h-4 w-px bg-slate-100" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
 
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
                {["all", "pending", "success", "failed"].map(s => (
                  <Button
                     key={s}
@@ -467,9 +467,9 @@ function TopupsManagementContent() {
                ))}
             </div>
 
-            <div className="h-4 w-px bg-slate-100" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
 
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
                {["all", "transfer", "midtrans", "bonus"].map(m => (
                  <Button
                     key={m}
@@ -486,9 +486,9 @@ function TopupsManagementContent() {
                ))}
             </div>
 
-            <div className="h-4 w-px bg-slate-100" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
             <DateRangeFilter value={dateRange} onChange={handleDateRange} />
-            <div className="h-4 w-px bg-slate-100" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
 
             <Button
               variant="ghost"
@@ -504,7 +504,7 @@ function TopupsManagementContent() {
 
       {/* OPERATIONAL DATA TABLE */}
       <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white min-h-[400px]">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
@@ -621,6 +621,76 @@ function TopupsManagementContent() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="space-y-3 p-4 md:hidden">
+          {filteredData.length === 0 && !loading ? (
+            <div className="py-16 text-center">
+              <History className="mx-auto mb-2 h-7 w-7 text-slate-200" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Tidak ada data yang sesuai</p>
+            </div>
+          ) : (
+            paginatedData.map((item) => {
+              const status = getTopupStatusUi(item.tk_status);
+              const isActionable = isTopupActionable(item.tk_status);
+              const dt = formatDateTime(item.tk_created);
+              return (
+                <div key={`mobile-${item.tk_id}`} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="break-all text-xs font-bold text-slate-900">#{item.tk_id}</p>
+                        <p className="mt-1 text-[10px] font-bold uppercase text-slate-400">{dt.display}</p>
+                      </div>
+                      <Badge className={cn("rounded-full px-2 py-0.5 text-[8px] font-bold uppercase border shadow-none", status.className, isActionable && "animate-pulse")}>
+                        {status.label}
+                      </Badge>
+                    </div>
+                    <div>
+                      {item.tk_outlet ? (
+                        <Link href={`/tenants/${item.tk_outlet}`} className="text-sm font-bold text-slate-800 hover:text-primary hover:underline">
+                          {item.outlet_name}
+                        </Link>
+                      ) : (
+                        <p className="text-sm font-bold text-slate-800">{item.outlet_name}</p>
+                      )}
+                      <p className="mt-1 text-[11px] font-medium text-slate-500">{item.owner_name}</p>
+                      {item.owner_code && (
+                        <p className="text-[10px] font-mono text-slate-400">Kode Referral: {item.owner_code}</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg border border-slate-100 bg-white p-3">
+                        <p className="text-[9px] font-bold uppercase text-slate-400">Koin</p>
+                        <p className="mt-1 text-sm font-black text-slate-900">{item.tk_jumlah?.toLocaleString()} Koin</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-100 bg-white p-3">
+                        <p className="text-[9px] font-bold uppercase text-slate-400">Nominal</p>
+                        <p className="mt-1 text-sm font-black text-primary">Rp {item.tk_total?.toLocaleString("id-ID")}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {item.tk_metode_bayar === "bonus" ? (
+                        <Badge className="border border-purple-100 bg-purple-50 text-[8px] font-bold uppercase text-purple-600 shadow-none">Bonus</Badge>
+                      ) : item.tk_metode_bayar === "transfer" ? (
+                        <Badge className="border border-orange-100 bg-orange-50 text-[8px] font-bold uppercase text-slate-600 shadow-none">Transfer</Badge>
+                      ) : (
+                        <Badge className="border border-amber-100 bg-amber-50 text-[8px] font-bold uppercase text-slate-600 shadow-none">Midtrans</Badge>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setSelectedTopup(item); setIsPreviewOpen(true); }}
+                      className="h-8 w-full text-[10px] font-bold uppercase text-primary"
+                    >
+                      {isActionable && item.tk_metode_bayar !== "bonus" ? "Verifikasi" : "Detail"}
+                      <ChevronRight className="ml-1 h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
         <Pagination
           page={page}

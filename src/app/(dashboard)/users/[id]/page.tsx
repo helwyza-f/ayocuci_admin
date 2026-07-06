@@ -241,7 +241,7 @@ export default function UserDetailPage() {
         {/* LEFT: Tabs */}
         <div>
           <Tabs defaultValue="portfolio" className="w-full">
-            <TabsList className="bg-white border border-slate-200 p-0.5 rounded-lg mb-4 w-full md:w-fit h-9 shadow-none gap-0.5">
+            <TabsList className="mb-4 flex h-auto w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white p-0.5 shadow-none">
               {[
                 { value: "portfolio", icon: Layers, label: "Portfolio" },
                 { value: "referrals", icon: Target, label: "Network" },
@@ -251,7 +251,7 @@ export default function UserDetailPage() {
               ].map(({ value, icon: Icon, label }) => (
                 <TabsTrigger
                   key={value} value={value}
-                  className="rounded px-4 font-bold text-[10px] uppercase gap-1.5 h-8 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+                  className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
                 >
                   <Icon className="h-3 w-3" />{label}
                 </TabsTrigger>
@@ -264,7 +264,7 @@ export default function UserDetailPage() {
                 <SectionHeader
                   label={`Owner Portfolio — ${outlets.length} Outlet`}
                 />
-                <div className="overflow-x-auto">
+                <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -307,6 +307,36 @@ export default function UserDetailPage() {
                     </tbody>
                   </table>
                 </div>
+                <div className="space-y-3 p-4 md:hidden">
+                  {outlets.length === 0 ? (
+                    <Empty icon={Store} text="Belum ada outlet terdaftar" />
+                  ) : outlets.map((outlet) => (
+                    <div key={outlet.id} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <Link href={`/tenants/${outlet.id}`} className="text-sm font-bold text-slate-900 hover:text-primary hover:underline">
+                            {outlet.name}
+                          </Link>
+                          <p className="mt-1 text-[10px] font-mono text-slate-400">#{outlet.id}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="rounded-lg border border-slate-100 bg-white p-3">
+                            <p className="text-[9px] font-bold uppercase text-slate-400">Koin</p>
+                            <p className="mt-1 text-sm font-black text-slate-900">{outlet.koin.toLocaleString()}</p>
+                          </div>
+                          <div className="rounded-lg border border-slate-100 bg-white p-3">
+                            <p className="text-[9px] font-bold uppercase text-slate-400">Orders</p>
+                            <p className="mt-1 text-sm font-black text-slate-900">{outlet.total_trx.toLocaleString()}</p>
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-slate-100 bg-white p-3">
+                          <p className="text-[9px] font-bold uppercase text-slate-400">Revenue</p>
+                          <p className="mt-1 text-sm font-black text-primary">Rp {outlet.total_revenue.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </Card>
             </TabsContent>
 
@@ -326,6 +356,7 @@ export default function UserDetailPage() {
                     />
                   }
                 />
+                <div className="hidden md:block">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -358,6 +389,28 @@ export default function UserDetailPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
+                <div className="space-y-3 p-4 md:hidden">
+                  {recruits.length === 0 ? (
+                    <Empty icon={Users} text="Belum ada rekrutan" />
+                  ) : recruits.map((recruit) => (
+                    <div key={recruit.id} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                      <p className="text-sm font-bold text-slate-900">{recruit.name}</p>
+                      <p className="mt-1 text-[10px] font-mono text-slate-400">#{recruit.id}</p>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-[11px] font-medium text-slate-500">
+                          {recruit.created_at ? format(new Date(recruit.created_at), "dd MMM yyyy", { locale: localeId }) : "—"}
+                        </p>
+                        <Badge variant="outline" className={cn(
+                          "text-[9px] font-bold uppercase px-2 py-0.5 rounded shadow-none",
+                          recruit.status === 1 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-200"
+                        )}>
+                          {recruit.status === 1 ? "Aktif" : "Inaktif"}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </Card>
             </TabsContent>
 
@@ -380,7 +433,7 @@ export default function UserDetailPage() {
                     />
                   }
                 />
-                <div className="overflow-x-auto">
+                <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -422,6 +475,33 @@ export default function UserDetailPage() {
                     </tbody>
                   </table>
                 </div>
+                <div className="space-y-3 p-4 md:hidden">
+                  {referral_rewards.length === 0 ? (
+                    <Empty icon={GitBranch} text="Belum ada komisi masuk" />
+                  ) : referral_rewards.map((r, i: number) => (
+                    <div key={`rr-mobile-${r.rr_id || i}`} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-900">{r.referred_nama}</p>
+                        <p className="text-[11px] text-slate-500 break-all">{r.referred_email}</p>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="rounded bg-slate-100 px-2 py-0.5 text-[9px] font-mono font-bold text-slate-600">
+                          {r.rr_referred_outlet || "—"}
+                        </span>
+                        <span className={cn(
+                          "rounded px-2 py-0.5 text-[9px] font-bold uppercase",
+                          r.rr_type === "recruit" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                        )}>{r.rr_type}</span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-sm font-black text-primary">Rp {r.rr_reward_amount?.toLocaleString()}</p>
+                        <p className="text-[10px] font-medium text-slate-400">
+                          {r.rr_created ? format(new Date(r.rr_created), "dd MMM yyyy", { locale: localeId }) : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </Card>
             </TabsContent>
 
@@ -443,6 +523,7 @@ export default function UserDetailPage() {
                     />
                   }
                 />
+                <div className="hidden md:block">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -479,6 +560,29 @@ export default function UserDetailPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
+                <div className="space-y-3 p-4 md:hidden">
+                  {koin_ledger.length === 0 ? (
+                    <Empty icon={Activity} text="Tidak ada aktivitas koin" />
+                  ) : koin_ledger.map((hk, i: number) => (
+                    <div key={`ledger-mobile-${i}`} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                      <p className="text-sm font-bold text-slate-900">{hk.outlet_nama}</p>
+                      <p className="mt-1 text-[11px] text-slate-500">{hk.hk_keterangan}</p>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <span className={cn(
+                          "flex items-center gap-1 text-sm font-bold tabular-nums",
+                          hk.hk_jenis_transaksi === "masuk" ? "text-emerald-600" : "text-rose-600"
+                        )}>
+                          {hk.hk_jenis_transaksi === "masuk" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                          {hk.hk_jenis_transaksi === "masuk" ? "+" : "-"}{hk.hk_jumlah} Koin
+                        </span>
+                        <p className="text-[10px] font-medium text-slate-400">
+                          {format(new Date(hk.hk_created), "dd MMM yy, HH:mm", { locale: localeId })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </Card>
             </TabsContent>
 
@@ -502,7 +606,7 @@ export default function UserDetailPage() {
                     />
                   }
                 />
-                <div className="overflow-x-auto">
+                <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -543,6 +647,32 @@ export default function UserDetailPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+                <div className="space-y-3 p-4 md:hidden">
+                  {payouts.length === 0 ? (
+                    <Empty icon={Receipt} text="Belum ada pencairan" />
+                  ) : payouts.map((rp) => (
+                    <div key={rp.rp_id} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                      <p className="text-sm font-bold text-slate-900">{rp.rp_id}</p>
+                      <p className="mt-1 text-[11px] text-slate-500">{rp.rp_bank_name} · {rp.rp_account_number}</p>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-sm font-black text-slate-800">Rp {rp.rp_amount?.toLocaleString()}</p>
+                        <Badge variant="outline" className={cn(
+                          "text-[9px] font-bold uppercase px-2 py-0.5 rounded shadow-none border",
+                          rp.rp_status === "completed" || rp.rp_status === "done"
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                            : rp.rp_status === "pending"
+                            ? "bg-orange-50 text-orange-600 border-orange-100"
+                            : "bg-slate-50 text-slate-400 border-slate-200"
+                        )}>
+                          {rp.rp_status}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 text-[10px] font-medium text-slate-400">
+                        {format(new Date(rp.rp_created), "dd MMM yyyy", { locale: localeId })}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </Card>
             </TabsContent>

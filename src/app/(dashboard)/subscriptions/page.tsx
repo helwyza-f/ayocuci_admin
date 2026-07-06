@@ -389,7 +389,7 @@ function SubscriptionsContent() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
           <PermissionGate module="subscriptions" action="export">
             <ExportExcelButton
               data={subscriptionExportRows}
@@ -486,7 +486,7 @@ function SubscriptionsContent() {
           <div className="h-px w-full bg-slate-100 xl:hidden" />
           <div className="hidden h-5 w-px bg-slate-100 xl:block" />
 
-          <div className="flex flex-wrap items-center gap-1 p-1 xl:p-0">
+          <div className="flex flex-wrap items-center gap-2 p-1 xl:p-0">
             <Popover open={openOutlet} onOpenChange={setOpenOutlet}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 font-bold text-[10px] px-2 gap-1.5 text-slate-600">
@@ -511,7 +511,7 @@ function SubscriptionsContent() {
               </PopoverContent>
             </Popover>
 
-            <div className="h-4 w-px bg-slate-100" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
 
             {/* Status Filter — compact select */}
             <div className="relative flex items-center">
@@ -558,12 +558,12 @@ function SubscriptionsContent() {
               <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
             </div>
 
-            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
             <DateRangeFilter
               value={dateRange}
               onChange={handleDateRange}
             />
-            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
 
             <Button
               variant="ghost"
@@ -586,7 +586,7 @@ function SubscriptionsContent() {
           </div>
         )}
 
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
@@ -698,6 +698,88 @@ function SubscriptionsContent() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="space-y-3 p-4 md:hidden">
+          {filteredData.length === 0 && !loading ? (
+            <div className="py-16 text-center">
+              <History className="mx-auto mb-2 h-7 w-7 text-slate-200" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Tidak ada data yang sesuai</p>
+            </div>
+          ) : (
+            paginatedData.map((item) => {
+              const status = getStatusConfig(item.ha_status);
+              const dt = formatDateTime(item.ha_created);
+              return (
+                <div key={`mobile-${item.ha_id}`} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="break-all text-xs font-bold text-slate-900">#{item.ha_id}</p>
+                        <p className="mt-1 text-[10px] font-bold uppercase text-slate-400">{dt.display}</p>
+                      </div>
+                      <Badge className={cn("rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none", status.class)}>
+                        {status.label}
+                      </Badge>
+                    </div>
+                    <div>
+                      {item.ha_outlet ? (
+                        <Link href={`/tenants/${item.ha_outlet}`} className="text-sm font-bold text-slate-800 hover:text-primary hover:underline">
+                          {item.outlet_name}
+                        </Link>
+                      ) : (
+                        <p className="text-sm font-bold text-slate-800">{item.outlet_name}</p>
+                      )}
+                      <p className="mt-1 text-[11px] font-medium text-slate-500">{item.owner_name}</p>
+                      {item.owner_code && (
+                        <p className="text-[10px] font-mono text-slate-400">Kode Referral: {item.owner_code}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "rounded px-1.5 py-0 text-[8px] font-bold uppercase border shadow-none",
+                          resolveLicenseType(item) === "pro"
+                            ? "border-blue-200 bg-blue-50 text-blue-700"
+                            : "border-violet-200 bg-violet-50 text-violet-700"
+                        )}
+                      >
+                        {resolveLicenseType(item) === "pro" ? "Aktivasi PRO" : "Add-on"}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="max-w-full truncate rounded px-1.5 py-0 text-[8px] font-bold uppercase border-slate-200 bg-slate-50 shadow-none"
+                        title={item.item_names}
+                      >
+                        {item.item_names}
+                      </Badge>
+                    </div>
+                    <div className="rounded-lg border border-slate-100 bg-white p-3">
+                      <p className="text-[9px] font-bold uppercase text-slate-400">Nominal</p>
+                      <p className="mt-1 text-sm font-black text-slate-900">
+                        Rp {item.ha_metode_bayar === "KOIN"
+                          ? (item.ha_total * pricePerCoin).toLocaleString("id-ID")
+                          : item.ha_total.toLocaleString("id-ID")}
+                      </p>
+                      <p className="mt-1 text-[10px] font-bold uppercase text-slate-400">
+                        {item.ha_metode_bayar === "KOIN"
+                          ? `${item.ha_total.toLocaleString("id-ID")} Koin`
+                          : item.ha_metode_bayar || "—"}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setSelectedTrx(item); setIsPreviewOpen(true); }}
+                      className="h-8 w-full text-[10px] font-bold uppercase text-primary"
+                    >
+                      Detail <ChevronRight className="ml-1 h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
         <Pagination
           page={page}
