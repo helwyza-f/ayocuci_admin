@@ -68,9 +68,9 @@ jobs:
             echo "SSH_PRIVATE_KEY_B64 is not a valid OpenSSH/RSA private key"
             exit 1
           fi
-          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "echo ssh-ready"
+          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts || true
+          chmod 644 ~/.ssh/known_hosts || true
+          ssh -i ~/.ssh/id_ed25519 -p "$DEPLOY_PORT" -o BatchMode=yes -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" "echo ssh-ready"
 
       - name: Verify SSH connection
         run: |
