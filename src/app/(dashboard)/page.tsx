@@ -172,6 +172,7 @@ export default function DashboardPage() {
   const [selectedItem, setSelectedItem] = useState<ActivityFeedItem | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
 
   // Double Confirmation
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -498,9 +499,13 @@ export default function DashboardPage() {
                  <div className="group relative aspect-video rounded-xl border border-slate-200 overflow-hidden bg-slate-200">
                   <img src={resolveUploadUrl(selectedItem.tk_bukti)} className="w-full h-full object-cover" alt="Proof" />
                     <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                      <a href={resolveUploadUrl(selectedItem.tk_bukti)} target="_blank" rel="noreferrer" className="bg-white text-slate-900 px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setProofPreviewUrl(resolveUploadUrl(selectedItem.tk_bukti))}
+                        className="bg-white text-slate-900 px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-2"
+                      >
                         <ArrowUpRight className="h-3 w-3" /> Layar Penuh
-                      </a>
+                      </button>
                     </div>
                  </div>
               ) : (
@@ -556,6 +561,17 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
+      </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(proofPreviewUrl)} onOpenChange={(open) => !open && setProofPreviewUrl(null)}>
+        <DialogContent className="max-w-5xl p-2 border border-slate-200 rounded-2xl bg-white">
+          <VisuallyHidden.Root><DialogTitle>Preview Bukti Pembayaran</DialogTitle></VisuallyHidden.Root>
+          {proofPreviewUrl ? (
+            <div className="overflow-hidden rounded-xl bg-slate-100">
+              <img src={proofPreviewUrl} alt="Preview bukti pembayaran" className="max-h-[85vh] w-full object-contain" />
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
 
