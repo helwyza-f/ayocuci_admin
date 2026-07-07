@@ -153,15 +153,23 @@ function OwnersPageContent() {
                 paginated.map((owner) => (
                   <tr key={owner.id} className="hover:bg-slate-50/30 transition-colors">
                     <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 bg-slate-50 rounded flex items-center justify-center text-slate-400 border border-slate-100">
-                          <UserCircle className="h-4 w-4" />
+                      <Link
+                        href={`/users/${owner.id}`}
+                        className="group -m-2 flex rounded-lg p-2 transition-colors hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 bg-slate-50 rounded flex items-center justify-center text-slate-400 border border-slate-100 transition-colors group-hover:border-primary/20 group-hover:text-primary">
+                            <UserCircle className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-slate-900 text-sm transition-colors group-hover:text-primary">{owner.name}</p>
+                              <ExternalLink className="h-3.5 w-3.5 text-slate-300 transition-colors group-hover:text-primary" />
+                            </div>
+                            <p className="text-[11px] font-medium text-slate-500">{owner.email}</p>
+                          </div>
                         </div>
-                        <div>
-                           <p className="font-bold text-slate-900 text-sm">{owner.name}</p>
-                           <p className="text-[11px] font-medium text-slate-500">{owner.email}</p>
-                         </div>
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-5 py-3 text-center">
                       <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[10px] font-bold text-slate-600">

@@ -122,6 +122,7 @@ export default function TenantDetailPage() {
   const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
   const [selectedAddon, setSelectedAddon] = useState<any>(null);
   const [confirming, setConfirming] = useState(false);
+  const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
 
   // Double Confirmation State
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -1834,9 +1835,13 @@ export default function TenantDetailPage() {
                    <div className="flex items-center justify-between">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bukti Transfer</label>
                       {selectedKoin?.tk_bukti && (
-                         <a href={resolveUploadUrl(selectedKoin.tk_bukti)} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline">
+                         <button
+                           type="button"
+                           onClick={() => setProofPreviewUrl(resolveUploadUrl(selectedKoin.tk_bukti))}
+                           className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline"
+                         >
                             Lihat Fullscreen <ExternalLink className="h-3 w-3" />
-                         </a>
+                         </button>
                       )}
                    </div>
                    {selectedKoin?.tk_bukti ? (
@@ -1919,9 +1924,13 @@ export default function TenantDetailPage() {
                 <div className="flex items-center justify-between">
                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bukti Pembayaran</label>
                    {selectedAddon?.ha_bukti && (
-                      <a href={resolveUploadUrl(selectedAddon.ha_bukti)} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline">
+                      <button
+                        type="button"
+                        onClick={() => setProofPreviewUrl(resolveUploadUrl(selectedAddon.ha_bukti))}
+                        className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline"
+                      >
                          Lihat Fullscreen <ExternalLink className="h-3 w-3" />
-                      </a>
+                      </button>
                    )}
                 </div>
                 {selectedAddon?.ha_bukti ? (
@@ -1968,6 +1977,17 @@ export default function TenantDetailPage() {
                 Batalkan
              </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(proofPreviewUrl)} onOpenChange={(open) => !open && setProofPreviewUrl(null)}>
+        <DialogContent className="max-w-5xl p-2 border border-slate-200 rounded-2xl bg-white">
+          <VisuallyHidden.Root><DialogTitle>Preview Bukti Pembayaran</DialogTitle></VisuallyHidden.Root>
+          {proofPreviewUrl ? (
+            <div className="overflow-hidden rounded-xl bg-slate-100">
+              <img src={proofPreviewUrl} alt="Preview bukti pembayaran" className="max-h-[85vh] w-full object-contain" />
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
 
