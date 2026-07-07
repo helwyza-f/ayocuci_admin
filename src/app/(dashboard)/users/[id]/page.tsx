@@ -133,6 +133,15 @@ interface OwnerDetailData {
   referral_rewards: OwnerRewardDetailRow[];
 }
 
+function normalizeWhatsapp(phone?: string | null) {
+  if (!phone) return null;
+  const digits = String(phone).replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("62")) return `https://wa.me/${digits}`;
+  if (digits.startsWith("0")) return `https://wa.me/62${digits.slice(1)}`;
+  return `https://wa.me/${digits}`;
+}
+
 export default function UserDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -172,7 +181,7 @@ export default function UserDetailPage() {
     );
 
   const { profile, stats, recruits = [], outlets = [], payouts = [], koin_ledger = [], referral_rewards = [] } = data;
-  const waHref = profile.nohp ? `https://wa.me/62${String(profile.nohp).replace(/^0/, "")}` : null;
+  const waHref = normalizeWhatsapp(profile.nohp);
 
   return (
     <PermissionGate module="users" action="read">
