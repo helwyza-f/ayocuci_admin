@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, ElementType } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Store,
@@ -77,6 +77,7 @@ import PermissionGate from "@/components/shared/permission-gate";
 export default function TenantDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   
@@ -129,6 +130,10 @@ export default function TenantDetailPage() {
   const [confirmTarget, setConfirmTarget] = useState<{ type: 'koin' | 'addon', id: string, status: 'confirm' | 'cancel' } | null>(null);
 
   const API_BASE_URL = "https://api.ayocuci.id";
+  const backHref = useMemo(() => {
+    const query = searchParams.toString();
+    return query ? `/tenants?${query}` : "/tenants";
+  }, [searchParams]);
 
   const fetchDetail = async () => {
     try {
@@ -489,7 +494,7 @@ export default function TenantDetailPage() {
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
         <ShieldAlert className="h-8 w-8 text-rose-500" />
         <p className="text-sm font-bold text-slate-900">Outlet Tidak Ditemukan</p>
-        <Button variant="ghost" onClick={() => router.back()} size="sm">Kembali ke Daftar</Button>
+        <Button variant="ghost" onClick={() => router.push(backHref)} size="sm">Kembali ke Daftar</Button>
       </div>
     );
 
@@ -502,7 +507,7 @@ export default function TenantDetailPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.back()}
+            onClick={() => router.push(backHref)}
             className="h-9 w-9 shrink-0 text-slate-500 border border-slate-200 hover:bg-white active:scale-95 transition-all shadow-sm"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -1787,7 +1792,7 @@ export default function TenantDetailPage() {
                   outletName={profile.ot_nama}
                   onDeleted={() => {
                     toast.success("Outlet berhasil dihapus. Anda akan diarahkan ke daftar outlet.");
-                    setTimeout(() => router.push("/tenants"), 1200);
+                    setTimeout(() => router.push(backHref), 1200);
                   }}
                 />
               </PermissionGate>

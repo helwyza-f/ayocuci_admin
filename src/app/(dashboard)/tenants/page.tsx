@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
   Store,
@@ -90,9 +90,11 @@ export default function TenantsPage() {
 }
 
 function TenantsPageContent() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [page, setPage] = useState(Number(searchParams.get("page") || "1"));
   const { data: tenantsResponse, isLoading } = useSWR<ApiResponse<Tenant[]>>(
     "/tenants",
     apiFetcher,
@@ -116,11 +118,54 @@ function TenantsPageContent() {
   const regionNames = useRegionNames(tenants);
 
   const [open, setOpen] = useState(false);
-  const [selectedOwner, setSelectedOwner] = useState("all");
+  const [selectedOwner, setSelectedOwner] = useState(searchParams.get("owner") || "all");
   const [selectedStatus, setSelectedStatus] = useState(searchParams.get("status") || "all");
   const [selectedActivity, setSelectedActivity] = useState(searchParams.get("activity") || "all");
   const [koinThreshold, setKoinThreshold] = useState(searchParams.get("koin") || "all");
-  const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
+  const [dateRange, setDateRange] = useState<DateRange>({
+    start: searchParams.get("start") || "",
+    end: searchParams.get("end") || "",
+  });
+
+  useEffect(() => {
+    setSearch(searchParams.get("search") || "");
+    setPage(Number(searchParams.get("page") || "1"));
+    setSelectedOwner(searchParams.get("owner") || "all");
+    setSelectedStatus(searchParams.get("status") || "all");
+    setSelectedActivity(searchParams.get("activity") || "all");
+    setKoinThreshold(searchParams.get("koin") || "all");
+    setDateRange({
+      start: searchParams.get("start") || "",
+      end: searchParams.get("end") || "",
+    });
+  }, [searchParams]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (search) params.set("search", search);
+    if (page > 1) params.set("page", String(page));
+    if (selectedOwner !== "all") params.set("owner", selectedOwner);
+    if (selectedStatus !== "all") params.set("status", selectedStatus);
+    if (selectedActivity !== "all") params.set("activity", selectedActivity);
+    if (koinThreshold !== "all") params.set("koin", koinThreshold);
+    if (dateRange.start) params.set("start", dateRange.start);
+    if (dateRange.end) params.set("end", dateRange.end);
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [
+    dateRange.end,
+    dateRange.start,
+    koinThreshold,
+    page,
+    pathname,
+    router,
+    search,
+    selectedActivity,
+    selectedOwner,
+    selectedStatus,
+  ]);
 
   const filteredTenants = useMemo(() => {
     const byFilter = tenants.filter((t) => {
@@ -202,6 +247,31 @@ function TenantsPageContent() {
     const found = owners.find((o) => String(o.id) === selectedOwner);
     return found ? found.name : selectedOwner;
   }, [selectedOwner, owners]);
+
+  const currentTenantQuery = useMemo(() => {
+    const params = new URLSearchParams();
+
+    if (search) params.set("search", search);
+    if (page > 1) params.set("page", String(page));
+    if (selectedOwner !== "all") params.set("owner", selectedOwner);
+    if (selectedStatus !== "all") params.set("status", selectedStatus);
+    if (selectedActivity !== "all") params.set("activity", selectedActivity);
+    if (koinThreshold !== "all") params.set("koin", koinThreshold);
+    if (dateRange.start) params.set("start", dateRange.start);
+    if (dateRange.end) params.set("end", dateRange.end);
+
+    const query = params.toString();
+    return query ? `?${query}` : "";
+  }, [
+    dateRange.end,
+    dateRange.start,
+    koinThreshold,
+    page,
+    search,
+    selectedActivity,
+    selectedOwner,
+    selectedStatus,
+  ]);
 
   const getSubscriptionBadgeClass = (status?: string | null) => {
     switch ((status || "").toUpperCase()) {
@@ -446,7 +516,7 @@ function TenantsPageContent() {
                   <tr key={tenant.ot_id} className="hover:bg-slate-50/30 transition-colors">
                     <td className="px-5 py-3">
                       <Link
-                        href={`/tenants/${tenant.ot_id}`}
+                        href={`/tenants/${tenant.ot_id}${currentTenantQuery}`}
                         className="group -m-2 flex rounded-lg p-2 transition-colors hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                       >
                         <div className="flex items-center gap-3">
@@ -511,7 +581,7 @@ function TenantsPageContent() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-right">
-                       <Link href={`/tenants/${tenant.ot_id}`}>
+                       <Link href={`/tenants/${tenant.ot_id}${currentTenantQuery}`}>
                         <Button
                             variant="ghost"
                             size="sm"
