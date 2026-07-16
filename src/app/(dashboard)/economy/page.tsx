@@ -24,6 +24,13 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/api-client";
 import { bankService, BankAccount } from "@/services/bank.service";
@@ -59,6 +66,10 @@ const PCT_KEYS = new Set([
   "activation_discount_pct",
   "referral_percent_first",
   "referral_percent_subsequent",
+]);
+
+const MODE_KEYS = new Set([
+  "activation_mode",
 ]);
 
 const DEPRECATED_CONFIG_KEYS = new Set([
@@ -134,7 +145,8 @@ function AdminEconomyContent() {
   }, []);
 
   // --- HANDLERS ECONOMY ---
-  const resolveUnit = (key: string, type?: string): "koin" | "rupiah" | "persen" | "kali" => {
+  const resolveUnit = (key: string, type?: string): "koin" | "rupiah" | "persen" | "kali" | "mode" => {
+    if (MODE_KEYS.has(key)) return "mode";
     if (KALI_KEYS.has(key)) return "kali";
     if (PCT_KEYS.has(key)) return "persen";
     if (KOIN_KEYS.has(key)) return "koin";
@@ -147,6 +159,12 @@ function AdminEconomyContent() {
   const formatDisplay = (val: string, key: string, type?: string) => {
     if (!val) return "—";
     const unit = resolveUnit(key, type);
+    if (unit === "mode") {
+      const normalized = val.trim().toLowerCase();
+      if (normalized === "free") return "Gratis";
+      if (normalized === "paid") return "Berbayar";
+      return val;
+    }
     if (unit === "persen") return `${val}%`;
     if (unit === "kali") return `${Number(val).toLocaleString("id-ID")}x`;
     if (unit === "rupiah") {
@@ -161,6 +179,7 @@ function AdminEconomyContent() {
 
   const getUnitLabel = (key: string, type?: string) => {
     const unit = resolveUnit(key, type);
+    if (unit === "mode") return "Mode";
     if (unit === "persen") return "Persen (%)";
     if (unit === "rupiah") return "Rupiah (Rp)";
     if (unit === "kali") return "Kali (x)";
@@ -172,9 +191,13 @@ function AdminEconomyContent() {
     setIsUpdating(true);
     try {
       if (!editingConfig) return;
+      const normalizedValue =
+        editingConfig.cfg_key === "activation_mode"
+          ? rawValue.trim().toLowerCase()
+          : rawValue;
       const res = await api.patch("/economy/configs", {
         key: editingConfig.cfg_key,
-        value: rawValue,
+        value: normalizedValue,
       });
       if (res.data.status) {
         toast.success(`Configuration updated`);
@@ -453,12 +476,28 @@ function AdminEconomyContent() {
                   {getUnitLabel(editingConfig?.cfg_key ?? "", editingConfig?.cfg_type)}
                 </span>
               </label>
-              <Input
-                type="number"
-                value={rawValue}
-                onChange={(e) => setRawValue(e.target.value)}
-                className="rounded border-slate-200 h-9 font-bold text-sm focus-visible:ring-primary shadow-none bg-white px-2.5"
-              />
+              {editingConfig?.cfg_key === "activation_mode" ? (
+                <Select value={rawValue || "paid"} onValueChange={setRawValue}>
+                  <SelectTrigger className="rounded border-slate-200 h-9 font-bold text-sm focus-visible:ring-primary shadow-none bg-white px-2.5">
+                    <SelectValue placeholder="Pilih mode" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-md">
+                    <SelectItem value="free" className="text-xs font-bold">
+                      Gratis
+                    </SelectItem>
+                    <SelectItem value="paid" className="text-xs font-bold">
+                      Berbayar
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  type="number"
+                  value={rawValue}
+                  onChange={(e) => setRawValue(e.target.value)}
+                  className="rounded border-slate-200 h-9 font-bold text-sm focus-visible:ring-primary shadow-none bg-white px-2.5"
+                />
+              )}
               <div className="mt-3 p-3 bg-white rounded border border-slate-100">
                 <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Preview:</p>
                 <p className="text-sm font-bold text-primary font-heading">
