@@ -133,6 +133,7 @@ export default function TenantDetailPage() {
   const [isInjectModalOpen, setIsInjectModalOpen] = useState(false);
   const [injectAmount, setInjectAmount] = useState<number | "">("");
   const [injectReason, setInjectReason] = useState("");
+  const [injectMethod, setInjectMethod] = useState<"transfer" | "bonus">("transfer");
   const [injectBukti, setInjectBukti] = useState<File | null>(null);
   const [injectLoading, setInjectLoading] = useState(false);
 
@@ -352,6 +353,7 @@ export default function TenantDetailPage() {
         params.id as string,
         Number(injectAmount),
         injectReason,
+        injectMethod,
         injectBukti || undefined
       );
       if (res.status) {
@@ -359,6 +361,7 @@ export default function TenantDetailPage() {
         setIsInjectModalOpen(false);
         setInjectAmount("");
         setInjectReason("");
+        setInjectMethod("transfer");
         setInjectBukti(null);
         fetchDetail();
       } else {
@@ -1878,14 +1881,33 @@ export default function TenantDetailPage() {
 
           <div className="p-5 space-y-5 bg-slate-50/30">
              {selectedKoin?.tk_metode_bayar === 'bonus' ? (
-                <div className="space-y-2">
-                   <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Detail Alokasi Bonus</label>
-                   <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-lg dark:bg-purple-950/10 dark:border-purple-900/30">
-                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-start gap-2">
-                         <Gift className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
-                         <span>{selectedKoin.keterangan || "Alokasi bonus sistem otomatis."}</span>
-                      </p>
+                <div className="space-y-4">
+                   <div className="space-y-2">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Detail Alokasi Bonus</label>
+                      <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-lg dark:bg-purple-950/10 dark:border-purple-900/30">
+                         <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-start gap-2">
+                            <Gift className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                            <span>{selectedKoin.keterangan || "Alokasi bonus sistem otomatis."}</span>
+                         </p>
+                      </div>
                    </div>
+                   {selectedKoin?.tk_bukti && (
+                      <div className="space-y-2">
+                         <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Lampiran Bukti / Dokumen</label>
+                            <button
+                               type="button"
+                               onClick={() => setProofPreviewUrl(resolveUploadUrl(selectedKoin.tk_bukti))}
+                               className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline"
+                            >
+                               Lihat Fullscreen <ExternalLink className="h-3 w-3" />
+                            </button>
+                         </div>
+                         <div className="aspect-video rounded-xl border border-slate-200 overflow-hidden bg-slate-200 shadow-inner">
+                            <img src={resolveUploadUrl(selectedKoin.tk_bukti)} className="w-full h-full object-cover" alt="Proof" />
+                         </div>
+                      </div>
+                   )}
                 </div>
              ) : (
                 <div className="space-y-2">
@@ -2104,6 +2126,18 @@ export default function TenantDetailPage() {
 
              <div className="space-y-3 pt-2">
                <div className="space-y-1">
+                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipe Penambahan</label>
+                 <select
+                   className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500 focus:bg-white transition-all cursor-pointer"
+                   value={injectMethod}
+                   onChange={(e) => setInjectMethod(e.target.value as "transfer" | "bonus")}
+                 >
+                   <option value="transfer">Transfer (Manual diluar aplikasi)</option>
+                   <option value="bonus">Bonus (Gratis / Penyesuaian Koin)</option>
+                 </select>
+               </div>
+
+               <div className="space-y-1">
                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Jumlah Koin</label>
                  <div className="relative">
                    <input
@@ -2167,6 +2201,7 @@ export default function TenantDetailPage() {
                    setIsInjectModalOpen(false);
                    setInjectAmount("");
                    setInjectReason("");
+                   setInjectMethod("transfer");
                    setInjectBukti(null);
                  }}
                  disabled={injectLoading}

@@ -26,10 +26,11 @@ export const tenantService = {
   },
 
   // Inject koin ke outlet
-  injectCoin: async (id: string, jumlahKoin: number, alasan: string, bukti?: File) => {
+  injectCoin: async (id: string, jumlahKoin: number, alasan: string, metode: "transfer" | "bonus", bukti?: File) => {
     const formData = new FormData();
     formData.append("jumlah_koin", jumlahKoin.toString());
     formData.append("alasan", alasan);
+    formData.append("metode_bayar", metode);
     if (bukti) {
       formData.append("bukti", bukti);
     }
@@ -41,5 +42,6 @@ export const tenantService = {
     return response.data;
   },
 };
+
 
 
