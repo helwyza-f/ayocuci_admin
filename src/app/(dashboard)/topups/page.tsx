@@ -773,17 +773,41 @@ function TopupsManagementContent() {
               </div>
             )}
 
-            {selectedTopup?.tk_metode_bayar === "bonus" && (
-              <div className="space-y-2">
-                <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Detail Alokasi Bonus</label>
-                <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-lg dark:bg-purple-950/10 dark:border-purple-900/30">
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-start gap-2">
-                    <Gift className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
-                    <span>{selectedTopup.keterangan || "Alokasi bonus sistem otomatis."}</span>
-                  </p>
+            {selectedTopup?.tk_metode_bayar === "bonus" || selectedTopup?.tk_metode_bayar === "inject" ? (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Detail Tambahan Koin</label>
+                  <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-lg">
+                    <p className="text-xs font-semibold text-slate-700 flex items-start gap-2">
+                      <Gift className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
+                      <span>{selectedTopup.keterangan || "Penambahan koin oleh admin AyoCuci."}</span>
+                    </p>
+                  </div>
                 </div>
+                {selectedTopup.tk_bukti && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Lampiran Bukti / Dokumen</label>
+                      <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-600">
+                        <Check className="h-3 w-3" /> Lampiran Ada
+                      </div>
+                    </div>
+                    <div className="group relative aspect-video rounded border border-slate-200 overflow-hidden bg-slate-200">
+                      <img src={resolveUploadUrl(selectedTopup.tk_bukti)} className="w-full h-full object-cover" alt="Proof" />
+                      <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                        <button
+                          type="button"
+                          onClick={() => setProofPreviewUrl(resolveUploadUrl(selectedTopup.tk_bukti))}
+                          className="bg-white text-slate-900 px-3 py-1.5 rounded font-bold text-[10px] flex items-center gap-2"
+                        >
+                           <ExternalLink className="h-3 w-3" /> Fullscreen
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            ) : null}
 
             {/* TRANSACTION SUMMARY */}
             <div className="grid grid-cols-2 gap-2">

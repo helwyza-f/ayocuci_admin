@@ -1880,14 +1880,15 @@ export default function TenantDetailPage() {
           </div>
 
           <div className="p-5 space-y-5 bg-slate-50/30">
-             {selectedKoin?.tk_metode_bayar === 'bonus' ? (
+             {/* Section khusus bonus / inject dari admin */}
+             {(selectedKoin?.tk_metode_bayar === 'bonus' || selectedKoin?.tk_metode_bayar === 'inject') ? (
                 <div className="space-y-4">
                    <div className="space-y-2">
-                      <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Detail Alokasi Bonus</label>
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Detail Tambahan Koin</label>
                       <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-lg dark:bg-purple-950/10 dark:border-purple-900/30">
                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-start gap-2">
                             <Gift className="h-4 w-4 text-purple-500 shrink-0 mt-0.5" />
-                            <span>{selectedKoin.keterangan || "Alokasi bonus sistem otomatis."}</span>
+                            <span>{selectedKoin.keterangan || "Penambahan koin oleh admin AyoCuci."}</span>
                          </p>
                       </div>
                    </div>

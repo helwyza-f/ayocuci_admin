@@ -55,7 +55,7 @@ interface DashboardSummary {
 }
 
 type KoinFeedItem = ActivityFeedItem & {
-  tk_metode_bayar: "transfer" | "midtrans" | "bonus" | "manual";
+  tk_metode_bayar: "transfer" | "midtrans" | "bonus" | "manual" | "inject";
   type: "koin";
   date: Date;
 };

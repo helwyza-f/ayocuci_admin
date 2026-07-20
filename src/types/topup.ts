@@ -1,5 +1,5 @@
 export type TopupStatus = "pending" | "success" | "failed" | "completed" | "verification" | "accepted" | "rejected" | "expired";
-export type TopupMethod = "transfer" | "midtrans" | "bonus" | "manual";
+export type TopupMethod = "transfer" | "midtrans" | "bonus" | "manual" | "inject";
 
 export interface Topup {
   tk_id: string;
