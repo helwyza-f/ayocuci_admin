@@ -26,12 +26,20 @@ export const tenantService = {
   },
 
   // Inject koin ke outlet
-  injectCoin: async (id: string, jumlahKoin: number, alasan: string) => {
-    const response = await api.post(`/tenants/${id}/inject-koin`, {
-      jumlah_koin: jumlahKoin,
-      alasan: alasan,
+  injectCoin: async (id: string, jumlahKoin: number, alasan: string, bukti?: File) => {
+    const formData = new FormData();
+    formData.append("jumlah_koin", jumlahKoin.toString());
+    formData.append("alasan", alasan);
+    if (bukti) {
+      formData.append("bukti", bukti);
+    }
+    const response = await api.post(`/tenants/${id}/inject-koin`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
     return response.data;
   },
 };
+
 

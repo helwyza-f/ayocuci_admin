@@ -132,6 +132,7 @@ export default function TenantDetailPage() {
   const [isInjectModalOpen, setIsInjectModalOpen] = useState(false);
   const [injectAmount, setInjectAmount] = useState<number | "">("");
   const [injectReason, setInjectReason] = useState("");
+  const [injectBukti, setInjectBukti] = useState<File | null>(null);
   const [injectLoading, setInjectLoading] = useState(false);
 
   const API_BASE_URL = "https://api.ayocuci.id";
@@ -342,12 +343,18 @@ export default function TenantDetailPage() {
 
     setInjectLoading(true);
     try {
-      const res = await tenantService.injectCoin(params.id as string, Number(injectAmount), injectReason);
+      const res = await tenantService.injectCoin(
+        params.id as string,
+        Number(injectAmount),
+        injectReason,
+        injectBukti || undefined
+      );
       if (res.status) {
         toast.success(res.message || "Koin berhasil ditambahkan ke outlet");
         setIsInjectModalOpen(false);
         setInjectAmount("");
         setInjectReason("");
+        setInjectBukti(null);
         fetchDetail();
       } else {
         toast.error(res.message || "Gagal menambahkan koin");
@@ -2114,6 +2121,37 @@ export default function TenantDetailPage() {
                    onChange={(e) => setInjectReason(e.target.value)}
                  />
                </div>
+
+               <div className="space-y-1">
+                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bukti Transfer / Dokumen (Opsional)</label>
+                 <div className="flex flex-col gap-2">
+                   <input
+                     type="file"
+                     accept="image/*"
+                     id="inject-bukti"
+                     className="hidden"
+                     onChange={(e) => {
+                       const file = e.target.files?.[0];
+                       if (file) setInjectBukti(file);
+                     }}
+                   />
+                   <label
+                     htmlFor="inject-bukti"
+                     className="flex items-center justify-center gap-2 w-full h-10 border border-dashed border-slate-300 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer transition-all"
+                   >
+                     {injectBukti ? `File: ${injectBukti.name.slice(0, 30)}` : "Pilih Bukti Pembayaran (Gambar)"}
+                   </label>
+                   {injectBukti && (
+                     <button
+                       type="button"
+                       className="text-[9px] font-black uppercase tracking-wider text-rose-500 hover:underline self-end"
+                       onClick={() => setInjectBukti(null)}
+                     >
+                       Hapus File
+                     </button>
+                   )}
+                 </div>
+               </div>
              </div>
 
              <div className="grid grid-cols-2 gap-3 pt-4">
@@ -2124,6 +2162,7 @@ export default function TenantDetailPage() {
                    setIsInjectModalOpen(false);
                    setInjectAmount("");
                    setInjectReason("");
+                   setInjectBukti(null);
                  }}
                  disabled={injectLoading}
                >
