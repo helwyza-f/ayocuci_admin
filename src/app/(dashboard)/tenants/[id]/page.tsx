@@ -344,13 +344,13 @@ export default function TenantDetailPage() {
     try {
       const res = await tenantService.injectCoin(params.id as string, Number(injectAmount), injectReason);
       if (res.status) {
-        toast.success(res.message || "Koin berhasil diinject ke outlet");
+        toast.success(res.message || "Koin berhasil ditambahkan ke outlet");
         setIsInjectModalOpen(false);
         setInjectAmount("");
         setInjectReason("");
         fetchDetail();
       } else {
-        toast.error(res.message || "Gagal menginject koin");
+        toast.error(res.message || "Gagal menambahkan koin");
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Terjadi kesalahan sistem");
@@ -580,7 +580,7 @@ export default function TenantDetailPage() {
                className="h-9 w-full px-4 font-bold text-[10px] uppercase tracking-wider gap-2 border-amber-200 text-amber-700 bg-amber-50/50 hover:bg-amber-50 hover:text-amber-800 shadow-sm active:scale-95 transition-all sm:w-auto"
                onClick={() => setIsInjectModalOpen(true)}
              >
-                <Coins className="h-3.5 w-3.5" /> Inject Koin
+                <Coins className="h-3.5 w-3.5" /> Tambah Koin
              </Button>
            </PermissionGate>
         </div>
@@ -2085,8 +2085,8 @@ export default function TenantDetailPage() {
                  <Coins className="h-5 w-5" />
                </div>
                <div>
-                 <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-tight">Inject Koin ke Outlet</h3>
-                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Inject Langsung Tanpa Transaksi Kasir</p>
+                 <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-tight">Tambah Saldo Koin</h3>
+                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tambahkan koin langsung untuk penyesuaian saldo</p>
                </div>
              </div>
 
@@ -2134,7 +2134,7 @@ export default function TenantDetailPage() {
                  onClick={handleInjectCoin}
                  disabled={injectLoading}
                >
-                 {injectLoading ? "Mengirim..." : "Kirim Koin"}
+                 {injectLoading ? "Mengirim..." : "Tambah Koin"}
                </Button>
              </div>
            </div>
