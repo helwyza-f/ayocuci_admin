@@ -24,4 +24,14 @@ export const tenantService = {
     const response = await api.delete(`/tenants/${id}`);
     return response.data;
   },
+
+  // Inject koin ke outlet
+  injectCoin: async (id: string, jumlahKoin: number, alasan: string) => {
+    const response = await api.post(`/tenants/${id}/inject-koin`, {
+      jumlah_koin: jumlahKoin,
+      alasan: alasan,
+    });
+    return response.data;
+  },
 };
+

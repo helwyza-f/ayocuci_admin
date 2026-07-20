@@ -128,6 +128,12 @@ export default function TenantDetailPage() {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<{ type: 'koin' | 'addon', id: string, status: 'confirm' | 'cancel' } | null>(null);
 
+  // Inject Koin States
+  const [isInjectModalOpen, setIsInjectModalOpen] = useState(false);
+  const [injectAmount, setInjectAmount] = useState<number | "">("");
+  const [injectReason, setInjectReason] = useState("");
+  const [injectLoading, setInjectLoading] = useState(false);
+
   const API_BASE_URL = "https://api.ayocuci.id";
 
   const fetchDetail = async () => {
@@ -321,6 +327,35 @@ export default function TenantDetailPage() {
       toast.error(error.response?.data?.message || "Terjadi kesalahan sistem");
     } finally {
       setConfirming(false);
+    }
+  };
+
+  const handleInjectCoin = async () => {
+    if (!injectAmount || Number(injectAmount) <= 0) {
+      toast.error("Jumlah koin harus lebih dari 0");
+      return;
+    }
+    if (!injectReason.trim()) {
+      toast.error("Alasan penambahan koin wajib diisi");
+      return;
+    }
+
+    setInjectLoading(true);
+    try {
+      const res = await tenantService.injectCoin(params.id as string, Number(injectAmount), injectReason);
+      if (res.status) {
+        toast.success(res.message || "Koin berhasil diinject ke outlet");
+        setIsInjectModalOpen(false);
+        setInjectAmount("");
+        setInjectReason("");
+        fetchDetail();
+      } else {
+        toast.error(res.message || "Gagal menginject koin");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Terjadi kesalahan sistem");
+    } finally {
+      setInjectLoading(false);
     }
   };
 
@@ -532,12 +567,22 @@ export default function TenantDetailPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
            <Link href={`/users/${profile.owner_id}`}>
              <Button variant="outline" size="sm" className="h-9 w-full px-4 font-bold text-[10px] uppercase tracking-wider gap-2 border-slate-200 shadow-sm hover:bg-slate-50 active:scale-95 transition-all sm:w-auto">
                 <User className="h-3.5 w-3.5" /> Profil Owner
              </Button>
            </Link>
+           <PermissionGate module="topups" action="confirm">
+             <Button 
+               variant="outline" 
+               size="sm" 
+               className="h-9 w-full px-4 font-bold text-[10px] uppercase tracking-wider gap-2 border-amber-200 text-amber-700 bg-amber-50/50 hover:bg-amber-50 hover:text-amber-800 shadow-sm active:scale-95 transition-all sm:w-auto"
+               onClick={() => setIsInjectModalOpen(true)}
+             >
+                <Coins className="h-3.5 w-3.5" /> Inject Koin
+             </Button>
+           </PermissionGate>
         </div>
       </div>
 
@@ -2030,6 +2075,71 @@ export default function TenantDetailPage() {
             </div>
          </DialogContent>
       </Dialog>
+
+      {/* INJECT COIN DIALOG MODAL */}
+      <Dialog open={isInjectModalOpen} onOpenChange={setIsInjectModalOpen}>
+         <DialogContent className="max-w-md p-6 rounded-2xl border-none shadow-2xl bg-white">
+           <div className="space-y-4">
+             <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+               <div className="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                 <Coins className="h-5 w-5" />
+               </div>
+               <div>
+                 <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-tight">Inject Koin ke Outlet</h3>
+                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Inject Langsung Tanpa Transaksi Kasir</p>
+               </div>
+             </div>
+
+             <div className="space-y-3 pt-2">
+               <div className="space-y-1">
+                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Jumlah Koin</label>
+                 <div className="relative">
+                   <input
+                     type="number"
+                     placeholder="Masukkan jumlah koin (contoh: 100)"
+                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                     value={injectAmount}
+                     onChange={(e) => setInjectAmount(e.target.value === "" ? "" : Number(e.target.value))}
+                   />
+                 </div>
+               </div>
+
+               <div className="space-y-1">
+                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alasan Penambahan</label>
+                 <textarea
+                   placeholder="Tuliskan alasan penambahan koin (wajib)..."
+                   rows={3}
+                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-all resize-none"
+                   value={injectReason}
+                   onChange={(e) => setInjectReason(e.target.value)}
+                 />
+               </div>
+             </div>
+
+             <div className="grid grid-cols-2 gap-3 pt-4">
+               <Button
+                 variant="outline"
+                 className="h-10 rounded-xl font-bold text-[10px] uppercase border-slate-200 text-slate-500 hover:bg-slate-50"
+                 onClick={() => {
+                   setIsInjectModalOpen(false);
+                   setInjectAmount("");
+                   setInjectReason("");
+                 }}
+                 disabled={injectLoading}
+               >
+                 Batal
+               </Button>
+               <Button
+                 className="h-10 rounded-xl font-bold text-[10px] uppercase bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/10 active:scale-95 transition-all"
+                 onClick={handleInjectCoin}
+                 disabled={injectLoading}
+               >
+                 {injectLoading ? "Mengirim..." : "Kirim Koin"}
+               </Button>
+             </div>
+           </div>
+         </DialogContent>
+       </Dialog>
       </div>
     </PermissionGate>
   );
