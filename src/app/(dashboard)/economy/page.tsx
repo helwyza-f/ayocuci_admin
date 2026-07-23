@@ -65,6 +65,7 @@ const KALI_KEYS = new Set([
 const PCT_KEYS = new Set([
   "activation_discount_pct",
   "referral_percent_first",
+  "referral_percent_first_referred",
   "referral_percent_subsequent",
 ]);
 

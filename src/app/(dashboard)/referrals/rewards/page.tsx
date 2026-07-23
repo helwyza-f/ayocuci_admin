@@ -212,13 +212,20 @@ function ReferralRewardsContent() {
       </div>
 
       {/* METRICS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard
           label="Komisi Isi Saldo"
           sub="Pertama / berikutnya"
           value={loading ? "—" : `${summary?.first_topup_percent ?? 0}% / ${summary?.next_topup_percent ?? 0}%`}
           icon={TrendingUp}
           color="bg-orange-50 text-primary"
+        />
+        <KpiCard
+          label="Bonus Owner Diajak"
+          sub="Top up pertama"
+          value={loading ? "—" : `${summary?.first_topup_percent_referred ?? 0}%`}
+          icon={Users2}
+          color="bg-emerald-50 text-emerald-600"
         />
         <KpiCard
           label="Referral Berhasil"

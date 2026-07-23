@@ -55,6 +55,7 @@ export interface ReferralConfig {
 
 export interface ReferralAdminSummary {
   first_topup_percent: string;
+  first_topup_percent_referred: string;
   next_topup_percent: string;
   monthly_reward_limit: string;
   payout_monthly_budget: number;

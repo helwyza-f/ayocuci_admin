@@ -35,6 +35,11 @@ const typeOptions: Array<{
     label: "Kebijakan Privasi",
     helper: "Dokumen yang tampil saat user membuka halaman privasi.",
   },
+  {
+    type: "REFERRAL_TERMS",
+    label: "Syarat Referral",
+    helper: "Dokumen khusus aturan program referral dan benefit referral.",
+  },
 ];
 
 const emptyForm: FormState = {
@@ -47,6 +52,7 @@ function LegalDocumentsContent() {
   const [docs, setDocs] = useState<Record<LegalDocumentType, LegalDocument | null>>({
     TERMS: null,
     PRIVACY: null,
+    REFERRAL_TERMS: null,
   });
   const [activeType, setActiveType] = useState<LegalDocumentType>("TERMS");
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -75,6 +81,7 @@ function LegalDocumentsContent() {
       const mapped: Record<LegalDocumentType, LegalDocument | null> = {
         TERMS: raw.find((item) => item.type === "TERMS") || null,
         PRIVACY: raw.find((item) => item.type === "PRIVACY") || null,
+        REFERRAL_TERMS: raw.find((item) => item.type === "REFERRAL_TERMS") || null,
       };
       setDocs(mapped);
       syncForm(activeType, mapped);

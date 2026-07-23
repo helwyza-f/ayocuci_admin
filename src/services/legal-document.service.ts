@@ -1,6 +1,6 @@
 import api from "@/lib/api-client";
 
-export type LegalDocumentType = "TERMS" | "PRIVACY";
+export type LegalDocumentType = "TERMS" | "PRIVACY" | "REFERRAL_TERMS";
 
 export interface LegalDocument {
   id: number;
