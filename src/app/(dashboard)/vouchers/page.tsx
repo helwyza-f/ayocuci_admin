@@ -71,6 +71,7 @@ function VoucherManagementContent() {
     vc_tanggalberakhir: "",
     vc_jumlah_voucher: "",
     vc_target: "ALL",
+    vc_min_topup: "",
   });
 
   const fetchVouchers = async () => {
@@ -100,6 +101,7 @@ function VoucherManagementContent() {
       vc_tanggalberakhir: v.vc_tanggalberakhir ? format(new Date(v.vc_tanggalberakhir), "yyyy-MM-dd") : "",
       vc_jumlah_voucher: v.vc_jumlah_voucher?.toString() || "",
       vc_target: v.vc_target || "ALL",
+      vc_min_topup: v.vc_min_topup ? v.vc_min_topup.toString() : "",
     });
     setIsDialogOpen(true);
   };
@@ -115,6 +117,7 @@ function VoucherManagementContent() {
         ...formData,
         vc_nilai_potongan: Number(formData.vc_nilai_potongan),
         vc_jumlah_voucher: Number(formData.vc_jumlah_voucher),
+        vc_min_topup: formData.vc_min_topup ? Number(formData.vc_min_topup) : 0,
         vc_tanggalmulai: formData.vc_tanggalmulai ? new Date(formData.vc_tanggalmulai).toISOString() : null,
         vc_tanggalberakhir: formData.vc_tanggalberakhir ? new Date(formData.vc_tanggalberakhir).toISOString() : null,
       };
@@ -139,6 +142,7 @@ function VoucherManagementContent() {
           vc_tanggalberakhir: "",
           vc_jumlah_voucher: "",
           vc_target: "ALL",
+          vc_min_topup: "",
         });
         fetchVouchers();
       }
@@ -212,6 +216,7 @@ function VoucherManagementContent() {
               { header: "Keterangan", key: "vc_keterangan", width: 30 },
               { header: "Tgl Mulai", key: "vc_tanggalmulai", width: 20, format: (v) => v ? format(new Date(v), "dd/MM/yyyy") : "" },
               { header: "Tgl Berakhir", key: "vc_tanggalberakhir", width: 20, format: (v) => v ? format(new Date(v), "dd/MM/yyyy") : "" },
+              { header: "Min. Top Up", key: "vc_min_topup", width: 15, format: (v) => v ? `Rp ${Number(v).toLocaleString()}` : "-" },
               { header: "Jumlah", key: "vc_jumlah_voucher", width: 12 },
               { header: "Sisa", key: "vc_sisa_voucher", width: 12 },
               { header: "Target", key: "vc_target", width: 12 },
@@ -236,6 +241,7 @@ function VoucherManagementContent() {
                     vc_tanggalberakhir: "",
                     vc_jumlah_voucher: "",
                     vc_target: "ALL",
+                    vc_min_topup: "",
                   });
                 }}
                 className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2"
@@ -342,6 +348,22 @@ function VoucherManagementContent() {
                         onChange={(e) => setFormData({ ...formData, vc_jumlah_voucher: e.target.value })}
                       />
                     </div>
+
+                    {(formData.vc_target === "KOIN" || formData.vc_target === "ALL") && (
+                      <div className="col-span-2 space-y-1">
+                        <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Min. Top Up Koin (Rp)</label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          className="rounded border-slate-200 font-bold h-9 text-xs shadow-none bg-white"
+                          value={formData.vc_min_topup}
+                          onChange={(e) => setFormData({ ...formData, vc_min_topup: e.target.value })}
+                        />
+                        <p className="text-[9px] font-medium text-slate-400 ml-1">
+                          Nominal top up koin minimal agar voucher bisa dipakai. Kosong / 0 = tanpa minimal.
+                        </p>
+                      </div>
+                    )}
                   </div>
                </div>
 
@@ -454,6 +476,14 @@ function VoucherManagementContent() {
                     {v.vc_jenis === "persen" ? `${v.vc_nilai_potongan}%` : `Rp ${v.vc_nilai_potongan.toLocaleString("id-ID")}`}
                   </span>
                 </div>
+                {v.vc_min_topup > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Min. Top Up</span>
+                    <span className="text-[11px] font-bold text-slate-900">
+                      Rp {v.vc_min_topup.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Kuota</span>
                   <div className="flex items-center gap-1 text-[11px] font-bold">
