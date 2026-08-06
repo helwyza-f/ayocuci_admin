@@ -27,6 +27,7 @@ type FormState = {
   title: string;
   summary: string;
   body: string;
+  voucherCode: string;
 };
 
 const emptyForm: FormState = {
@@ -34,6 +35,7 @@ const emptyForm: FormState = {
   title: "",
   summary: "",
   body: "",
+  voucherCode: "",
 };
 
 export function ContentForm({ initial }: { initial?: ContentBanner }) {
@@ -45,6 +47,7 @@ export function ContentForm({ initial }: { initial?: ContentBanner }) {
           title: initial.title,
           summary: initial.summary || "",
           body: initial.body,
+          voucherCode: initial.voucher_code || "",
         }
       : emptyForm,
   );
@@ -86,6 +89,11 @@ export function ContentForm({ initial }: { initial?: ContentBanner }) {
     payload.append("title", form.title);
     payload.append("summary", form.summary);
     payload.append("body", form.body);
+    // Kode voucher hanya dikirim untuk kategori PROMO (kosongkan selain itu).
+    payload.append(
+      "voucher_code",
+      form.category === "PROMO" ? form.voucherCode.trim() : "",
+    );
     payload.append("published_at", new Date().toISOString());
     if (imageFile) payload.append("image", imageFile);
 
@@ -174,6 +182,29 @@ export function ContentForm({ initial }: { initial?: ContentBanner }) {
                 className="h-12 rounded-xl bg-slate-50"
               />
             </div>
+
+            {form.category === "PROMO" && (
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase text-slate-400">
+                  Kode Voucher (opsional)
+                </label>
+                <Input
+                  value={form.voucherCode}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      voucherCode: e.target.value.toUpperCase(),
+                    })
+                  }
+                  placeholder="Contoh: FLASH70"
+                  className="h-12 rounded-xl bg-slate-50 font-bold uppercase"
+                />
+                <p className="text-xs font-medium text-slate-400">
+                  Bila diisi, kode ini tampil sebagai kartu yang bisa disalin di
+                  artikel promo. Kosongkan bila promo tanpa kode.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-xs font-black uppercase text-slate-400">

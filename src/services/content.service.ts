@@ -8,6 +8,7 @@ export interface ContentBanner {
   title: string;
   summary: string;
   body: string;
+  voucher_code?: string;
   image_url: string;
   published_at: string;
   is_active: boolean;
