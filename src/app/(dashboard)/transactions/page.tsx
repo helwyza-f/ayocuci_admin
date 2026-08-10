@@ -174,10 +174,10 @@ function TransactionsPageContent() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-slate-700">
-                        {trx.pelanggan?.plg_nama || "-"}
+                        {trx.pelanggan?.nama || "-"}
                       </div>
                       <div className="text-[11px] text-slate-500 mt-0.5">
-                        {trx.pelanggan?.plg_telepon || ""}
+                        {trx.pelanggan?.no_hp || ""}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
