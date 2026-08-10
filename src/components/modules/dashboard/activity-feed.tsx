@@ -19,6 +19,9 @@ export interface ActivityFeedItem {
   owner_code?: string;
   type: "koin" | "addon";
   item_names?: string;
+  tk_lastupdate?: string | null;
+  tk_tanggal_validasi?: string | null;
+  tk_staf_validasi?: string | null;
 }
 
 interface ActivityFeedProps {
