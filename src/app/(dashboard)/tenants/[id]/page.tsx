@@ -65,6 +65,7 @@ import StatCard from "@/components/modules/dashboard/stat-card";
 import { ResetDataForm } from "@/components/modules/ResetDataForm";
 import { ResetHistoryTable } from "@/components/modules/ResetHistoryTable";
 import { DeleteTenantAction } from "@/components/modules/DeleteTenantAction";
+import { TenantTransactionsTab } from "@/components/modules/TenantTransactionsTab";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -1225,105 +1226,9 @@ export default function TenantDetailPage() {
         </TabsContent>
         </PermissionGate>
 
-        {/* TAB: TRANSAKSI (WITH PAGINATION) */}
-        <TabsContent value="transaksi" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-           <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
-              <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Daftar Transaksi Outlet</p>
-                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-400">Hal {pages.transactions}</span>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="h-7 w-7" 
-                      disabled={pages.transactions === 1}
-                      onClick={() => setPages(prev => ({ ...prev, transactions: prev.transactions - 1 }))}
-                    >
-                      <ArrowLeft className="h-3 w-3" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="h-7 w-7" 
-                      disabled={trxHistory.length <= pages.transactions * itemsPerPage}
-                      onClick={() => setPages(prev => ({ ...prev, transactions: prev.transactions + 1 }))}
-                    >
-                      <ArrowUpRight className="h-3 w-3 rotate-45" />
-                    </Button>
-                 </div>
-              </div>
-              <div className="hidden overflow-x-auto md:block">
-                 <table className="w-full text-left border-collapse">
-                    <thead>
-                       <tr className="bg-slate-50/30 border-b border-slate-100">
-                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">ID Trx</th>
-                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Pelanggan</th>
-                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Nominal</th>
-                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Tanggal</th>
-                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                       {trxHistory.length > 0 ? trxHistory.slice((pages.transactions - 1) * itemsPerPage, pages.transactions * itemsPerPage).map((trx, i) => (
-                          <tr key={i} className="hover:bg-slate-50/30 transition-colors">
-                             <td className="px-6 py-4 font-bold text-[11px] text-slate-900 uppercase font-mono">{trx.id}</td>
-                             <td className="px-6 py-4">
-                               <div className="space-y-1">
-                                 <p className="text-xs font-bold text-slate-700">{trx.cust || "-"}</p>
-                                 <p className="text-[9px] font-medium text-slate-400 uppercase">
-                                   {trx.kasir_name || (trx.actor_type === "pegawai" ? "Pegawai" : "User")}
-                                 </p>
-                               </div>
-                             </td>
-                             <td className="px-6 py-4 text-xs font-bold text-primary">Rp {trx.total?.toLocaleString()}</td>
-                             <td className="px-6 py-4">
-                                <Badge variant="outline" className={cn(
-                                   "text-[8px] px-2 py-0.5 border-none font-bold uppercase",
-                                   trx.status === "Selesai" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                                )}>{trx.status}</Badge>
-                             </td>
-                             <td className="px-6 py-4 text-right text-[10px] font-bold text-slate-400 uppercase">{format(new Date(trx.date), "dd/MM/yyyy HH:mm")}</td>
-                          </tr>
-                       )) : (
-                          <tr><td colSpan={5} className="py-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">Data transaksi tidak ditemukan</td></tr>
-                       )}
-                    </tbody>
-                 </table>
-              </div>
-              <div className="space-y-3 p-4 md:hidden">
-                {trxHistory.length > 0 ? trxHistory.slice((pages.transactions - 1) * itemsPerPage, pages.transactions * itemsPerPage).map((trx, i) => (
-                  <div key={i} className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="break-all font-mono text-[11px] font-black uppercase text-slate-900">{trx.id}</p>
-                          <p className="mt-1 text-sm font-bold text-slate-700">{trx.cust || "-"}</p>
-                          <p className="text-[10px] font-medium uppercase text-slate-400">
-                            {trx.kasir_name || (trx.actor_type === "pegawai" ? "Pegawai" : "User")}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className={cn(
-                          "shrink-0 border-none px-2 py-0.5 text-[8px] font-bold uppercase",
-                          trx.status === "Selesai" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                        )}>
-                          {trx.status}
-                        </Badge>
-                      </div>
-                      <div className="rounded-lg border border-slate-100 bg-white p-3">
-                        <p className="text-[10px] font-bold uppercase text-slate-400">Nominal</p>
-                        <p className="mt-1 text-base font-black text-primary">Rp {trx.total?.toLocaleString()}</p>
-                        <p className="mt-2 text-[10px] font-bold uppercase text-slate-400">Tanggal</p>
-                        <p className="mt-1 text-xs font-bold uppercase text-slate-600">{format(new Date(trx.date), "dd/MM/yyyy HH:mm")}</p>
-                      </div>
-                    </div>
-                  </div>
-                )) : (
-                  <div className="py-10 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Data transaksi tidak ditemukan
-                  </div>
-                )}
-              </div>
-           </Card>
+        {/* TAB: TRANSAKSI (WITH PAGINATION & DATE FILTER) */}
+        <TabsContent value="transaksi">
+          <TenantTransactionsTab tenantId={params.id as string} />
         </TabsContent>
 
         {/* TAB: LAYANAN ADD-ON */}
