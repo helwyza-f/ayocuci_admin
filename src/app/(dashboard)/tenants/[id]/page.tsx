@@ -123,6 +123,9 @@ export default function TenantDetailPage() {
   const [selectedKoin, setSelectedKoin] = useState<any>(null);
   const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
   const [selectedAddon, setSelectedAddon] = useState<any>(null);
+  const [isHistoryNameModalOpen, setIsHistoryNameModalOpen] = useState(false);
+  const [historyNameData, setHistoryNameData] = useState<any[]>([]);
+  const [historyNameLoading, setHistoryNameLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
 
@@ -560,8 +563,20 @@ export default function TenantDetailPage() {
           </Button>
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="break-words text-lg font-bold tracking-tight text-slate-900 font-heading uppercase md:text-xl">
+              <h1 className="break-words text-lg font-bold tracking-tight text-slate-900 font-heading uppercase md:text-xl flex items-center gap-2">
                 {profile?.ot_nama}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-slate-400 hover:text-primary hover:bg-primary/10"
+                  onClick={() => {
+                    setIsHistoryNameModalOpen(true);
+                    fetchHistoryName();
+                  }}
+                  title="Lihat Riwayat Nama"
+                >
+                  <History className="h-3.5 w-3.5" />
+                </Button>
               </h1>
               <Badge variant="outline" className={cn(
                 "rounded px-2 py-0 text-[8px] font-bold uppercase border shadow-none",
@@ -2156,6 +2171,71 @@ export default function TenantDetailPage() {
                  {injectLoading ? "Mengirim..." : "Tambah Koin"}
                </Button>
              </div>
+           </div>
+         </DialogContent>
+       </Dialog>
+
+       {/* MODAL: RIWAYAT GANTI NAMA */}
+       <Dialog open={isHistoryNameModalOpen} onOpenChange={setIsHistoryNameModalOpen}>
+         <DialogContent className="max-w-md p-0 overflow-hidden border-none rounded-xl shadow-2xl bg-white">
+           <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-1">
+             <DialogTitle className="text-base font-black text-slate-800 tracking-tight flex items-center gap-2">
+               <History className="h-4 w-4 text-primary" />
+               Riwayat Nama Outlet
+             </DialogTitle>
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+               Menampilkan log perubahan nama pada outlet ini
+             </p>
+           </div>
+           
+           <div className="p-0 max-h-[400px] overflow-y-auto">
+             {historyNameLoading ? (
+               <div className="flex flex-col items-center justify-center p-8 gap-3">
+                 <LoaderIcon className="h-6 w-6 text-primary animate-spin" />
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Memuat Riwayat...</p>
+               </div>
+             ) : historyNameData.length === 0 ? (
+               <div className="flex flex-col items-center justify-center p-8 gap-3 text-center">
+                 <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center mb-1">
+                   <Store className="h-6 w-6 text-slate-300" />
+                 </div>
+                 <p className="text-sm font-bold text-slate-700">Belum Ada Riwayat</p>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider max-w-[200px]">
+                   Outlet ini belum pernah mengganti nama.
+                 </p>
+               </div>
+             ) : (
+               <div className="divide-y divide-slate-50">
+                 {historyNameData.map((history, idx) => (
+                   <div key={idx} className="p-4 hover:bg-slate-50/50 transition-colors">
+                     <div className="flex items-center justify-between mb-3">
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                         {format(new Date(history.created_at), "dd MMM yyyy, HH:mm", { locale: localeId })}
+                       </span>
+                     </div>
+                     <div className="flex items-center gap-3">
+                       <div className="flex-1 min-w-0 p-3 rounded-lg bg-slate-50 border border-slate-100">
+                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nama Sebelumnya</p>
+                         <p className="text-sm font-bold text-slate-600 truncate line-through">{history.old_name}</p>
+                       </div>
+                       <ArrowLeft className="h-4 w-4 text-slate-300 shrink-0 rotate-180" />
+                       <div className="flex-1 min-w-0 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                         <p className="text-[10px] font-bold text-primary/60 uppercase tracking-wider mb-1">Nama Baru</p>
+                         <p className="text-sm font-bold text-primary truncate">{history.new_name}</p>
+                       </div>
+                     </div>
+                     {(history.changed_by || history.changed_by_type) && (
+                       <div className="mt-3 flex items-center gap-1.5 justify-end">
+                         <User className="h-3 w-3 text-slate-400" />
+                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                           Diubah oleh: {history.changed_by || "-"} {history.changed_by_type ? `(${history.changed_by_type})` : ""}
+                         </span>
+                       </div>
+                     )}
+                   </div>
+                 ))}
+               </div>
+             )}
            </div>
          </DialogContent>
        </Dialog>
