@@ -1852,6 +1852,40 @@ export default function TenantDetailPage() {
                    <p className="font-bold text-xs text-[#FF5F4E]">Rp {selectedKoin?.tk_total?.toLocaleString("id-ID")}</p>
                 </div>
              </div>
+
+             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl shadow-inner mt-4 text-[10px] space-y-2">
+                <p className="font-bold uppercase text-slate-500 mb-2 border-b border-slate-200 pb-1 flex items-center gap-1">
+                   <Clock3 className="h-3 w-3" /> Audit Log
+                </p>
+                <div className="flex justify-between items-center">
+                   <span className="text-slate-500 font-medium">Tagihan Dibuat:</span>
+                   <span className="font-bold text-slate-800">
+                      {selectedKoin?.tk_created ? format(new Date(selectedKoin.tk_created), "dd MMM yyyy HH:mm") : "-"}
+                   </span>
+                </div>
+                <div className="flex justify-between items-center">
+                   <span className="text-slate-500 font-medium">Terakhir Diupdate (Upload Bukti):</span>
+                   <span className="font-bold text-slate-800">
+                      {selectedKoin?.tk_lastupdate ? format(new Date(selectedKoin.tk_lastupdate), "dd MMM yyyy HH:mm") : "-"}
+                   </span>
+                </div>
+                {selectedKoin?.tk_tanggal_validasi && (
+                   <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">Divalidasi Pada:</span>
+                      <span className="font-bold text-emerald-600">
+                         {format(new Date(selectedKoin.tk_tanggal_validasi), "dd MMM yyyy HH:mm")}
+                      </span>
+                   </div>
+                )}
+                {selectedKoin?.tk_staf_validasi && (
+                   <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">Divalidasi Oleh:</span>
+                      <span className="font-bold text-emerald-600">
+                         {selectedKoin.tk_staf_validasi}
+                      </span>
+                   </div>
+                )}
+             </div>
           </div>
 
           {selectedKoin && isTopupActionable(selectedKoin.tk_status) && (
