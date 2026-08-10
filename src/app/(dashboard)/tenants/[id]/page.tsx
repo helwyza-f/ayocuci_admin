@@ -377,6 +377,19 @@ export default function TenantDetailPage() {
       setInjectLoading(false);
     }
   };
+  const fetchHistoryName = async () => {
+    setHistoryNameLoading(true);
+    try {
+      const res = await api.get(`/admin/tenants/${params.id}/name-history`);
+      if (res.data?.status) {
+        setHistoryNameData(res.data.data || []);
+      }
+    } catch (error) {
+      toast.error("Gagal mengambil riwayat pergantian nama");
+    } finally {
+      setHistoryNameLoading(false);
+    }
+  };
 
   // 🚀 REAL-TIME COMMAND CENTER (WebSocket Integration)
   useEffect(() => {
