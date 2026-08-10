@@ -380,7 +380,7 @@ export default function TenantDetailPage() {
   const fetchHistoryName = async () => {
     setHistoryNameLoading(true);
     try {
-      const res = await api.get(`/admin/tenants/${params.id}/name-history`);
+      const res = await api.get(`/tenants/${params.id}/name-history`);
       if (res.data?.status) {
         setHistoryNameData(res.data.data || []);
       }
