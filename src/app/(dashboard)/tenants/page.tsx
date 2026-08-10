@@ -305,12 +305,12 @@ function TenantsPageContent() {
   };
 
   const outletSummary = useMemo(() => {
-    const total = tenants.length;
-    const active = tenants.filter((tenant) => Number(tenant.ot_status) === 1).length;
-    const inactive = tenants.filter((tenant) => Number(tenant.ot_status) !== 1).length;
-    const expired = tenants.filter((tenant) => String(tenant.subscription_status || "").toUpperCase() === "EXPIRED").length;
+    const total = filteredTenants.length;
+    const active = filteredTenants.filter((tenant) => Number(tenant.ot_status) === 1).length;
+    const inactive = filteredTenants.filter((tenant) => Number(tenant.ot_status) !== 1).length;
+    const expired = filteredTenants.filter((tenant) => String(tenant.subscription_status || "").toUpperCase() === "EXPIRED").length;
     return { total, active, inactive, expired };
-  }, [tenants]);
+  }, [filteredTenants]);
 
   return (
     <div className="space-y-6">
