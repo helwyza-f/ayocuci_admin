@@ -20,6 +20,7 @@ import {
   BookOpen,
   MessageSquareWarning,
   Trash2,
+  Receipt,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -43,6 +44,7 @@ export const adminMenus: MenuGroup[] = [
     items: [
       { label: "Pusat Kontrol",     href: "/",          icon: LayoutGrid, module: "dashboard" },
       { label: "Analisis & Laporan", href: "/analytics", icon: BarChart2,  module: "analytics" },
+      { label: "Riwayat Transaksi", href: "/transactions", icon: Receipt, module: "dashboard" },
     ],
   },
   {
