@@ -526,7 +526,6 @@ export default function DashboardPage() {
                 <div className="font-bold text-xs text-primary">Rp {selectedItem?.tk_total?.toLocaleString("id-ID")}</div>
               </div>
             </div>
-            </div>
 
              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl shadow-inner mt-4 text-[10px] space-y-2">
                 <p className="font-bold uppercase text-slate-500 mb-2 border-b border-slate-200 pb-1 flex items-center gap-1">
