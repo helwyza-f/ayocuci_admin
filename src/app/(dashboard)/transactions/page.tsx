@@ -116,7 +116,7 @@ function TransactionsPageContent() {
         </div>
         
         <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto">
-          <DateRangeFilter dateRange={dateRange} onChange={(dr) => { setDateRange(dr); setPage(1); }} />
+          <DateRangeFilter value={dateRange} onChange={(dr) => { setDateRange(dr); setPage(1); }} />
           
           <select
             className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 min-w-[140px]"
@@ -209,8 +209,10 @@ function TransactionsPageContent() {
               Menampilkan {transactions.length} dari total {totalData} transaksi
             </p>
             <Pagination
-              currentPage={page}
+              page={page}
               totalPages={totalPages}
+              totalItems={totalData}
+              pageSize={PAGE_SIZE}
               onPageChange={(p) => setPage(p)}
             />
           </div>
