@@ -48,7 +48,7 @@ function TransactionsPageContent() {
   if (dateRange.end) queryParams.set("end", dateRange.end);
 
   const { data: response, isLoading } = useSWR<any>(
-    `/admin/transactions?${queryParams.toString()}`,
+    `/transactions?${queryParams.toString()}`,
     apiFetcher,
     {
       keepPreviousData: true,
