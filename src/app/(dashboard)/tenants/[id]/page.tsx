@@ -65,6 +65,7 @@ import StatCard from "@/components/modules/dashboard/stat-card";
 import { ResetDataForm } from "@/components/modules/ResetDataForm";
 import { ResetHistoryTable } from "@/components/modules/ResetHistoryTable";
 import { DeleteTenantAction } from "@/components/modules/DeleteTenantAction";
+import { TenantTransactionsTab } from "@/components/modules/TenantTransactionsTab";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -122,6 +123,9 @@ export default function TenantDetailPage() {
   const [selectedKoin, setSelectedKoin] = useState<any>(null);
   const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
   const [selectedAddon, setSelectedAddon] = useState<any>(null);
+  const [isHistoryNameModalOpen, setIsHistoryNameModalOpen] = useState(false);
+  const [historyNameData, setHistoryNameData] = useState<any[]>([]);
+  const [historyNameLoading, setHistoryNameLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
 
@@ -136,6 +140,10 @@ export default function TenantDetailPage() {
   const [injectMethod, setInjectMethod] = useState<"transfer" | "bonus">("transfer");
   const [injectBukti, setInjectBukti] = useState<File | null>(null);
   const [injectLoading, setInjectLoading] = useState(false);
+
+  // Status Update State
+  const [isStatusUpdateModalOpen, setIsStatusUpdateModalOpen] = useState(false);
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
 
   const API_BASE_URL = "https://api.ayocuci.id";
   const backHref = useMemo(() => {
@@ -373,6 +381,35 @@ export default function TenantDetailPage() {
       setInjectLoading(false);
     }
   };
+  const fetchHistoryName = async () => {
+    setHistoryNameLoading(true);
+    try {
+      const res = await api.get(`/tenants/${params.id}/name-history`);
+      if (res.data?.status) {
+        setHistoryNameData(res.data.data || []);
+      }
+    } catch (error) {
+      toast.error("Gagal mengambil riwayat pergantian nama");
+    } finally {
+      setHistoryNameLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!profile?.ot_id) return;
+    setStatusUpdateLoading(true);
+    const newStatus = profile.ot_status === 1 ? 0 : 1;
+    try {
+      const res = await tenantService.updateStatus(profile.ot_id, newStatus);
+      toast.success("Status outlet berhasil diperbarui");
+      setIsStatusUpdateModalOpen(false);
+      fetchDetail();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Terjadi kesalahan sistem");
+    } finally {
+      setStatusUpdateLoading(false);
+    }
+  };
 
   // 🚀 REAL-TIME COMMAND CENTER (WebSocket Integration)
   useEffect(() => {
@@ -559,8 +596,20 @@ export default function TenantDetailPage() {
           </Button>
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="break-words text-lg font-bold tracking-tight text-slate-900 font-heading uppercase md:text-xl">
+              <h1 className="break-words text-lg font-bold tracking-tight text-slate-900 font-heading uppercase md:text-xl flex items-center gap-2">
                 {profile?.ot_nama}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-slate-400 hover:text-primary hover:bg-primary/10"
+                  onClick={() => {
+                    setIsHistoryNameModalOpen(true);
+                    fetchHistoryName();
+                  }}
+                  title="Lihat Riwayat Nama"
+                >
+                  <History className="h-3.5 w-3.5" />
+                </Button>
               </h1>
               <Badge variant="outline" className={cn(
                 "rounded px-2 py-0 text-[8px] font-bold uppercase border shadow-none",
@@ -596,6 +645,25 @@ export default function TenantDetailPage() {
                onClick={() => setIsInjectModalOpen(true)}
              >
                 <Coins className="h-3.5 w-3.5" /> Tambah Koin
+             </Button>
+           </PermissionGate>
+           <PermissionGate module="tenants" action="suspend">
+             <Button 
+               variant="outline" 
+               size="sm" 
+               className={cn(
+                 "h-9 w-full px-4 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-sm active:scale-95 transition-all sm:w-auto",
+                 profile.ot_status === 1 
+                  ? "border-rose-200 text-rose-700 bg-rose-50/50 hover:bg-rose-50 hover:text-rose-800" 
+                  : "border-emerald-200 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-50 hover:text-emerald-800"
+               )}
+               onClick={() => setIsStatusUpdateModalOpen(true)}
+             >
+                {profile.ot_status === 1 ? (
+                  <><ShieldAlert className="h-3.5 w-3.5" /> Nonaktifkan</>
+                ) : (
+                  <><CheckCircle2 className="h-3.5 w-3.5" /> Aktifkan</>
+                )}
              </Button>
            </PermissionGate>
         </div>
@@ -1225,105 +1293,9 @@ export default function TenantDetailPage() {
         </TabsContent>
         </PermissionGate>
 
-        {/* TAB: TRANSAKSI (WITH PAGINATION) */}
-        <TabsContent value="transaksi" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-           <Card className="border border-slate-200 bg-white shadow-none overflow-hidden">
-              <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Daftar Transaksi Outlet</p>
-                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-400">Hal {pages.transactions}</span>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="h-7 w-7" 
-                      disabled={pages.transactions === 1}
-                      onClick={() => setPages(prev => ({ ...prev, transactions: prev.transactions - 1 }))}
-                    >
-                      <ArrowLeft className="h-3 w-3" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="h-7 w-7" 
-                      disabled={trxHistory.length <= pages.transactions * itemsPerPage}
-                      onClick={() => setPages(prev => ({ ...prev, transactions: prev.transactions + 1 }))}
-                    >
-                      <ArrowUpRight className="h-3 w-3 rotate-45" />
-                    </Button>
-                 </div>
-              </div>
-              <div className="hidden overflow-x-auto md:block">
-                 <table className="w-full text-left border-collapse">
-                    <thead>
-                       <tr className="bg-slate-50/30 border-b border-slate-100">
-                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">ID Trx</th>
-                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Pelanggan</th>
-                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Nominal</th>
-                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-[9px] font-bold uppercase text-slate-400 tracking-wider text-right">Tanggal</th>
-                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                       {trxHistory.length > 0 ? trxHistory.slice((pages.transactions - 1) * itemsPerPage, pages.transactions * itemsPerPage).map((trx, i) => (
-                          <tr key={i} className="hover:bg-slate-50/30 transition-colors">
-                             <td className="px-6 py-4 font-bold text-[11px] text-slate-900 uppercase font-mono">{trx.id}</td>
-                             <td className="px-6 py-4">
-                               <div className="space-y-1">
-                                 <p className="text-xs font-bold text-slate-700">{trx.cust || "-"}</p>
-                                 <p className="text-[9px] font-medium text-slate-400 uppercase">
-                                   {trx.kasir_name || (trx.actor_type === "pegawai" ? "Pegawai" : "User")}
-                                 </p>
-                               </div>
-                             </td>
-                             <td className="px-6 py-4 text-xs font-bold text-primary">Rp {trx.total?.toLocaleString()}</td>
-                             <td className="px-6 py-4">
-                                <Badge variant="outline" className={cn(
-                                   "text-[8px] px-2 py-0.5 border-none font-bold uppercase",
-                                   trx.status === "Selesai" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                                )}>{trx.status}</Badge>
-                             </td>
-                             <td className="px-6 py-4 text-right text-[10px] font-bold text-slate-400 uppercase">{format(new Date(trx.date), "dd/MM/yyyy HH:mm")}</td>
-                          </tr>
-                       )) : (
-                          <tr><td colSpan={5} className="py-20 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">Data transaksi tidak ditemukan</td></tr>
-                       )}
-                    </tbody>
-                 </table>
-              </div>
-              <div className="space-y-3 p-4 md:hidden">
-                {trxHistory.length > 0 ? trxHistory.slice((pages.transactions - 1) * itemsPerPage, pages.transactions * itemsPerPage).map((trx, i) => (
-                  <div key={i} className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="break-all font-mono text-[11px] font-black uppercase text-slate-900">{trx.id}</p>
-                          <p className="mt-1 text-sm font-bold text-slate-700">{trx.cust || "-"}</p>
-                          <p className="text-[10px] font-medium uppercase text-slate-400">
-                            {trx.kasir_name || (trx.actor_type === "pegawai" ? "Pegawai" : "User")}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className={cn(
-                          "shrink-0 border-none px-2 py-0.5 text-[8px] font-bold uppercase",
-                          trx.status === "Selesai" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                        )}>
-                          {trx.status}
-                        </Badge>
-                      </div>
-                      <div className="rounded-lg border border-slate-100 bg-white p-3">
-                        <p className="text-[10px] font-bold uppercase text-slate-400">Nominal</p>
-                        <p className="mt-1 text-base font-black text-primary">Rp {trx.total?.toLocaleString()}</p>
-                        <p className="mt-2 text-[10px] font-bold uppercase text-slate-400">Tanggal</p>
-                        <p className="mt-1 text-xs font-bold uppercase text-slate-600">{format(new Date(trx.date), "dd/MM/yyyy HH:mm")}</p>
-                      </div>
-                    </div>
-                  </div>
-                )) : (
-                  <div className="py-10 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    Data transaksi tidak ditemukan
-                  </div>
-                )}
-              </div>
-           </Card>
+        {/* TAB: TRANSAKSI (WITH PAGINATION & DATE FILTER) */}
+        <TabsContent value="transaksi">
+          <TenantTransactionsTab tenantId={params.id as string} />
         </TabsContent>
 
         {/* TAB: LAYANAN ADD-ON */}
@@ -1947,6 +1919,40 @@ export default function TenantDetailPage() {
                    <p className="font-bold text-xs text-[#FF5F4E]">Rp {selectedKoin?.tk_total?.toLocaleString("id-ID")}</p>
                 </div>
              </div>
+
+             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl shadow-inner mt-4 text-[10px] space-y-2">
+                <p className="font-bold uppercase text-slate-500 mb-2 border-b border-slate-200 pb-1 flex items-center gap-1">
+                   <Clock3 className="h-3 w-3" /> Audit Log
+                </p>
+                <div className="flex justify-between items-center">
+                   <span className="text-slate-500 font-medium">Tagihan Dibuat:</span>
+                   <span className="font-bold text-slate-800">
+                      {selectedKoin?.tk_created ? format(new Date(selectedKoin.tk_created), "dd MMM yyyy HH:mm") : "-"}
+                   </span>
+                </div>
+                <div className="flex justify-between items-center">
+                   <span className="text-slate-500 font-medium">Terakhir Diupdate (Upload Bukti):</span>
+                   <span className="font-bold text-slate-800">
+                      {selectedKoin?.tk_lastupdate ? format(new Date(selectedKoin.tk_lastupdate), "dd MMM yyyy HH:mm") : "-"}
+                   </span>
+                </div>
+                {selectedKoin?.tk_tanggal_validasi && (
+                   <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">Divalidasi Pada:</span>
+                      <span className="font-bold text-emerald-600">
+                         {format(new Date(selectedKoin.tk_tanggal_validasi), "dd MMM yyyy HH:mm")}
+                      </span>
+                   </div>
+                )}
+                {selectedKoin?.tk_staf_validasi && (
+                   <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">Divalidasi Oleh:</span>
+                      <span className="font-bold text-emerald-600">
+                         {selectedKoin.tk_staf_validasi}
+                      </span>
+                   </div>
+                )}
+             </div>
           </div>
 
           {selectedKoin && isTopupActionable(selectedKoin.tk_status) && (
@@ -2220,6 +2226,117 @@ export default function TenantDetailPage() {
            </div>
          </DialogContent>
        </Dialog>
+
+       {/* MODAL: RIWAYAT GANTI NAMA */}
+       <Dialog open={isHistoryNameModalOpen} onOpenChange={setIsHistoryNameModalOpen}>
+         <DialogContent className="max-w-md p-0 overflow-hidden border-none rounded-xl shadow-2xl bg-white">
+           <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-1">
+             <DialogTitle className="text-base font-black text-slate-800 tracking-tight flex items-center gap-2">
+               <History className="h-4 w-4 text-primary" />
+               Riwayat Nama Outlet
+             </DialogTitle>
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+               Menampilkan log perubahan nama pada outlet ini
+             </p>
+           </div>
+           
+           <div className="p-0 max-h-[400px] overflow-y-auto">
+             {historyNameLoading ? (
+               <div className="flex flex-col items-center justify-center p-8 gap-3">
+                 <LoaderIcon className="h-6 w-6 text-primary animate-spin" />
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Memuat Riwayat...</p>
+               </div>
+             ) : historyNameData.length === 0 ? (
+               <div className="flex flex-col items-center justify-center p-8 gap-3 text-center">
+                 <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center mb-1">
+                   <Store className="h-6 w-6 text-slate-300" />
+                 </div>
+                 <p className="text-sm font-bold text-slate-700">Belum Ada Riwayat</p>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider max-w-[200px]">
+                   Outlet ini belum pernah mengganti nama.
+                 </p>
+               </div>
+             ) : (
+               <div className="divide-y divide-slate-50">
+                 {historyNameData.map((history, idx) => (
+                   <div key={idx} className="p-4 hover:bg-slate-50/50 transition-colors">
+                     <div className="flex items-center justify-between mb-3">
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                         {format(new Date(history.created_at), "dd MMM yyyy, HH:mm", { locale: localeId })}
+                       </span>
+                     </div>
+                     <div className="flex items-center gap-3">
+                       <div className="flex-1 min-w-0 p-3 rounded-lg bg-slate-50 border border-slate-100">
+                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nama Sebelumnya</p>
+                         <p className="text-sm font-bold text-slate-600 truncate line-through">{history.old_name}</p>
+                       </div>
+                       <ArrowLeft className="h-4 w-4 text-slate-300 shrink-0 rotate-180" />
+                       <div className="flex-1 min-w-0 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                         <p className="text-[10px] font-bold text-primary/60 uppercase tracking-wider mb-1">Nama Baru</p>
+                         <p className="text-sm font-bold text-primary truncate">{history.new_name}</p>
+                       </div>
+                     </div>
+                     {(history.changed_by || history.changed_by_type) && (
+                       <div className="mt-3 flex items-center gap-1.5 justify-end">
+                         <User className="h-3 w-3 text-slate-400" />
+                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                           Diubah oleh: {history.changed_by || "-"} {history.changed_by_type ? `(${history.changed_by_type})` : ""}
+                         </span>
+                       </div>
+                     )}
+                   </div>
+                 ))}
+               </div>
+             )}
+           </div>
+         </DialogContent>
+       </Dialog>
+
+      {/* MODAL UPDATE STATUS */}
+      <Dialog open={isStatusUpdateModalOpen} onOpenChange={setIsStatusUpdateModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogTitle className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4 flex items-center gap-2">
+            {profile?.ot_status === 1 ? (
+              <><ShieldAlert className="h-5 w-5 text-rose-500" /> Nonaktifkan Outlet</>
+            ) : (
+              <><CheckCircle2 className="h-5 w-5 text-emerald-500" /> Aktifkan Outlet</>
+            )}
+          </DialogTitle>
+          <div className="py-6 space-y-4">
+            <p className="text-sm text-slate-600 leading-relaxed text-center">
+              {profile?.ot_status === 1 
+                ? `Apakah Anda yakin ingin menonaktifkan outlet "${profile?.ot_nama}"? Outlet yang dinonaktifkan tidak akan dapat diakses oleh pegawainya.` 
+                : `Apakah Anda yakin ingin mengaktifkan kembali outlet "${profile?.ot_nama}"?`}
+            </p>
+          </div>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-slate-100">
+            <Button
+              variant="outline"
+              onClick={() => setIsStatusUpdateModalOpen(false)}
+              disabled={statusUpdateLoading}
+              className="w-full sm:w-auto h-10 font-bold uppercase text-[10px] tracking-wider"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleUpdateStatus}
+              disabled={statusUpdateLoading}
+              className={cn(
+                "w-full sm:w-auto h-10 font-bold uppercase text-[10px] tracking-wider",
+                profile?.ot_status === 1 
+                  ? "bg-rose-500 hover:bg-rose-600 text-white" 
+                  : "bg-emerald-500 hover:bg-emerald-600 text-white"
+              )}
+            >
+              {statusUpdateLoading ? (
+                <LoaderIcon className="h-4 w-4 animate-spin" />
+              ) : (
+                profile?.ot_status === 1 ? "Ya, Nonaktifkan" : "Ya, Aktifkan"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </PermissionGate>
   );

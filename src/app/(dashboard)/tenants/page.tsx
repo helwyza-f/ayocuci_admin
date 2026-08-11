@@ -186,9 +186,24 @@ function TenantsPageContent() {
       const matchesActivity =
         selectedActivity === "all" ||
         (selectedActivity === "today_tx" && Number(t.daily_tx_count || 0) > 0);
-      const matchesKoin =
-        koinThreshold === "all" ||
-        Number(t.ot_koin || 0) < Number(koinThreshold);
+      
+      const matchesKoin = (() => {
+        if (koinThreshold === "all") return true;
+        const koinValue = Number(t.ot_koin || 0);
+        
+        if (koinThreshold.startsWith("lt_")) {
+          return koinValue < Number(koinThreshold.replace("lt_", ""));
+        }
+        if (koinThreshold.startsWith("gt_")) {
+          return koinValue > Number(koinThreshold.replace("gt_", ""));
+        }
+        // Legacy fallback for old numeric URL params
+        if (!isNaN(Number(koinThreshold))) {
+          return koinValue < Number(koinThreshold);
+        }
+        return true;
+      })();
+
       return matchesSearch && matchesOwner && matchesStatus && matchesActivity && matchesKoin;
     });
     return filterByDateRange(byFilter, (t) => t.ot_created, dateRange);
@@ -290,12 +305,12 @@ function TenantsPageContent() {
   };
 
   const outletSummary = useMemo(() => {
-    const total = tenants.length;
-    const active = tenants.filter((tenant) => Number(tenant.ot_status) === 1).length;
-    const inactive = tenants.filter((tenant) => Number(tenant.ot_status) !== 1).length;
-    const expired = tenants.filter((tenant) => String(tenant.subscription_status || "").toUpperCase() === "EXPIRED").length;
+    const total = filteredTenants.length;
+    const active = filteredTenants.filter((tenant) => Number(tenant.ot_status) === 1).length;
+    const inactive = filteredTenants.filter((tenant) => Number(tenant.ot_status) !== 1).length;
+    const expired = filteredTenants.filter((tenant) => String(tenant.subscription_status || "").toUpperCase() === "EXPIRED").length;
     return { total, active, inactive, expired };
-  }, [tenants]);
+  }, [filteredTenants]);
 
   return (
     <div className="space-y-6">
@@ -469,10 +484,16 @@ function TenantsPageContent() {
                 className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
               >
                 <option value="all">Semua Koin</option>
-                <option value="10">Sisa &lt; 10</option>
-                <option value="20">Sisa &lt; 20</option>
-                <option value="50">Sisa &lt; 50</option>
-                <option value="100">Sisa &lt; 100</option>
+                <option value="lt_5">Sisa &lt; 5</option>
+                <option value="lt_10">Sisa &lt; 10</option>
+                <option value="lt_20">Sisa &lt; 20</option>
+                <option value="lt_50">Sisa &lt; 50</option>
+                <option value="lt_100">Sisa &lt; 100</option>
+                <option disabled>────────</option>
+                <option value="gt_50">Sisa &gt; 50</option>
+                <option value="gt_100">Sisa &gt; 100</option>
+                <option value="gt_500">Sisa &gt; 500</option>
+                <option value="gt_1000">Sisa &gt; 1000</option>
               </select>
               <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
             </div>

@@ -47,3 +47,13 @@ export interface Tenant {
   ot_timezone: string;
   ot_zona_waktu?: string;
 }
+
+export interface OutletNameHistory {
+  id: number;
+  ot_id: string;
+  old_name: string;
+  new_name: string;
+  changed_by?: string;
+  changed_by_type?: string;
+  created_at: string;
+}
