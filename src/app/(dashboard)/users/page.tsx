@@ -61,6 +61,28 @@ function OwnersPageContent() {
 
   const totalPages = Math.ceil(filteredOwners.length / PAGE_SIZE);
   const paginated = filteredOwners.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const summary = useMemo(() => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const total = owners.length || 0;
+    const filtered = filteredOwners.length || 0;
+    const thisMonth = owners.filter((o) => o.created_at && new Date(o.created_at) >= monthStart).length;
+    const outlets = owners.reduce((sum, owner) => sum + Number(owner.total_outlets || 0), 0);
+    const withOutlet = owners.filter((owner) => Number(owner.total_outlets || 0) > 0).length;
+    const avgOutlets = total > 0 ? outlets / total : 0;
+
+    return {
+      total,
+      filtered,
+      thisMonth,
+      thisMonthPct: total > 0 ? (thisMonth / total) * 100 : 0,
+      filteredPct: total > 0 ? (filtered / total) * 100 : 0,
+      withOutlet,
+      withOutletPct: total > 0 ? (withOutlet / total) * 100 : 0,
+      outlets,
+      avgOutlets,
+    };
+  }, [owners, filteredOwners]);
 
   const handleSearch = (val: string) => { setSearch(val); setPage(1); };
   const handleDateRange = (r: DateRange) => { setDateRange(r); setPage(1); };
@@ -103,6 +125,66 @@ function OwnersPageContent() {
       </div>
 
       {/* FILTER BAR */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
+        <Card className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-primary to-orange-500 p-5 text-white shadow-lg">
+          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative space-y-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/70">
+                Owner Bulan Ini
+              </p>
+              <p className="mt-1 text-3xl font-black tracking-tight">
+                {summary.thisMonth.toLocaleString("id-ID")}
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/80">
+                {summary.thisMonthPct.toFixed(1)}% dari total owner
+              </p>
+              <p className="mt-1 text-sm font-semibold text-white/95">
+                {summary.filteredPct.toFixed(1)}% dari total ikut filter saat ini
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+            Total Owner
+          </p>
+          <p className="mt-3 text-3xl font-black tracking-tight text-slate-900">
+            {summary.total.toLocaleString("id-ID")}
+          </p>
+          <p className="mt-2 text-xs font-semibold text-slate-500">
+            {summary.filtered.toLocaleString("id-ID")} tampil di filter aktif
+          </p>
+        </Card>
+
+        <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+            Owner Dengan Outlet
+          </p>
+          <p className="mt-3 text-3xl font-black tracking-tight text-emerald-600">
+            {summary.withOutlet.toLocaleString("id-ID")}
+          </p>
+          <p className="mt-2 text-xs font-semibold text-slate-500">
+            {summary.withOutletPct.toFixed(1)}% dari total owner
+          </p>
+        </Card>
+
+        <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+            Rata-rata Outlet / Owner
+          </p>
+          <p className="mt-3 text-3xl font-black tracking-tight text-slate-900">
+            {summary.avgOutlets.toFixed(1)}
+          </p>
+          <p className="mt-2 text-xs font-semibold text-slate-500">
+            {summary.outlets.toLocaleString("id-ID")} total outlet aktif
+          </p>
+        </Card>
+      </div>
+
       <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
         <div className="flex flex-col lg:flex-row lg:items-center gap-1">
           {/* Search */}
