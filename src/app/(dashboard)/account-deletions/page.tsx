@@ -291,6 +291,14 @@ function AccountDeletionsContent() {
                             {formatSnapshotNumber(getSnapshotValue(row.snapshot, "outlet_count"))}
                           </span>
                         </p>
+                        {getSnapshotValue(row.snapshot, "outlet_names") && (
+                          <p>
+                            Nama:{" "}
+                            <span className="font-semibold text-slate-800 line-clamp-1" title={formatSnapshotList(getSnapshotValue(row.snapshot, "outlet_names"))}>
+                              {formatSnapshotList(getSnapshotValue(row.snapshot, "outlet_names"))}
+                            </span>
+                          </p>
+                        )}
                         <p>
                           Pegawai:{" "}
                           <span className="font-semibold text-slate-800">
@@ -375,6 +383,9 @@ function AccountDeletionsContent() {
                     <div className="rounded-lg border border-slate-100 bg-white p-3">
                       <p className="text-[9px] font-bold uppercase text-slate-400">Outlet</p>
                       <p className="mt-1 text-sm font-black text-slate-800">{formatSnapshotNumber(getSnapshotValue(row.snapshot, "outlet_count"))}</p>
+                      {getSnapshotValue(row.snapshot, "outlet_names") && (
+                        <p className="mt-1 text-[10px] text-slate-600 line-clamp-1">{formatSnapshotList(getSnapshotValue(row.snapshot, "outlet_names"))}</p>
+                      )}
                     </div>
                     <div className="rounded-lg border border-slate-100 bg-white p-3">
                       <p className="text-[9px] font-bold uppercase text-slate-400">Pegawai</p>
