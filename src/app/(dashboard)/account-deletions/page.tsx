@@ -274,6 +274,14 @@ function AccountDeletionsContent() {
                             {row.actor_name || "Nama tidak tersedia"}
                           </span>
                         </div>
+                        {!!getSnapshotValue(row.snapshot, "outlet_names") && (
+                          <div className="flex flex-wrap items-start gap-1 pt-1">
+                            <span className="text-[10px] font-medium text-slate-500 mt-0.5">Outlet:</span>
+                            <span className="text-[11px] font-semibold text-blue-600 line-clamp-2 flex-1" title={formatSnapshotList(getSnapshotValue(row.snapshot, "outlet_names"))}>
+                              {formatSnapshotList(getSnapshotValue(row.snapshot, "outlet_names"))}
+                            </span>
+                          </div>
+                        )}
                         {row.actor_email ? (
                           <p className="text-[11px] text-slate-600">{row.actor_email}</p>
                         ) : null}
@@ -291,14 +299,6 @@ function AccountDeletionsContent() {
                             {formatSnapshotNumber(getSnapshotValue(row.snapshot, "outlet_count"))}
                           </span>
                         </p>
-                        {!!getSnapshotValue(row.snapshot, "outlet_names") && (
-                          <p>
-                            Nama:{" "}
-                            <span className="font-semibold text-slate-800 line-clamp-1" title={formatSnapshotList(getSnapshotValue(row.snapshot, "outlet_names"))}>
-                              {formatSnapshotList(getSnapshotValue(row.snapshot, "outlet_names"))}
-                            </span>
-                          </p>
-                        )}
                         <p>
                           Pegawai:{" "}
                           <span className="font-semibold text-slate-800">
@@ -374,6 +374,14 @@ function AccountDeletionsContent() {
                   <div className="rounded-lg border border-slate-100 bg-white p-3">
                     <p className="text-[9px] font-bold uppercase text-slate-400">Actor</p>
                     <p className="mt-1 text-sm font-semibold text-slate-900">{row.actor_name || "Nama tidak tersedia"}</p>
+                    {!!getSnapshotValue(row.snapshot, "outlet_names") && (
+                      <div className="mt-2 rounded bg-blue-50 px-2 py-1.5 border border-blue-100">
+                        <p className="text-[9px] font-bold uppercase text-blue-500">Nama Outlet</p>
+                        <p className="mt-0.5 text-xs font-semibold text-blue-700">
+                          {formatSnapshotList(getSnapshotValue(row.snapshot, "outlet_names"))}
+                        </p>
+                      </div>
+                    )}
                     {row.actor_email ? <p className="text-[11px] text-slate-600 break-all">{row.actor_email}</p> : null}
                     {row.actor_phone ? <p className="text-[11px] text-slate-500">{row.actor_phone}</p> : null}
                     <p className="font-mono text-[10px] text-slate-400">{row.actor_id}</p>
@@ -383,9 +391,6 @@ function AccountDeletionsContent() {
                     <div className="rounded-lg border border-slate-100 bg-white p-3">
                       <p className="text-[9px] font-bold uppercase text-slate-400">Outlet</p>
                       <p className="mt-1 text-sm font-black text-slate-800">{formatSnapshotNumber(getSnapshotValue(row.snapshot, "outlet_count"))}</p>
-                      {!!getSnapshotValue(row.snapshot, "outlet_names") && (
-                        <p className="mt-1 text-[10px] text-slate-600 line-clamp-1">{formatSnapshotList(getSnapshotValue(row.snapshot, "outlet_names"))}</p>
-                      )}
                     </div>
                     <div className="rounded-lg border border-slate-100 bg-white p-3">
                       <p className="text-[9px] font-bold uppercase text-slate-400">Pegawai</p>
@@ -455,6 +460,14 @@ function AccountDeletionsContent() {
                       {selectedRow.actor_name || "Nama tidak tersedia"}
                     </span>
                   </div>
+                  {!!getSnapshotValue(selectedRow.snapshot, "outlet_names") && (
+                    <div className="mt-3 rounded-md bg-blue-50/50 p-2.5 border border-blue-100">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-blue-500 mb-1">Nama Outlet / Laundry</p>
+                      <p className="text-sm font-semibold text-blue-700 leading-tight">
+                        {formatSnapshotList(getSnapshotValue(selectedRow.snapshot, "outlet_names"))}
+                      </p>
+                    </div>
+                  )}
                   <p className="mt-1 font-mono text-[10px] text-slate-400">{selectedRow.actor_id}</p>
                   {selectedRow.actor_email ? (
                     <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-600">
