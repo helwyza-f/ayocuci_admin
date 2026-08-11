@@ -141,6 +141,10 @@ export default function TenantDetailPage() {
   const [injectBukti, setInjectBukti] = useState<File | null>(null);
   const [injectLoading, setInjectLoading] = useState(false);
 
+  // Status Update State
+  const [isStatusUpdateModalOpen, setIsStatusUpdateModalOpen] = useState(false);
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+
   const API_BASE_URL = "https://api.ayocuci.id";
   const backHref = useMemo(() => {
     const query = searchParams.toString();
@@ -391,6 +395,22 @@ export default function TenantDetailPage() {
     }
   };
 
+  const handleUpdateStatus = async () => {
+    if (!profile?.ot_id) return;
+    setStatusUpdateLoading(true);
+    const newStatus = profile.ot_status === 1 ? 0 : 1;
+    try {
+      const res = await tenantService.updateStatus(profile.ot_id, newStatus);
+      toast.success("Status outlet berhasil diperbarui");
+      setIsStatusUpdateModalOpen(false);
+      fetchDetail();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Terjadi kesalahan sistem");
+    } finally {
+      setStatusUpdateLoading(false);
+    }
+  };
+
   // 🚀 REAL-TIME COMMAND CENTER (WebSocket Integration)
   useEffect(() => {
     if (!params.id) return;
@@ -625,6 +645,25 @@ export default function TenantDetailPage() {
                onClick={() => setIsInjectModalOpen(true)}
              >
                 <Coins className="h-3.5 w-3.5" /> Tambah Koin
+             </Button>
+           </PermissionGate>
+           <PermissionGate module="tenants" action="suspend">
+             <Button 
+               variant="outline" 
+               size="sm" 
+               className={cn(
+                 "h-9 w-full px-4 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-sm active:scale-95 transition-all sm:w-auto",
+                 profile.ot_status === 1 
+                  ? "border-rose-200 text-rose-700 bg-rose-50/50 hover:bg-rose-50 hover:text-rose-800" 
+                  : "border-emerald-200 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-50 hover:text-emerald-800"
+               )}
+               onClick={() => setIsStatusUpdateModalOpen(true)}
+             >
+                {profile.ot_status === 1 ? (
+                  <><ShieldAlert className="h-3.5 w-3.5" /> Nonaktifkan</>
+                ) : (
+                  <><CheckCircle2 className="h-3.5 w-3.5" /> Aktifkan</>
+                )}
              </Button>
            </PermissionGate>
         </div>
@@ -2252,6 +2291,52 @@ export default function TenantDetailPage() {
            </div>
          </DialogContent>
        </Dialog>
+
+      {/* MODAL UPDATE STATUS */}
+      <Dialog open={isStatusUpdateModalOpen} onOpenChange={setIsStatusUpdateModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogTitle className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4 flex items-center gap-2">
+            {profile?.ot_status === 1 ? (
+              <><ShieldAlert className="h-5 w-5 text-rose-500" /> Nonaktifkan Outlet</>
+            ) : (
+              <><CheckCircle2 className="h-5 w-5 text-emerald-500" /> Aktifkan Outlet</>
+            )}
+          </DialogTitle>
+          <div className="py-6 space-y-4">
+            <p className="text-sm text-slate-600 leading-relaxed text-center">
+              {profile?.ot_status === 1 
+                ? `Apakah Anda yakin ingin menonaktifkan outlet "${profile?.ot_nama}"? Outlet yang dinonaktifkan tidak akan dapat diakses oleh pegawainya.` 
+                : `Apakah Anda yakin ingin mengaktifkan kembali outlet "${profile?.ot_nama}"?`}
+            </p>
+          </div>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-slate-100">
+            <Button
+              variant="outline"
+              onClick={() => setIsStatusUpdateModalOpen(false)}
+              disabled={statusUpdateLoading}
+              className="w-full sm:w-auto h-10 font-bold uppercase text-[10px] tracking-wider"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleUpdateStatus}
+              disabled={statusUpdateLoading}
+              className={cn(
+                "w-full sm:w-auto h-10 font-bold uppercase text-[10px] tracking-wider",
+                profile?.ot_status === 1 
+                  ? "bg-rose-500 hover:bg-rose-600 text-white" 
+                  : "bg-emerald-500 hover:bg-emerald-600 text-white"
+              )}
+            >
+              {statusUpdateLoading ? (
+                <LoaderIcon className="h-4 w-4 animate-spin" />
+              ) : (
+                profile?.ot_status === 1 ? "Ya, Nonaktifkan" : "Ya, Aktifkan"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </PermissionGate>
   );
