@@ -6,6 +6,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { getTopupStatusUi, isTopupActionable, normalizeTopupStatus } from "@/lib/topup-status";
 
+function formatMetodeLabel(metode?: string): string {
+  const key = (metode || "").toLowerCase();
+  if (key === "iap_topup" || key === "iap") return "Apple IAP";
+  if (key === "midtrans") return "Midtrans";
+  if (key === "transfer") return "Transfer";
+  return metode || "-";
+}
+
 export interface ActivityFeedItem {
   tk_id: string;
   tk_created: string;
@@ -97,7 +105,7 @@ export default function ActivityFeed({ activities, isLoading, onVerify }: Activi
                   )}
                </div>
                <div className="flex items-center justify-end gap-2 text-[9px] font-medium text-slate-500 uppercase tracking-tighter">
-                  <span>{item.tk_metode_bayar}</span>
+                  <span>{formatMetodeLabel(item.tk_metode_bayar)}</span>
                   <div className="h-0.5 w-0.5 bg-slate-300 rounded-full" />
                   <span className="font-bold">Rp {item.tk_total?.toLocaleString("id-ID")}</span>
                </div>
