@@ -1931,9 +1931,9 @@ export default function TenantDetailPage() {
                    </span>
                 </div>
                 <div className="flex justify-between items-center">
-                   <span className="text-slate-500 font-medium">Terakhir Diupdate (Upload Bukti):</span>
+                   <span className="text-slate-500 font-medium">Waktu Upload Bukti:</span>
                    <span className="font-bold text-slate-800">
-                      {selectedKoin?.tk_lastupdate ? format(new Date(selectedKoin.tk_lastupdate), "dd MMM yyyy HH:mm") : "-"}
+                      {selectedKoin?.tk_tanggal_upload_bukti ? format(new Date(selectedKoin.tk_tanggal_upload_bukti), "dd MMM yyyy HH:mm") : "-"}
                    </span>
                 </div>
                 {selectedKoin?.tk_tanggal_validasi && (

@@ -832,9 +832,9 @@ function TopupsManagementContent() {
                    </span>
                 </div>
                 <div className="flex justify-between items-center">
-                   <span className="text-slate-500 font-medium">Terakhir Diupdate (Upload Bukti):</span>
+                   <span className="text-slate-500 font-medium">Waktu Upload Bukti:</span>
                    <span className="font-bold text-slate-800">
-                      {selectedTopup?.tk_lastupdate ? format(new Date(selectedTopup.tk_lastupdate), "dd MMM yyyy HH:mm") : "-"}
+                      {selectedTopup?.tk_tanggal_upload_bukti ? format(new Date(selectedTopup.tk_tanggal_upload_bukti), "dd MMM yyyy HH:mm") : "-"}
                    </span>
                 </div>
                 {selectedTopup?.tk_tanggal_validasi && (

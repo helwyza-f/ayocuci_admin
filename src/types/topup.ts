@@ -16,6 +16,7 @@ export interface Topup {
   keterangan?: string;
   bonus_type?: string;
   tk_lastupdate?: string | null;
+  tk_tanggal_upload_bukti?: string | null;
   tk_tanggal_validasi?: string | null;
   tk_staf_validasi?: string | null;
 }
