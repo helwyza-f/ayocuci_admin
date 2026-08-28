@@ -15,6 +15,8 @@ export interface Topup {
   tk_outlet?: string;
   keterangan?: string;
   bonus_type?: string;
+  /** Jumlah top up SUKSES outlet ini sepanjang waktu: <=1 = pelanggan baru, >=2 = repeat (retensi). */
+  outlet_paid_count?: number;
   tk_lastupdate?: string | null;
   tk_tanggal_upload_bukti?: string | null;
   tk_tanggal_validasi?: string | null;

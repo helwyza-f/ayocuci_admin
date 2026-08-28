@@ -555,6 +555,17 @@ function TopupsManagementContent() {
                         {item.owner_code && (
                           <div className="text-[9px] font-mono text-slate-400">Kode Referral: {item.owner_code}</div>
                         )}
+                        {typeof item.outlet_paid_count === "number" && (
+                          item.outlet_paid_count >= 2 ? (
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold text-blue-600">
+                              🔁 Repeat · {item.outlet_paid_count}× bayar
+                            </span>
+                          ) : (
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600">
+                              🟢 Pelanggan Baru
+                            </span>
+                          )
+                        )}
                       </td>
                       <td className="px-5 py-3 text-center">
                         <div className="inline-flex flex-col items-center">
