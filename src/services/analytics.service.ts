@@ -45,6 +45,11 @@ export interface RevenueSummary {
   addon_revenue: number;
   avg_daily_revenue: number;
   series: RevenuePoint[];
+  // Retensi all-time: outlet berbayar dibagi baru (1x) vs repeat (>=2x).
+  paid_outlets?: number;
+  new_paid_outlets?: number;
+  repeat_paid_outlets?: number;
+  repeat_rate?: number;
 }
 
 export interface GrowthPoint {

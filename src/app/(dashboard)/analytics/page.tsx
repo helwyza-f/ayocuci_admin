@@ -562,6 +562,32 @@ export default function AnalyticsPage() {
         />
       </div>
 
+      <Card className="border border-slate-200 rounded-2xl p-5 bg-white shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">Retensi Pelanggan Berbayar</h3>
+            <p className="text-[11px] text-slate-500">Berdasarkan seluruh riwayat top up sukses (all-time)</p>
+          </div>
+          <span className="text-xs font-bold text-blue-600">
+            Repeat rate {revenue ? `${((revenue.repeat_rate ?? 0) * 100).toFixed(1)}%` : "—"}
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-xl bg-slate-50 p-3">
+            <div className="text-lg font-extrabold text-slate-800">{revenue?.paid_outlets ?? "—"}</div>
+            <div className="text-[11px] font-medium text-slate-500">Outlet berbayar</div>
+          </div>
+          <div className="rounded-xl bg-emerald-50 p-3">
+            <div className="text-lg font-extrabold text-emerald-600">{revenue?.new_paid_outlets ?? "—"}</div>
+            <div className="text-[11px] font-medium text-emerald-600">🟢 Pelanggan baru (1×)</div>
+          </div>
+          <div className="rounded-xl bg-blue-50 p-3">
+            <div className="text-lg font-extrabold text-blue-600">{revenue?.repeat_paid_outlets ?? "—"}</div>
+            <div className="text-[11px] font-medium text-blue-600">🔁 Repeat (≥2×)</div>
+          </div>
+        </div>
+      </Card>
+
       <Card className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <SectionHeader
