@@ -224,6 +224,7 @@ function TenantsPageContent() {
         ot_provinsi: regionNames.provinceName(tenant.ot_provinsi),
         ot_alamat: tenant.ot_alamat ?? "",
         ot_koin: tenant.ot_koin ?? 0,
+        topup_count: tenant.topup_count ?? 0,
         ot_status: tenant.ot_status,
         subscription_status: tenant.subscription_status ?? "",
         ot_created: tenant.ot_created,
@@ -351,6 +352,7 @@ function TenantsPageContent() {
               { header: "Provinsi", key: "ot_provinsi", width: 18 },
               { header: "Alamat Lengkap", key: "ot_alamat", width: 40 },
               { header: "Saldo Koin", key: "ot_koin", width: 15 },
+              { header: "Jumlah Top Up", key: "topup_count", width: 15 },
               { header: "Status", key: "ot_status", width: 15, format: (v) => v === 1 ? "Aktif" : "Pending" },
               { header: "Subscription", key: "subscription_status", width: 15 },
               { header: "Tanggal Daftar", key: "ot_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
@@ -574,8 +576,14 @@ function TenantsPageContent() {
                        <div className="text-[10px] font-bold text-emerald-600">Rp {tenant.total_tx_amount?.toLocaleString()}</div>
                     </td>
                     <td className="px-5 py-3 text-center">
-                      <div className="inline-flex items-center gap-1 font-bold text-slate-700 text-[10px]">
-                         {tenant.ot_koin} KOIN
+                      <div className="inline-flex flex-col items-center gap-0.5">
+                        <span className="font-bold text-slate-700 text-[10px]">{tenant.ot_koin} KOIN</span>
+                        <span className={cn(
+                          "text-[9px] font-bold",
+                          (tenant.topup_count ?? 0) > 0 ? "text-blue-600" : "text-slate-400"
+                        )}>
+                          {(tenant.topup_count ?? 0)}× top up
+                        </span>
                       </div>
                     </td>
                     <td className="px-5 py-3">

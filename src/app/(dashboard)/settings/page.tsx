@@ -22,8 +22,11 @@ function SettingsContent() {
     tiktok_username: "",
     website_url: "",
     playstore_url: "",
+    appstore_url: "",
     app_version: "",
     minimum_supported_version: "",
+    app_version_ios: "",
+    minimum_supported_version_ios: "",
   });
 
   const fetchSettings = async () => {
@@ -39,9 +42,13 @@ function SettingsContent() {
           tiktok_username: res.data.data.tiktok_username || "",
           website_url: res.data.data.website_url || "",
           playstore_url: res.data.data.playstore_url || "",
+          appstore_url: res.data.data.appstore_url || "",
           app_version: res.data.data.app_version || "",
           minimum_supported_version:
             res.data.data.minimum_supported_version || "",
+          app_version_ios: res.data.data.app_version_ios || "",
+          minimum_supported_version_ios:
+            res.data.data.minimum_supported_version_ios || "",
         });
       }
     } catch {
@@ -219,49 +226,92 @@ function SettingsContent() {
                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-700">Distribution & Build</h3>
               </div>
 
-              <div className="space-y-5">
-                <div className="space-y-1">
-                  <Label htmlFor="playstore_url" className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">Play Store URI</Label>
-                  <Input
-                    id="playstore_url"
-                    name="playstore_url"
-                    placeholder="market://details?id=..."
-                    value={formData.playstore_url}
-                    onChange={handleChange}
-                    className="h-9 rounded border-slate-200 font-bold text-xs shadow-none"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="app_version" className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">Registry Version</Label>
-                  <div className="flex items-center gap-2">
-                     <Input
-                        id="app_version"
-                        name="app_version"
-                        placeholder="e.g. 2.4.0"
-                        value={formData.app_version}
-                        onChange={handleChange}
-                        className="h-9 rounded border-slate-200 font-bold text-primary text-base font-heading shadow-none"
-                      />
-                      <Badge variant="secondary" className="h-9 px-2 rounded bg-emerald-50 text-emerald-600 border-emerald-100 font-bold text-[8px] uppercase">Stable</Badge>
+              <div className="space-y-6">
+                {/* ANDROID */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="secondary" className="h-5 px-2 rounded bg-green-50 text-green-600 border-green-100 font-bold text-[8px] uppercase">Android</Badge>
+                    <span className="text-[9px] font-bold uppercase tracking-tight text-slate-400">Play Store</span>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="playstore_url" className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">Play Store URI</Label>
+                    <Input
+                      id="playstore_url"
+                      name="playstore_url"
+                      placeholder="market://details?id=..."
+                      value={formData.playstore_url}
+                      onChange={handleChange}
+                      className="h-9 rounded border-slate-200 font-bold text-xs shadow-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="app_version" className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">Latest Version</Label>
+                    <Input
+                      id="app_version"
+                      name="app_version"
+                      placeholder="e.g. 2.4.0"
+                      value={formData.app_version}
+                      onChange={handleChange}
+                      className="h-9 rounded border-slate-200 font-bold text-primary text-base font-heading shadow-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="minimum_supported_version" className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">Minimum Supported Version</Label>
+                    <Input
+                      id="minimum_supported_version"
+                      name="minimum_supported_version"
+                      placeholder="e.g. 1.0.1+8"
+                      value={formData.minimum_supported_version}
+                      onChange={handleChange}
+                      className="h-9 rounded border-slate-200 font-bold text-xs shadow-none"
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="minimum_supported_version"
-                    className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1"
-                  >
-                    Minimum Supported Version
-                  </Label>
-                  <Input
-                    id="minimum_supported_version"
-                    name="minimum_supported_version"
-                    placeholder="e.g. 1.0.1+8"
-                    value={formData.minimum_supported_version}
-                    onChange={handleChange}
-                    className="h-9 rounded border-slate-200 font-bold text-xs shadow-none"
-                  />
+                <div className="border-t border-slate-100" />
+
+                {/* iOS */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="secondary" className="h-5 px-2 rounded bg-slate-100 text-slate-600 border-slate-200 font-bold text-[8px] uppercase">iOS</Badge>
+                    <span className="text-[9px] font-bold uppercase tracking-tight text-slate-400">App Store</span>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="appstore_url" className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">App Store URL</Label>
+                    <Input
+                      id="appstore_url"
+                      name="appstore_url"
+                      placeholder="https://apps.apple.com/app/id..."
+                      value={formData.appstore_url}
+                      onChange={handleChange}
+                      className="h-9 rounded border-slate-200 font-bold text-xs shadow-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="app_version_ios" className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">Latest Version</Label>
+                    <Input
+                      id="app_version_ios"
+                      name="app_version_ios"
+                      placeholder="e.g. 2.4.0"
+                      value={formData.app_version_ios}
+                      onChange={handleChange}
+                      className="h-9 rounded border-slate-200 font-bold text-primary text-base font-heading shadow-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="minimum_supported_version_ios" className="text-[9px] font-bold uppercase tracking-tight text-slate-400 ml-1">Minimum Supported Version</Label>
+                    <Input
+                      id="minimum_supported_version_ios"
+                      name="minimum_supported_version_ios"
+                      placeholder="e.g. 1.0.1+8"
+                      value={formData.minimum_supported_version_ios}
+                      onChange={handleChange}
+                      className="h-9 rounded border-slate-200 font-bold text-xs shadow-none"
+                    />
+                  </div>
+                  <p className="text-[9px] text-slate-400 leading-relaxed ml-1">
+                    Kosongkan bila iOS mengikuti versi Android. App akan fallback otomatis.
+                  </p>
                 </div>
               </div>
            </Card>

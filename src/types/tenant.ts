@@ -34,6 +34,8 @@ export interface Tenant {
   daily_tx_amount: number;
   total_tx_count: number;
   total_tx_amount: number;
+  /** Jumlah top up SUKSES (berbayar) outlet ini sepanjang waktu. */
+  topup_count?: number;
 
   // Subscription & Guardrails
   ot_activated_at?: string;

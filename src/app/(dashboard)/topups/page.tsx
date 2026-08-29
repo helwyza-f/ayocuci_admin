@@ -555,6 +555,17 @@ function TopupsManagementContent() {
                         {item.owner_code && (
                           <div className="text-[9px] font-mono text-slate-400">Kode Referral: {item.owner_code}</div>
                         )}
+                        {typeof item.outlet_paid_count === "number" && (
+                          item.outlet_paid_count >= 2 ? (
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold text-blue-600">
+                              🔁 Repeat · {item.outlet_paid_count}× bayar
+                            </span>
+                          ) : (
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600">
+                              🟢 Pelanggan Baru
+                            </span>
+                          )
+                        )}
                       </td>
                       <td className="px-5 py-3 text-center">
                         <div className="inline-flex flex-col items-center">
@@ -832,9 +843,9 @@ function TopupsManagementContent() {
                    </span>
                 </div>
                 <div className="flex justify-between items-center">
-                   <span className="text-slate-500 font-medium">Terakhir Diupdate (Upload Bukti):</span>
+                   <span className="text-slate-500 font-medium">Waktu Upload Bukti:</span>
                    <span className="font-bold text-slate-800">
-                      {selectedTopup?.tk_lastupdate ? format(new Date(selectedTopup.tk_lastupdate), "dd MMM yyyy HH:mm") : "-"}
+                      {selectedTopup?.tk_tanggal_upload_bukti ? format(new Date(selectedTopup.tk_tanggal_upload_bukti), "dd MMM yyyy HH:mm") : "-"}
                    </span>
                 </div>
                 {selectedTopup?.tk_tanggal_validasi && (
