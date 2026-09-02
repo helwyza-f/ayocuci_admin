@@ -438,6 +438,32 @@ function TopupsManagementContent() {
         />
       </div>
 
+      {/* RINCIAN PER METODE */}
+      {!loading && (
+        <div className="flex flex-wrap gap-2">
+          {(["transfer", "midtrans", "iap", "bonus", "lainnya"] as TopupMethodKey[])
+            .filter((k) => summary.byMethod[k])
+            .map((k) => {
+              const b = summary.byMethod[k];
+              const meta = TOPUP_METHOD_META[k];
+              return (
+                <div key={k} className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px]", meta.badge)}>
+                  <span className="font-extrabold uppercase tracking-wide">{meta.label}</span>
+                  <span className="font-semibold text-slate-600">{b.trx} trx</span>
+                  <span className="text-slate-400">·</span>
+                  <span className="font-semibold text-slate-600">{b.koin.toLocaleString("id-ID")} koin</span>
+                  {k !== "bonus" && (
+                    <>
+                      <span className="text-slate-400">·</span>
+                      <span className="font-semibold text-slate-600">Rp {b.rupiah.toLocaleString("id-ID")}</span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+      )}
+
       {/* FILTER & SEARCH COMMAND BAR */}
       <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
         <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
