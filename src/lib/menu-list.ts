@@ -21,6 +21,7 @@ import {
   MessageSquareWarning,
   Trash2,
   Receipt,
+  Sparkles,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -44,6 +45,7 @@ export const adminMenus: MenuGroup[] = [
     items: [
       { label: "Pusat Kontrol",     href: "/",          icon: LayoutGrid, module: "dashboard" },
       { label: "Analisis & Laporan", href: "/analytics", icon: BarChart2,  module: "analytics" },
+      { label: "AI Analyst",         href: "/ai-analyst", icon: Sparkles,   module: "dashboard", masterOnly: true },
       { label: "Riwayat Transaksi", href: "/transactions", icon: Receipt, module: "dashboard" },
     ],
   },
