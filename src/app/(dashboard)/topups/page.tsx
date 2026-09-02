@@ -64,6 +64,25 @@ import PermissionGate from "@/components/shared/permission-gate";
 
 const PAGE_SIZE = 25;
 
+// Klasifikasi metode top up dari tk_metode_bayar (backend juga mengisi
+// "iap_topup" & "bonus" di kolom ini, bukan hanya transfer/midtrans).
+type TopupMethodKey = "transfer" | "midtrans" | "iap" | "bonus" | "lainnya";
+function classifyTopupMethod(raw?: string): TopupMethodKey {
+  const m = (raw || "").toLowerCase();
+  if (m.includes("iap")) return "iap";
+  if (m === "bonus") return "bonus";
+  if (m === "transfer") return "transfer";
+  if (m === "midtrans") return "midtrans";
+  return "lainnya";
+}
+const TOPUP_METHOD_META: Record<TopupMethodKey, { label: string; badge: string }> = {
+  transfer: { label: "Transfer", badge: "border-blue-100 bg-blue-50 text-blue-600" },
+  midtrans: { label: "Midtrans", badge: "border-amber-100 bg-amber-50 text-amber-700" },
+  iap: { label: "IAP", badge: "border-violet-100 bg-violet-50 text-violet-600" },
+  bonus: { label: "Bonus", badge: "border-emerald-100 bg-emerald-50 text-emerald-600" },
+  lainnya: { label: "Lainnya", badge: "border-slate-200 bg-slate-50 text-slate-500" },
+};
+
 function KpiCard({
   label,
   value,
@@ -177,7 +196,7 @@ function TopupsManagementContent() {
     try {
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.append("status", statusFilter);
-      if (methodFilter !== "all") params.append("metode", methodFilter);
+      // Metode difilter di klien (mendukung IAP yang tak didukung param server).
       if (startDate)
         params.append("start_date", format(startDate, "yyyy-MM-dd"));
       if (endDate) params.append("end_date", format(endDate, "yyyy-MM-dd"));
@@ -190,7 +209,7 @@ function TopupsManagementContent() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, methodFilter, startDate, endDate]);
+  }, [statusFilter, startDate, endDate]);
 
   useEffect(() => {
     fetchTopups();
@@ -212,9 +231,11 @@ function TopupsManagementContent() {
       const matchesSearch = item.tk_id.toLowerCase().includes(cleanSearch);
       const matchesOutlet = outletFilter === "all" || item.outlet_name === outletFilter;
       const matchesOwner = ownerFilter === "all" || item.owner_name === ownerFilter;
-      return matchesSearch && matchesOutlet && matchesOwner;
+      const matchesMethod =
+        methodFilter === "all" || classifyTopupMethod(item.tk_metode_bayar) === methodFilter;
+      return matchesSearch && matchesOutlet && matchesOwner && matchesMethod;
     });
-  }, [data, searchQuery, outletFilter, ownerFilter]);
+  }, [data, searchQuery, outletFilter, ownerFilter, methodFilter]);
 
   const tenantMap = useMemo(
     () => new Map(tenants.map((tenant) => [tenant.ot_id, tenant])),
@@ -267,18 +288,26 @@ function TopupsManagementContent() {
     const successful = data.filter((item) =>
       ["success", "completed", "accepted"].includes(normalizeTopupStatus(item.tk_status))
     );
-    const topupKoin = successful
-      .filter((item) => item.tk_metode_bayar !== "bonus")
-      .reduce((sum, item) => sum + Number(item.tk_jumlah || 0), 0);
-    const bonusKoin = successful
-      .filter((item) => item.tk_metode_bayar === "bonus")
-      .reduce((sum, item) => sum + Number(item.tk_jumlah || 0), 0);
+    // Top up berbayar = semua kecuali bonus (transfer/midtrans/iap).
+    const paid = successful.filter((i) => classifyTopupMethod(i.tk_metode_bayar) !== "bonus");
+    const bonus = successful.filter((i) => classifyTopupMethod(i.tk_metode_bayar) === "bonus");
 
-    return {
-      topupKoin,
-      bonusKoin,
-      totalKoinKeluar: topupKoin + bonusKoin,
-    };
+    const rupiah = paid.reduce((s, i) => s + Number(i.tk_total || 0), 0);
+    const trx = paid.length;
+    const koinBerbayar = paid.reduce((s, i) => s + Number(i.tk_jumlah || 0), 0);
+    const bonusKoin = bonus.reduce((s, i) => s + Number(i.tk_jumlah || 0), 0);
+
+    // Rincian per metode (trx, koin, rupiah)
+    const byMethod: Record<string, { trx: number; koin: number; rupiah: number }> = {};
+    for (const i of successful) {
+      const k = classifyTopupMethod(i.tk_metode_bayar);
+      byMethod[k] ??= { trx: 0, koin: 0, rupiah: 0 };
+      byMethod[k].trx += 1;
+      byMethod[k].koin += Number(i.tk_jumlah || 0);
+      byMethod[k].rupiah += Number(i.tk_total || 0);
+    }
+
+    return { rupiah, trx, koinBerbayar, bonusKoin, totalKoin: koinBerbayar + bonusKoin, byMethod };
   }, [data]);
 
   const resetFilters = () => {
@@ -387,27 +416,53 @@ function TopupsManagementContent() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <KpiCard
-          label="Total Koin Top Up"
-          sub="Akumulasi koin dari top up yang sukses"
-          value={loading ? "—" : summary.topupKoin.toLocaleString("id-ID")}
+          label="Total Pendapatan"
+          sub="Rupiah dari top up berbayar sukses (transfer + midtrans + IAP)"
+          value={loading ? "—" : `Rp ${summary.rupiah.toLocaleString("id-ID")}`}
           icon={Wallet2}
           color="bg-orange-50 text-primary"
         />
         <KpiCard
-          label="Total Koin Bonus"
-          sub="Akumulasi koin bonus yang sudah dialokasikan"
-          value={loading ? "—" : summary.bonusKoin.toLocaleString("id-ID")}
-          icon={Gift}
-          color="bg-violet-50 text-violet-600"
-        />
-        <KpiCard
-          label="Total Koin Keluar"
-          sub="Gabungan top up sukses dan bonus"
-          value={loading ? "—" : summary.totalKoinKeluar.toLocaleString("id-ID")}
+          label="Total Transaksi"
+          sub="Jumlah top up berbayar sukses"
+          value={loading ? "—" : summary.trx.toLocaleString("id-ID")}
           icon={ShieldCheck}
           color="bg-emerald-50 text-emerald-600"
         />
+        <KpiCard
+          label="Total Koin Masuk"
+          sub={loading ? "" : `Berbayar ${summary.koinBerbayar.toLocaleString("id-ID")} + bonus ${summary.bonusKoin.toLocaleString("id-ID")}`}
+          value={loading ? "—" : summary.totalKoin.toLocaleString("id-ID")}
+          icon={Gift}
+          color="bg-violet-50 text-violet-600"
+        />
       </div>
+
+      {/* RINCIAN PER METODE */}
+      {!loading && (
+        <div className="flex flex-wrap gap-2">
+          {(["transfer", "midtrans", "iap", "bonus", "lainnya"] as TopupMethodKey[])
+            .filter((k) => summary.byMethod[k])
+            .map((k) => {
+              const b = summary.byMethod[k];
+              const meta = TOPUP_METHOD_META[k];
+              return (
+                <div key={k} className={cn("flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px]", meta.badge)}>
+                  <span className="font-extrabold uppercase tracking-wide">{meta.label}</span>
+                  <span className="font-semibold text-slate-600">{b.trx} trx</span>
+                  <span className="text-slate-400">·</span>
+                  <span className="font-semibold text-slate-600">{b.koin.toLocaleString("id-ID")} koin</span>
+                  {k !== "bonus" && (
+                    <>
+                      <span className="text-slate-400">·</span>
+                      <span className="font-semibold text-slate-600">Rp {b.rupiah.toLocaleString("id-ID")}</span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+      )}
 
       {/* FILTER & SEARCH COMMAND BAR */}
       <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
@@ -471,7 +526,7 @@ function TopupsManagementContent() {
             <div className="hidden h-4 w-px bg-slate-100 xl:block" />
 
             <div className="flex flex-wrap items-center gap-1">
-               {["all", "transfer", "midtrans", "bonus"].map(m => (
+               {["all", "transfer", "midtrans", "iap", "bonus"].map(m => (
                  <Button
                     key={m}
                     variant={methodFilter === m ? "secondary" : "ghost"}
@@ -482,7 +537,7 @@ function TopupsManagementContent() {
                       methodFilter === m ? "bg-primary/10 text-primary" : "text-slate-500"
                     )}
                  >
-                   {m === "all" ? "Semua Metode" : m === "midtrans" ? "Midtrans" : m === "transfer" ? "Transfer" : "Bonus"}
+                   {m === "all" ? "Semua Metode" : TOPUP_METHOD_META[m as TopupMethodKey]?.label ?? m}
                  </Button>
                ))}
             </div>
@@ -574,35 +629,24 @@ function TopupsManagementContent() {
                         </div>
                       </td>
                       <td className="px-5 py-3">
-                        {item.tk_metode_bayar === "bonus" ? (
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-1.5 bg-purple-50 px-2.5 py-1.5 rounded-lg border border-purple-100 w-fit group-hover:bg-white group-hover:shadow-sm transition-all dark:bg-purple-950/20 dark:border-purple-900/30">
-                              <Gift className="h-3 w-3 text-purple-500 group-hover:scale-110 transition-transform" />
-                              <span className="font-bold uppercase text-purple-600 tracking-widest text-[8px] dark:text-purple-400">
-                                BONUS
-                              </span>
+                        {(() => {
+                          const mk = classifyTopupMethod(item.tk_metode_bayar);
+                          const meta = TOPUP_METHOD_META[mk];
+                          const Icon = mk === "transfer" ? ArrowRightLeft : mk === "bonus" ? Gift : mk === "iap" ? ExternalLink : mk === "lainnya" ? History : CreditCard;
+                          return (
+                            <div className="flex flex-col">
+                              <div className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border w-fit group-hover:bg-white group-hover:shadow-sm transition-all", meta.badge)}>
+                                <Icon className="h-3 w-3 group-hover:scale-110 transition-transform" />
+                                <span className="font-bold uppercase tracking-widest text-[8px]">{meta.label}</span>
+                              </div>
+                              {mk === "bonus" && item.bonus_type && (
+                                <span className="text-[8px] font-semibold text-slate-500 italic mt-0.5 ml-1">
+                                  ({item.bonus_type})
+                                </span>
+                              )}
                             </div>
-                            {item.bonus_type && (
-                              <span className="text-[8px] font-semibold text-slate-500 italic mt-0.5 ml-1">
-                                ({item.bonus_type})
-                              </span>
-                            )}
-                          </div>
-                        ) : item.tk_metode_bayar === "transfer" ? (
-                          <div className="flex items-center gap-1.5 bg-orange-50 px-2.5 py-1.5 rounded-lg border border-orange-100 w-fit group-hover:bg-white group-hover:shadow-sm transition-all">
-                            <ArrowRightLeft className="h-3 w-3 text-orange-500 group-hover:scale-110 transition-transform" />
-                            <span className="font-bold uppercase text-slate-600 tracking-widest text-[8px]">
-                              TRANSFER
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-100 w-fit group-hover:bg-white group-hover:shadow-sm transition-all">
-                            <CreditCard className="h-3 w-3 text-amber-500 group-hover:scale-110 transition-transform" />
-                            <span className="font-bold uppercase text-slate-600 tracking-widest text-[8px]">
-                              MIDTRANS
-                            </span>
-                          </div>
-                        )}
+                          );
+                        })()}
                       </td>
                       <td className="px-5 py-3 text-center">
                         <Badge className={cn("rounded-full px-2 py-0.5 text-[8px] font-bold uppercase border shadow-none transition-all group-hover:shadow-sm", status.className, isActionable && "animate-pulse")}>
@@ -681,13 +725,9 @@ function TopupsManagementContent() {
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      {item.tk_metode_bayar === "bonus" ? (
-                        <Badge className="border border-purple-100 bg-purple-50 text-[8px] font-bold uppercase text-purple-600 shadow-none">Bonus</Badge>
-                      ) : item.tk_metode_bayar === "transfer" ? (
-                        <Badge className="border border-orange-100 bg-orange-50 text-[8px] font-bold uppercase text-slate-600 shadow-none">Transfer</Badge>
-                      ) : (
-                        <Badge className="border border-amber-100 bg-amber-50 text-[8px] font-bold uppercase text-slate-600 shadow-none">Midtrans</Badge>
-                      )}
+                      <Badge className={cn("border text-[8px] font-bold uppercase shadow-none", TOPUP_METHOD_META[classifyTopupMethod(item.tk_metode_bayar)].badge)}>
+                        {TOPUP_METHOD_META[classifyTopupMethod(item.tk_metode_bayar)].label}
+                      </Badge>
                     </div>
                     <Button
                       variant="outline"
