@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Send, Database, Loader2, User } from "lucide-react";
-import { aiAnalystService } from "@/services/ai-analyst.service";
 import { cn } from "@/lib/utils";
 
 interface ChatMsg {
@@ -24,6 +25,7 @@ export default function AIAnalystPage() {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -31,21 +33,72 @@ export default function AIAnalystPage() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
+  // Update teks/sqls pesan asisten terakhir (untuk streaming).
+  const patchLastAssistant = (fn: (m: ChatMsg) => ChatMsg) => {
+    setMessages((prev) => {
+      const next = [...prev];
+      for (let i = next.length - 1; i >= 0; i--) {
+        if (next[i].role === "assistant") {
+          next[i] = fn(next[i]);
+          break;
+        }
+      }
+      return next;
+    });
+  };
+
   const send = async (q?: string) => {
     const message = (q ?? input).trim();
     if (!message || loading) return;
     setInput("");
-    setMessages((m) => [...m, { role: "user", text: message }]);
+    setMessages((m) => [...m, { role: "user", text: message }, { role: "assistant", text: "" }]);
     setLoading(true);
+    setStatus("Menganalisa...");
     try {
-      const res = await aiAnalystService.ask(message, sessionId);
-      setSessionId(res.session_id);
-      setMessages((m) => [...m, { role: "assistant", text: res.answer, sqls: res.sqls }]);
+      const res = await fetch("/api/admin/ai-analyst/ask-stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, session_id: sessionId }),
+      });
+      if (!res.ok || !res.body) throw new Error(`Gagal memproses (${res.status})`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const events = buf.split("\n\n");
+        buf = events.pop() || "";
+        for (const ev of events) {
+          let evt = "";
+          let data = "";
+          for (const line of ev.split("\n")) {
+            if (line.startsWith("event:")) evt = line.slice(6).trim();
+            else if (line.startsWith("data:")) data = line.slice(5).trim();
+          }
+          if (!data) continue;
+          const payload = JSON.parse(data);
+          if (evt === "session") setSessionId(payload.session_id);
+          else if (evt === "text") {
+            setStatus("");
+            patchLastAssistant((m) => ({ ...m, text: m.text + (payload.delta || "") }));
+          } else if (evt === "status") setStatus(payload.message || "");
+          else if (evt === "done") {
+            setSessionId(payload.session_id);
+            patchLastAssistant((m) => ({ ...m, sqls: payload.sqls || [] }));
+          } else if (evt === "error") {
+            patchLastAssistant((m) => ({ ...m, text: (m.text ? m.text + "\n\n" : "") + `⚠️ ${payload.message}` }));
+          }
+        }
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Gagal memproses pertanyaan.";
-      setMessages((m) => [...m, { role: "assistant", text: `⚠️ ${msg}` }]);
+      patchLastAssistant((m) => ({ ...m, text: (m.text ? m.text + "\n\n" : "") + `⚠️ ${msg}` }));
     } finally {
       setLoading(false);
+      setStatus("");
     }
   };
 
@@ -89,11 +142,17 @@ export default function AIAnalystPage() {
               )}
               <div
                 className={cn(
-                  "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap",
-                  m.role === "user" ? "bg-primary text-white" : "bg-slate-100 text-slate-800"
+                  "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm",
+                  m.role === "user" ? "whitespace-pre-wrap bg-primary text-white" : "bg-slate-100 text-slate-800"
                 )}
               >
-                {m.text}
+                {m.role === "user" ? (
+                  m.text
+                ) : (
+                  <div className="ai-md">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text || " "}</ReactMarkdown>
+                  </div>
+                )}
                 {m.sqls && m.sqls.length > 0 && (
                   <details className="mt-2 text-[11px] text-slate-500">
                     <summary className="flex cursor-pointer items-center gap-1 font-semibold">
@@ -117,9 +176,9 @@ export default function AIAnalystPage() {
             </div>
           ))}
 
-          {loading && (
+          {loading && status && (
             <div className="flex items-center gap-2 text-xs text-slate-400">
-              <Loader2 className="h-4 w-4 animate-spin" /> AI sedang menganalisa data...
+              <Loader2 className="h-4 w-4 animate-spin" /> {status}
             </div>
           )}
         </div>

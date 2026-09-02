@@ -131,3 +131,18 @@
     @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
   }
 }
+
+/* AI Analyst markdown rendering */
+.ai-md { font-size: 13px; line-height: 1.55; word-break: break-word; }
+.ai-md p { margin: 0.35rem 0; }
+.ai-md h1,.ai-md h2,.ai-md h3,.ai-md h4 { font-weight: 800; margin: 0.5rem 0 0.35rem; }
+.ai-md h3 { font-size: 13.5px; }
+.ai-md strong { font-weight: 700; }
+.ai-md ul,.ai-md ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.ai-md li { margin: 0.15rem 0; }
+.ai-md code { background: #e2e8f0; padding: 0 4px; border-radius: 4px; font-size: 11.5px; }
+.ai-md hr { border: none; border-top: 1px solid #e2e8f0; margin: 0.5rem 0; }
+.ai-md table { border-collapse: collapse; width: 100%; margin: 0.5rem 0; display: block; overflow-x: auto; }
+.ai-md th,.ai-md td { border: 1px solid #e2e8f0; padding: 4px 8px; text-align: left; white-space: nowrap; }
+.ai-md th { background: #f1f5f9; font-weight: 700; }
+.ai-md tr:nth-child(even) td { background: #f8fafc; }
