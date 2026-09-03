@@ -63,6 +63,7 @@ export const adminMenus: MenuGroup[] = [
       { label: "Aktivasi Lisensi",  href: "/subscriptions", icon: ShieldCheck, module: "subscriptions" },
       { label: "Top Up & Penagihan",  href: "/topups",        icon: Wallet2,     module: "topups" },
       { label: "Ledger Koin",       href: "/coin-ledger",  icon: Coins,       module: "topups" },
+      { label: "QRIS Nobu Finance", href: "/nobu-finance", icon: Wallet2, module: "finance" },
       { label: "Paket Koin (SKU)",   href: "/packages",      icon: Package,     module: "packages" },
       { label: "Katalog Addon", href: "/addons",      icon: Zap,         module: "packages" },
     ],
