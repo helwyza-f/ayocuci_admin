@@ -75,6 +75,18 @@ function classifyTopupMethod(raw?: string): TopupMethodKey {
   if (m === "midtrans") return "midtrans";
   return "lainnya";
 }
+// Klasifikasi nasabah berdasarkan riwayat top up berhasil outlet:
+//  - "baru"   : outlet belum pernah / baru pertama kali top up berhasil (<= 1)
+//  - "repeat" : outlet sudah pernah top up berhasil sebelumnya (>= 2)
+type NasabahTopupType = "baru" | "repeat";
+function classifyNasabahTopup(paidCount?: number): NasabahTopupType {
+  return Number(paidCount || 0) >= 2 ? "repeat" : "baru";
+}
+const NASABAH_TOPUP_LABEL: Record<NasabahTopupType, string> = {
+  baru: "Nasabah Baru",
+  repeat: "Repeat Top Up",
+};
+
 const TOPUP_METHOD_META: Record<TopupMethodKey, { label: string; badge: string }> = {
   transfer: { label: "Transfer", badge: "border-blue-100 bg-blue-50 text-blue-600" },
   midtrans: { label: "Midtrans", badge: "border-amber-100 bg-amber-50 text-amber-700" },
@@ -129,6 +141,9 @@ function TopupsManagementContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all");
   const [methodFilter, setMethodFilter] = useState<string>("all");
+  const [nasabahTypeFilter, setNasabahTypeFilter] = useState<string>(
+    searchParams.get("nasabah") || "all",
+  );
 
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -233,9 +248,12 @@ function TopupsManagementContent() {
       const matchesOwner = ownerFilter === "all" || item.owner_name === ownerFilter;
       const matchesMethod =
         methodFilter === "all" || classifyTopupMethod(item.tk_metode_bayar) === methodFilter;
-      return matchesSearch && matchesOutlet && matchesOwner && matchesMethod;
+      const matchesNasabahType =
+        nasabahTypeFilter === "all" ||
+        classifyNasabahTopup(item.outlet_paid_count) === nasabahTypeFilter;
+      return matchesSearch && matchesOutlet && matchesOwner && matchesMethod && matchesNasabahType;
     });
-  }, [data, searchQuery, outletFilter, ownerFilter, methodFilter]);
+  }, [data, searchQuery, outletFilter, ownerFilter, methodFilter, nasabahTypeFilter]);
 
   const tenantMap = useMemo(
     () => new Map(tenants.map((tenant) => [tenant.ot_id, tenant])),
@@ -276,6 +294,8 @@ function TopupsManagementContent() {
           tk_total: item.tk_total ?? 0,
           tk_metode_bayar: item.tk_metode_bayar ?? "",
           tk_status: item.tk_status ?? "",
+          nasabah_type: NASABAH_TOPUP_LABEL[classifyNasabahTopup(item.outlet_paid_count)],
+          outlet_paid_count: item.outlet_paid_count ?? 0,
         };
       }),
     [filteredData, ownerByNameMap, ownerMap, regionNames, tenantMap],
@@ -314,6 +334,7 @@ function TopupsManagementContent() {
     setSearchQuery("");
     setStatusFilter("all");
     setMethodFilter("all");
+    setNasabahTypeFilter("all");
     setOutletFilter("all");
     setOwnerFilter("all");
     setStartDate(undefined);
@@ -390,6 +411,8 @@ function TopupsManagementContent() {
               { header: "Total Koin", key: "tk_jumlah", width: 15 },
               { header: "Total Bayar", key: "tk_total", width: 18, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
               { header: "Metode", key: "tk_metode_bayar", width: 15 },
+              { header: "Tipe Nasabah", key: "nasabah_type", width: 16 },
+              { header: "Top Up Berhasil Outlet", key: "outlet_paid_count", width: 20 },
               {
                 header: "Status",
                 key: "tk_status",
@@ -538,6 +561,25 @@ function TopupsManagementContent() {
                     )}
                  >
                    {m === "all" ? "Semua Metode" : TOPUP_METHOD_META[m as TopupMethodKey]?.label ?? m}
+                 </Button>
+               ))}
+            </div>
+
+            <div className="hidden h-4 w-px bg-slate-100 xl:block" />
+
+            <div className="flex flex-wrap items-center gap-1">
+               {["all", "baru", "repeat"].map((n) => (
+                 <Button
+                    key={n}
+                    variant={nasabahTypeFilter === n ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setNasabahTypeFilter(n)}
+                    className={cn(
+                      "h-7 px-2 text-[9px] font-bold uppercase tracking-tight rounded",
+                      nasabahTypeFilter === n ? "bg-primary/10 text-primary" : "text-slate-500"
+                    )}
+                 >
+                   {n === "all" ? "Semua Nasabah" : NASABAH_TOPUP_LABEL[n as NasabahTopupType]}
                  </Button>
                ))}
             </div>
