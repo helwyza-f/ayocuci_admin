@@ -52,6 +52,13 @@ interface DashboardSummary {
   trial_outlets?: number;
   pro_outlets?: number;
   expired_outlets?: number;
+  // Status Keaktifan Nasabah (outlet) — berbasis transaksi laundry terakhir
+  nasabah_aktif_7d?: number;
+  nasabah_aktif_30d?: number;
+  nasabah_pasif?: number;
+  nasabah_dorman?: number;
+  nasabah_belum_transaksi?: number;
+  outlets_addon_active?: number;
 }
 
 type KoinFeedItem = ActivityFeedItem & {
@@ -198,6 +205,12 @@ export default function DashboardPage() {
     trialOutlets: stats.trial_outlets ?? 0,
     proOutlets: stats.pro_outlets ?? 0,
     expiredOutlets: stats.expired_outlets ?? 0,
+    nasabahAktif7d: stats.nasabah_aktif_7d ?? 0,
+    nasabahAktif30d: stats.nasabah_aktif_30d ?? 0,
+    nasabahPasif: stats.nasabah_pasif ?? 0,
+    nasabahDorman: stats.nasabah_dorman ?? 0,
+    nasabahBelumTransaksi: stats.nasabah_belum_transaksi ?? 0,
+    outletsAddonActive: stats.outlets_addon_active ?? 0,
   };
   
   // MERGE & SORT ACTIVITIES
@@ -345,6 +358,41 @@ export default function DashboardPage() {
             color="bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-emerald-200"
             href="/tenants?activity=today_tx"
           />
+        </div>
+      </div>
+
+      {/* ── STATUS KEAKTIFAN NASABAH ── */}
+      <div className="space-y-4">
+        <div className="space-y-1 px-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">
+            Status Keaktifan Nasabah
+          </p>
+          <p className="text-xs text-slate-500">
+            Klasifikasi outlet berdasarkan transaksi laundry terakhir &amp; kepemilikan Add-On.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+          {[
+            { label: "Aktif (7 hari)", value: dashboardStats.nasabahAktif7d, href: "/tenants?keaktifan=aktif_7d", color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+            { label: "Aktif (30 hari)", value: dashboardStats.nasabahAktif30d, href: "/tenants?keaktifan=aktif_30d", color: "text-lime-700 bg-lime-50 border-lime-200" },
+            { label: "Pasif (31-60 hr)", value: dashboardStats.nasabahPasif, href: "/tenants?keaktifan=pasif", color: "text-amber-700 bg-amber-50 border-amber-200" },
+            { label: "Dorman (>60 hr)", value: dashboardStats.nasabahDorman, href: "/tenants?keaktifan=dorman", color: "text-rose-700 bg-rose-50 border-rose-200" },
+            { label: "Belum Transaksi", value: dashboardStats.nasabahBelumTransaksi, href: "/tenants?keaktifan=belum", color: "text-slate-600 bg-slate-50 border-slate-200" },
+            { label: "Add-On Aktif", value: dashboardStats.outletsAddonActive, href: "/tenants?addon=addon_active", color: "text-violet-700 bg-violet-50 border-violet-200" },
+          ].map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`rounded-2xl border p-4 transition-colors hover:brightness-[0.97] ${item.color}`}
+            >
+              <p className="text-2xl font-extrabold tracking-tight tabular-nums">
+                {isLoading ? "—" : item.value.toLocaleString("id-ID")}
+              </p>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-widest opacity-80">
+                {item.label}
+              </p>
+            </Link>
+          ))}
         </div>
       </div>
 

@@ -15,6 +15,8 @@ import {
   Zap,
   AlertCircle,
   Clock,
+  Activity,
+  Sparkles,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,8 +48,32 @@ import DateRangeFilter, { DateRange, filterByDateRange } from "@/components/shar
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { useRegionNames } from "@/hooks/use-region-names";
 import PermissionGate from "@/components/shared/permission-gate";
+import {
+  deriveKeaktifan,
+  KEAKTIFAN_META,
+  KEAKTIFAN_ORDER,
+  type KeaktifanKey,
+} from "@/lib/keaktifan";
 
 const PAGE_SIZE = 20;
+
+/** Rentang jumlah total transaksi (nota) outlet untuk filter. */
+function matchesTxTotal(total: number, bucket: string): boolean {
+  switch (bucket) {
+    case "tx_0":
+      return total === 0;
+    case "tx_1_10":
+      return total >= 1 && total <= 10;
+    case "tx_11_50":
+      return total >= 11 && total <= 50;
+    case "tx_51_200":
+      return total >= 51 && total <= 200;
+    case "tx_200plus":
+      return total > 200;
+    default:
+      return true;
+  }
+}
 
 function KpiCard({
   label,
@@ -122,9 +148,18 @@ function TenantsPageContent() {
   const [selectedStatus, setSelectedStatus] = useState(searchParams.get("status") || "all");
   const [selectedActivity, setSelectedActivity] = useState(searchParams.get("activity") || "all");
   const [koinThreshold, setKoinThreshold] = useState(searchParams.get("koin") || "all");
+  const [selectedKeaktifan, setSelectedKeaktifan] = useState(searchParams.get("keaktifan") || "all");
+  const [selectedTxTotal, setSelectedTxTotal] = useState(searchParams.get("tx_total") || "all");
+  const [selectedAddon, setSelectedAddon] = useState(searchParams.get("addon") || "all");
   const [dateRange, setDateRange] = useState<DateRange>({
     start: searchParams.get("start") || "",
     end: searchParams.get("end") || "",
+  });
+  // Filter periode transaksi (berbasis transaksi laundry terakhir), terpisah
+  // dari filter tanggal daftar outlet di atas.
+  const [txDateRange, setTxDateRange] = useState<DateRange>({
+    start: searchParams.get("tx_start") || "",
+    end: searchParams.get("tx_end") || "",
   });
 
   useEffect(() => {
@@ -134,9 +169,16 @@ function TenantsPageContent() {
     setSelectedStatus(searchParams.get("status") || "all");
     setSelectedActivity(searchParams.get("activity") || "all");
     setKoinThreshold(searchParams.get("koin") || "all");
+    setSelectedKeaktifan(searchParams.get("keaktifan") || "all");
+    setSelectedTxTotal(searchParams.get("tx_total") || "all");
+    setSelectedAddon(searchParams.get("addon") || "all");
     setDateRange({
       start: searchParams.get("start") || "",
       end: searchParams.get("end") || "",
+    });
+    setTxDateRange({
+      start: searchParams.get("tx_start") || "",
+      end: searchParams.get("tx_end") || "",
     });
   }, [searchParams]);
 
@@ -149,15 +191,25 @@ function TenantsPageContent() {
     if (selectedStatus !== "all") params.set("status", selectedStatus);
     if (selectedActivity !== "all") params.set("activity", selectedActivity);
     if (koinThreshold !== "all") params.set("koin", koinThreshold);
+    if (selectedKeaktifan !== "all") params.set("keaktifan", selectedKeaktifan);
+    if (selectedTxTotal !== "all") params.set("tx_total", selectedTxTotal);
+    if (selectedAddon !== "all") params.set("addon", selectedAddon);
     if (dateRange.start) params.set("start", dateRange.start);
     if (dateRange.end) params.set("end", dateRange.end);
+    if (txDateRange.start) params.set("tx_start", txDateRange.start);
+    if (txDateRange.end) params.set("tx_end", txDateRange.end);
 
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [
     dateRange.end,
     dateRange.start,
+    txDateRange.end,
+    txDateRange.start,
     koinThreshold,
+    selectedKeaktifan,
+    selectedTxTotal,
+    selectedAddon,
     page,
     pathname,
     router,
@@ -186,7 +238,25 @@ function TenantsPageContent() {
       const matchesActivity =
         selectedActivity === "all" ||
         (selectedActivity === "today_tx" && Number(t.daily_tx_count || 0) > 0);
-      
+
+      const matchesKeaktifan =
+        selectedKeaktifan === "all" ||
+        deriveKeaktifan({
+          last_tx_at: t.last_tx_at,
+          total_tx_count: t.total_tx_count,
+        }).key === (selectedKeaktifan as KeaktifanKey);
+
+      const matchesTxTotalFilter = matchesTxTotal(
+        Number(t.total_tx_count || 0),
+        selectedTxTotal,
+      );
+
+      const isAddonActive = Number(t.addon_active || 0) === 1;
+      const matchesAddon =
+        selectedAddon === "all" ||
+        (selectedAddon === "addon_active" && isAddonActive) ||
+        (selectedAddon === "addon_none" && !isAddonActive);
+
       const matchesKoin = (() => {
         if (koinThreshold === "all") return true;
         const koinValue = Number(t.ot_koin || 0);
@@ -204,36 +274,76 @@ function TenantsPageContent() {
         return true;
       })();
 
-      return matchesSearch && matchesOwner && matchesStatus && matchesActivity && matchesKoin;
+      return (
+        matchesSearch &&
+        matchesOwner &&
+        matchesStatus &&
+        matchesActivity &&
+        matchesKoin &&
+        matchesKeaktifan &&
+        matchesTxTotalFilter &&
+        matchesAddon
+      );
     });
-    return filterByDateRange(byFilter, (t) => t.ot_created, dateRange);
-  }, [search, selectedOwner, selectedStatus, selectedActivity, koinThreshold, dateRange, tenants]);
+    const byRegDate = filterByDateRange(byFilter, (t) => t.ot_created, dateRange);
+    return filterByDateRange(
+      byRegDate,
+      (t) => t.last_tx_at || "",
+      txDateRange,
+    );
+  }, [
+    search,
+    selectedOwner,
+    selectedStatus,
+    selectedActivity,
+    koinThreshold,
+    selectedKeaktifan,
+    selectedTxTotal,
+    selectedAddon,
+    dateRange,
+    txDateRange,
+    tenants,
+  ]);
 
   const tenantExportRows = useMemo(
     () =>
-      filteredTenants.map((tenant) => ({
-        owner_id: tenant.owner_id ?? "",
-        owner_name: tenant.owner_name ?? "",
-        owner_email: tenant.owner_email ?? "",
-        ot_id: tenant.ot_id ?? "",
-        ot_nama: tenant.ot_nama ?? "",
-        owner_nohp: tenant.owner_nohp ?? "",
-        ot_nohp: tenant.ot_nohp ?? "",
-        ot_kecamatan: regionNames.districtName(tenant.ot_kecamatan),
-        ot_kota: regionNames.cityName(tenant.ot_kota),
-        ot_provinsi: regionNames.provinceName(tenant.ot_provinsi),
-        ot_alamat: tenant.ot_alamat ?? "",
-        ot_koin: tenant.ot_koin ?? 0,
-        topup_count: tenant.topup_count ?? 0,
-        ot_status: tenant.ot_status,
-        subscription_status: tenant.subscription_status ?? "",
-        ot_created: tenant.ot_created,
-        expiry_date: tenant.expiry_date,
-        daily_tx_count: tenant.daily_tx_count ?? 0,
-        daily_tx_amount: tenant.daily_tx_amount ?? 0,
-        total_tx_count: tenant.total_tx_count ?? 0,
-        total_tx_amount: tenant.total_tx_amount ?? 0,
-      })),
+      filteredTenants.map((tenant) => {
+        const k = deriveKeaktifan({
+          last_tx_at: tenant.last_tx_at,
+          total_tx_count: tenant.total_tx_count,
+        });
+        return {
+          owner_id: tenant.owner_id ?? "",
+          owner_name: tenant.owner_name ?? "",
+          owner_email: tenant.owner_email ?? "",
+          ot_id: tenant.ot_id ?? "",
+          ot_nama: tenant.ot_nama ?? "",
+          owner_nohp: tenant.owner_nohp ?? "",
+          ot_nohp: tenant.ot_nohp ?? "",
+          owner_lead_source: tenant.owner_lead_source ?? "",
+          ot_tipe_lokasi_usaha: tenant.ot_tipe_lokasi_usaha ?? "",
+          ot_kecamatan: regionNames.districtName(tenant.ot_kecamatan),
+          ot_kota: regionNames.cityName(tenant.ot_kota),
+          ot_provinsi: regionNames.provinceName(tenant.ot_provinsi),
+          ot_alamat: tenant.ot_alamat ?? "",
+          ot_koin: tenant.ot_koin ?? 0,
+          topup_count: tenant.topup_count ?? 0,
+          ot_status: tenant.ot_status,
+          subscription_status: tenant.subscription_status ?? "",
+          keaktifan: k.label,
+          last_tx_at: tenant.last_tx_at ?? "",
+          tx_count_7d: tenant.tx_count_7d ?? 0,
+          tx_count_30d: tenant.tx_count_30d ?? 0,
+          addon_active: Number(tenant.addon_active || 0) === 1 ? "Ya" : "Tidak",
+          addon_active_names: tenant.addon_active_names ?? "",
+          ot_created: tenant.ot_created,
+          expiry_date: tenant.expiry_date,
+          daily_tx_count: tenant.daily_tx_count ?? 0,
+          daily_tx_amount: tenant.daily_tx_amount ?? 0,
+          total_tx_count: tenant.total_tx_count ?? 0,
+          total_tx_amount: tenant.total_tx_amount ?? 0,
+        };
+      }),
     [filteredTenants, regionNames],
   );
 
@@ -245,18 +355,28 @@ function TenantsPageContent() {
   const handleStatusFilter = (val: string) => { setSelectedStatus(val); setPage(1); };
   const handleActivityFilter = (val: string) => { setSelectedActivity(val); setPage(1); };
   const handleKoinThreshold = (val: string) => { setKoinThreshold(val); setPage(1); };
+  const handleKeaktifan = (val: string) => { setSelectedKeaktifan(val); setPage(1); };
+  const handleTxTotal = (val: string) => { setSelectedTxTotal(val); setPage(1); };
+  const handleAddon = (val: string) => { setSelectedAddon(val); setPage(1); };
   const handleDateRange = (r: DateRange) => { setDateRange(r); setPage(1); };
+  const handleTxDateRange = (r: DateRange) => { setTxDateRange(r); setPage(1); };
   const handleReset = () => {
     setSearch("");
     handleOwnerFilter("all");
     handleStatusFilter("all");
     handleActivityFilter("all");
     handleKoinThreshold("all");
+    handleKeaktifan("all");
+    handleTxTotal("all");
+    handleAddon("all");
     setDateRange({ start: "", end: "" });
+    setTxDateRange({ start: "", end: "" });
     setPage(1);
   };
   const isFiltered =
-    search || selectedOwner !== "all" || selectedStatus !== "all" || selectedActivity !== "all" || koinThreshold !== "all" || dateRange.start || dateRange.end;
+    search || selectedOwner !== "all" || selectedStatus !== "all" || selectedActivity !== "all" || koinThreshold !== "all" ||
+    selectedKeaktifan !== "all" || selectedTxTotal !== "all" || selectedAddon !== "all" ||
+    dateRange.start || dateRange.end || txDateRange.start || txDateRange.end;
 
   const ownerLabel = useMemo(() => {
     if (selectedOwner === "all") return "Semua Owner";
@@ -273,15 +393,25 @@ function TenantsPageContent() {
     if (selectedStatus !== "all") params.set("status", selectedStatus);
     if (selectedActivity !== "all") params.set("activity", selectedActivity);
     if (koinThreshold !== "all") params.set("koin", koinThreshold);
+    if (selectedKeaktifan !== "all") params.set("keaktifan", selectedKeaktifan);
+    if (selectedTxTotal !== "all") params.set("tx_total", selectedTxTotal);
+    if (selectedAddon !== "all") params.set("addon", selectedAddon);
     if (dateRange.start) params.set("start", dateRange.start);
     if (dateRange.end) params.set("end", dateRange.end);
+    if (txDateRange.start) params.set("tx_start", txDateRange.start);
+    if (txDateRange.end) params.set("tx_end", txDateRange.end);
 
     const query = params.toString();
     return query ? `?${query}` : "";
   }, [
     dateRange.end,
     dateRange.start,
+    txDateRange.end,
+    txDateRange.start,
     koinThreshold,
+    selectedKeaktifan,
+    selectedTxTotal,
+    selectedAddon,
     page,
     search,
     selectedActivity,
@@ -311,6 +441,25 @@ function TenantsPageContent() {
     const inactive = filteredTenants.filter((tenant) => Number(tenant.ot_status) !== 1).length;
     const expired = filteredTenants.filter((tenant) => String(tenant.subscription_status || "").toUpperCase() === "EXPIRED").length;
     return { total, active, inactive, expired };
+  }, [filteredTenants]);
+
+  // Rekap Status Keaktifan Nasabah + Add-On aktif atas hasil filter aktif.
+  const keaktifanSummary = useMemo(() => {
+    const counts: Record<KeaktifanKey, number> = {
+      aktif_7d: 0,
+      aktif_30d: 0,
+      pasif: 0,
+      dorman: 0,
+      belum: 0,
+    };
+    let addonActive = 0;
+    for (const t of filteredTenants) {
+      counts[
+        deriveKeaktifan({ last_tx_at: t.last_tx_at, total_tx_count: t.total_tx_count }).key
+      ] += 1;
+      if (Number(t.addon_active || 0) === 1) addonActive += 1;
+    }
+    return { counts, addonActive };
   }, [filteredTenants]);
 
   return (
@@ -347,6 +496,8 @@ function TenantsPageContent() {
               { header: "Nama Outlet", key: "ot_nama", width: 25 },
               { header: "No Hp Owner", key: "owner_nohp", width: 18 },
               { header: "No. Hp Outlet", key: "ot_nohp", width: 18 },
+              { header: "Sumber Informasi", key: "owner_lead_source", width: 20 },
+              { header: "Tipe Lokasi", key: "ot_tipe_lokasi_usaha", width: 16 },
               { header: "Kecamatan", key: "ot_kecamatan", width: 20 },
               { header: "Kota", key: "ot_kota", width: 18 },
               { header: "Provinsi", key: "ot_provinsi", width: 18 },
@@ -355,6 +506,12 @@ function TenantsPageContent() {
               { header: "Jumlah Top Up", key: "topup_count", width: 15 },
               { header: "Status", key: "ot_status", width: 15, format: (v) => v === 1 ? "Aktif" : "Pending" },
               { header: "Subscription", key: "subscription_status", width: 15 },
+              { header: "Status Keaktifan", key: "keaktifan", width: 22 },
+              { header: "Transaksi Terakhir", key: "last_tx_at", width: 22, format: (v) => v ? format(new Date(v as string), "dd/MM/yyyy HH:mm") : "" },
+              { header: "TX 7 Hari", key: "tx_count_7d", width: 12 },
+              { header: "TX 30 Hari", key: "tx_count_30d", width: 12 },
+              { header: "Add-On Aktif", key: "addon_active", width: 14 },
+              { header: "Add-On Aktif (Detail)", key: "addon_active_names", width: 40 },
               { header: "Tanggal Daftar", key: "ot_created", width: 22, format: (v) => v ? format(new Date(v), "dd/MM/yyyy HH:mm") : "" },
               { header: "Expired At", key: "expiry_date", width: 20, format: (v) => v ? format(new Date(v), "dd/MM/yyyy") : "" },
               { header: "Daily TX", key: "daily_tx_count", width: 12 },
@@ -403,6 +560,57 @@ function TenantsPageContent() {
           href="/tenants?status=expired"
         />
       </div>
+
+      {/* STATUS KEAKTIFAN NASABAH */}
+      <Card className="border border-slate-200 rounded-2xl bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Activity className="h-3.5 w-3.5 text-primary" />
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            Status Keaktifan Nasabah
+          </p>
+          <span className="text-[10px] text-slate-400">
+            berdasarkan transaksi laundry {isFiltered ? "(hasil filter)" : ""}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+          {KEAKTIFAN_ORDER.map((key) => (
+            <button
+              key={key}
+              onClick={() => handleKeaktifan(selectedKeaktifan === key ? "all" : key)}
+              className={cn(
+                "rounded-xl border px-3 py-2.5 text-left transition-colors",
+                selectedKeaktifan === key
+                  ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20"
+                  : "border-slate-200 bg-white hover:bg-slate-50",
+              )}
+            >
+              <p className="text-xl font-extrabold text-slate-900 tabular-nums">
+                {isLoading ? "—" : keaktifanSummary.counts[key].toLocaleString("id-ID")}
+              </p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                {KEAKTIFAN_META[key].label}
+              </p>
+            </button>
+          ))}
+          <button
+            onClick={() => handleAddon(selectedAddon === "addon_active" ? "all" : "addon_active")}
+            className={cn(
+              "rounded-xl border px-3 py-2.5 text-left transition-colors",
+              selectedAddon === "addon_active"
+                ? "border-violet-300 bg-violet-50 ring-1 ring-violet-200"
+                : "border-slate-200 bg-white hover:bg-slate-50",
+            )}
+          >
+            <p className="flex items-center gap-1 text-xl font-extrabold text-slate-900 tabular-nums">
+              <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+              {isLoading ? "—" : keaktifanSummary.addonActive.toLocaleString("id-ID")}
+            </p>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+              Outlet Add-On Aktif
+            </p>
+          </button>
+        </div>
+      </Card>
 
       {/* SEARCH & FILTER COMMAND BAR */}
       <Card className="p-1 border border-slate-200 rounded-lg bg-white overflow-hidden shadow-none">
@@ -501,7 +709,61 @@ function TenantsPageContent() {
             </div>
 
             <div className="h-4 w-px bg-slate-100 mx-0.5" />
-            <DateRangeFilter value={dateRange} onChange={handleDateRange} />
+            <div className="relative flex items-center">
+              <select
+                value={selectedKeaktifan}
+                onChange={(e) => handleKeaktifan(e.target.value)}
+                className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
+              >
+                <option value="all">Semua Keaktifan</option>
+                {KEAKTIFAN_ORDER.map((key) => (
+                  <option key={key} value={key}>{KEAKTIFAN_META[key].label}</option>
+                ))}
+              </select>
+              <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
+
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <div className="relative flex items-center">
+              <select
+                value={selectedTxTotal}
+                onChange={(e) => handleTxTotal(e.target.value)}
+                className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
+              >
+                <option value="all">Semua Total TX</option>
+                <option value="tx_0">Belum pernah transaksi</option>
+                <option value="tx_1_10">1 - 10 transaksi</option>
+                <option value="tx_11_50">11 - 50 transaksi</option>
+                <option value="tx_51_200">51 - 200 transaksi</option>
+                <option value="tx_200plus">&gt; 200 transaksi</option>
+              </select>
+              <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
+
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <div className="relative flex items-center">
+              <select
+                value={selectedAddon}
+                onChange={(e) => handleAddon(e.target.value)}
+                className="h-8 pl-2.5 pr-7 text-[10px] font-bold uppercase text-slate-600 bg-transparent border border-slate-200 rounded-md focus:ring-0 focus:outline-none cursor-pointer appearance-none hover:bg-slate-50 transition-colors"
+              >
+                <option value="all">Semua Add-On</option>
+                <option value="addon_active">Add-On Aktif</option>
+                <option value="addon_none">Tanpa Add-On</option>
+              </select>
+              <ChevronsUpDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400 pointer-events-none" />
+            </div>
+
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Daftar</span>
+              <DateRangeFilter value={dateRange} onChange={handleDateRange} />
+            </div>
+            <div className="h-4 w-px bg-slate-100 mx-0.5" />
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Transaksi</span>
+              <DateRangeFilter value={txDateRange} onChange={handleTxDateRange} />
+            </div>
             <div className="h-4 w-px bg-slate-100 mx-0.5" />
 
             <Button
@@ -607,6 +869,37 @@ function TenantsPageContent() {
                         >
                           {tenant.subscription_status}
                         </Badge>
+                        {(() => {
+                          const k = deriveKeaktifan({
+                            last_tx_at: tenant.last_tx_at,
+                            total_tx_count: tenant.total_tx_count,
+                          });
+                          return (
+                            <Badge
+                              variant="outline"
+                              title={
+                                k.daysSince === null
+                                  ? "Belum pernah transaksi"
+                                  : `Transaksi terakhir ${k.daysSince} hari lalu`
+                              }
+                              className={cn(
+                                "rounded-md px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide border shadow-none",
+                                k.badgeClass,
+                              )}
+                            >
+                              {k.shortLabel}
+                            </Badge>
+                          );
+                        })()}
+                        {Number(tenant.addon_active || 0) === 1 && (
+                          <Badge
+                            variant="outline"
+                            title={tenant.addon_active_names || "Add-On aktif"}
+                            className="rounded-md px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide border shadow-none bg-violet-50 text-violet-700 border-violet-200 inline-flex items-center gap-1"
+                          >
+                            <Sparkles className="h-3 w-3" /> Add-On
+                          </Badge>
+                        )}
                       </div>
                     </td>
                     <td className="px-5 py-3 text-right">

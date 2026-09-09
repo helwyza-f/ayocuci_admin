@@ -37,6 +37,20 @@ export interface Tenant {
   /** Jumlah top up SUKSES (berbayar) outlet ini sepanjang waktu. */
   topup_count?: number;
 
+  // Keaktifan Nasabah (berbasis transaksi laundry)
+  /** Timestamp transaksi laundry terakhir. Null = belum pernah transaksi. */
+  last_tx_at?: string | null;
+  /** Jumlah nota 7 hari terakhir. */
+  tx_count_7d?: number;
+  /** Jumlah nota 30 hari terakhir. */
+  tx_count_30d?: number;
+
+  // Add-On
+  /** 1 = outlet punya minimal 1 add-on yang belum kedaluwarsa. */
+  addon_active?: number;
+  /** Nama add-on aktif, dipisah koma. */
+  addon_active_names?: string;
+
   // Subscription & Guardrails
   ot_activated_at?: string;
   ot_trial_at?: string;
