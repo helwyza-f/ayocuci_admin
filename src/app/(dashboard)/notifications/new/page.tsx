@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ImagePlus, Loader2, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, ImagePlus, Loader2, Save, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,16 +24,62 @@ type Tenant = {
   ot_nama: string;
 };
 
+type EntityOption = {
+  id: string;
+  label: string;
+  parentId?: string;
+};
+
+type NotificationTemplate = {
+  id: number;
+  name: string;
+  description?: string;
+  title: string;
+  message: string;
+  category: string;
+  target: string;
+  fallback_target?: string;
+  cta_label?: string;
+};
+
+const notificationTargets = [
+  { value: "notification_detail", label: "Detail notifikasi" },
+  { value: "coin_management", label: "Top Up & Koin" },
+  { value: "addon_purchases", label: "Riwayat Pembelian" },
+  { value: "pro_activation", label: "Aktivasi PRO" },
+  { value: "referral_dashboard", label: "Referral" },
+  { value: "transaction_list", label: "Daftar Transaksi" },
+  { value: "transaction_detail", label: "Detail Transaksi" },
+  { value: "customer_list", label: "Daftar Pelanggan" },
+  { value: "customer_detail", label: "Detail Pelanggan" },
+  { value: "customer_deposit", label: "Deposit Pelanggan" },
+  { value: "customer_deposit_entry", label: "Detail Mutasi Deposit" },
+  { value: "coin_topup_detail", label: "Detail Top Up Koin" },
+  { value: "addon_purchase_detail", label: "Detail Pembelian Add-on" },
+  { value: "expense_list", label: "Daftar Pengeluaran" },
+  { value: "expense_detail", label: "Detail Pengeluaran" },
+  { value: "report_dashboard", label: "Laporan" },
+] as const;
+
 export default function NewNotificationPage() {
   const router = useRouter();
   const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
+  const [templateName, setTemplateName] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     judul: "",
     pesan: "",
     kategori: "INFO",
     outlets: ["all"],
+    target: "notification_detail",
+    ctaLabel: "",
+    entityId: "",
+    parentId: "",
   });
+  const [entityOptions, setEntityOptions] = useState<EntityOption[]>([]);
+  const [loadingEntities, setLoadingEntities] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
 
@@ -44,13 +90,137 @@ export default function NewNotificationPage() {
         if (res.data.status) setTenants(res.data.data || []);
       })
       .catch(() => toast.error("Gagal memuat outlet"));
+    api.get("/notifications/templates", { params: { active_only: true } })
+      .then((res) => setTemplates(res.data?.data || []))
+      .catch(() => toast.error("Gagal memuat template notifikasi"));
   }, []);
+
+  const applyTemplate = (id: string) => {
+    const template = templates.find((item) => String(item.id) === id);
+    if (!template) return;
+    setForm((current) => ({
+      ...current,
+      judul: template.title,
+      pesan: template.message,
+      kategori: template.category,
+      target: template.target,
+      ctaLabel: template.cta_label || "",
+      entityId: "",
+      parentId: "",
+    }));
+    toast.success(`Template “${template.name}” diterapkan`);
+  };
+
+  const saveTemplate = async () => {
+    if (!templateName.trim() || !form.judul.trim() || !form.pesan.trim()) {
+      toast.error("Nama template, judul, dan pesan wajib diisi");
+      return;
+    }
+    setSavingTemplate(true);
+    try {
+      const response = await api.post("/notifications/templates", {
+        name: templateName.trim(),
+        title: form.judul.trim(),
+        message: form.pesan.trim(),
+        category: form.kategori,
+        target: form.target,
+        fallback_target: "notification_detail",
+        cta_label: form.ctaLabel.trim(),
+      });
+      setTemplates((current) => [...current, response.data.data].sort((a, b) => a.name.localeCompare(b.name)));
+      setTemplateName("");
+      toast.success("Template notifikasi disimpan");
+    } catch {
+      toast.error("Gagal menyimpan template; pastikan namanya belum digunakan");
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
 
   useEffect(() => {
     return () => {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
     };
   }, [imagePreview]);
+
+  const selectedOutlet = form.outlets.length === 1 && form.outlets[0] !== "all"
+    ? form.outlets[0]
+    : "";
+
+  useEffect(() => {
+    const entityTargets = new Set([
+      "transaction_detail",
+      "customer_detail",
+      "customer_deposit",
+      "customer_deposit_entry",
+      "coin_topup_detail",
+      "addon_purchase_detail",
+	  "expense_detail",
+    ]);
+    if (!entityTargets.has(form.target) || !selectedOutlet) {
+      setEntityOptions([]);
+      return;
+    }
+    setLoadingEntities(true);
+    const loadEntities = async () => {
+      try {
+        if (form.target === "transaction_detail") {
+          const res = await api.get("/transactions", { params: { outlet: selectedOutlet, page: 1, limit: 100 } });
+          const rows = res.data?.data?.data || [];
+          setEntityOptions(rows.map((row: Record<string, any>) => ({
+            id: String(row.id),
+            label: `${row.id} · ${row.pelanggan?.nama || row.pelanggan?.name || "Pelanggan"} · ${row.status_order || "-"}`,
+          })));
+        } else if (form.target === "customer_detail" || form.target === "customer_deposit") {
+          const res = await api.get("/customers", { params: { outlet_id: selectedOutlet } });
+          const rows = res.data?.data || [];
+          setEntityOptions(rows.map((row: Record<string, any>) => ({
+            id: String(row.pel_id || row.id),
+            label: `${row.pel_nama || row.name || "Pelanggan"} · ${row.pel_nohp || row.nohp || "-"}`,
+          })));
+        } else if (form.target === "customer_deposit_entry") {
+          const res = await api.get("/notifications/entity-options", {
+            params: { target: form.target, outlet_id: selectedOutlet },
+          });
+          const rows = res.data?.data || [];
+          setEntityOptions(rows.map((row: Record<string, any>) => ({
+            id: String(row.id),
+            parentId: String(row.parent_id),
+            label: `${row.customer_name || "Pelanggan"} · ${row.entry_type || "Mutasi"} ${row.deposit_type || ""} · ${row.amount || 0}`,
+          })));
+        } else if (form.target === "coin_topup_detail") {
+          const res = await api.get("/topup-koin", { params: { outlet_id: selectedOutlet } });
+          const rows = res.data?.data || [];
+          setEntityOptions(rows.map((row: Record<string, any>) => ({
+            id: String(row.tk_id),
+            label: `${row.tk_id} · ${row.tk_jumlah || 0} koin · ${row.tk_status || "-"}`,
+          })));
+        } else if (form.target === "addon_purchase_detail") {
+          const res = await api.get("/topup-addon", { params: { outlet_id: selectedOutlet } });
+          const rows = res.data?.data || [];
+          setEntityOptions(rows.map((row: Record<string, any>) => ({
+            id: String(row.ha_id),
+            label: `${row.ha_id} · ${row.item_names || "Add-on"} · ${row.ha_status || "-"}`,
+          })));
+		} else if (form.target === "expense_detail") {
+		  const res = await api.get("/notifications/entity-options", {
+			params: { target: form.target, outlet_id: selectedOutlet },
+		  });
+		  const rows = res.data?.data || [];
+		  setEntityOptions(rows.map((row: Record<string, any>) => ({
+			id: String(row.id),
+			label: `${row.kategori || "Pengeluaran"} · Rp${Number(row.total || 0).toLocaleString("id-ID")} · ${String(row.tanggal || "").slice(0, 10)}`,
+		  })));
+        }
+      } catch {
+        setEntityOptions([]);
+        toast.error("Gagal memuat data tujuan outlet");
+      } finally {
+        setLoadingEntities(false);
+      }
+    };
+    loadEntities();
+  }, [form.target, selectedOutlet]);
 
   const outletOptions: Option[] = useMemo(
     () => [
@@ -66,11 +236,11 @@ export default function NewNotificationPage() {
   const handleOutletChange = (values: string[]) => {
     const lastValue = values[values.length - 1];
     if (lastValue === "all") {
-      setForm({ ...form, outlets: ["all"] });
+      setForm({ ...form, outlets: ["all"], entityId: "" });
     } else if (values.includes("all") && values.length > 1) {
-      setForm({ ...form, outlets: values.filter((v) => v !== "all") });
+      setForm({ ...form, outlets: values.filter((v) => v !== "all"), entityId: "" });
     } else {
-      setForm({ ...form, outlets: values });
+      setForm({ ...form, outlets: values, entityId: "" });
     }
   };
 
@@ -96,11 +266,20 @@ export default function NewNotificationPage() {
   const handleSubmit = async () => {
     if (!form.judul || !form.pesan) return toast.error("Data tidak lengkap");
     if (form.outlets.length === 0) return toast.error("Pilih target outlet");
+    if (["transaction_detail", "customer_detail", "customer_deposit", "customer_deposit_entry", "coin_topup_detail", "addon_purchase_detail", "expense_detail"].includes(form.target)) {
+      if (!selectedOutlet) return toast.error("Tujuan spesifik hanya dapat dikirim ke satu outlet");
+      if (!form.entityId) return toast.error("Pilih data tujuan notifikasi");
+    }
 
     const payload = new FormData();
     payload.append("judul", form.judul);
     payload.append("pesan", form.pesan);
     payload.append("kategori", form.kategori);
+    payload.append("target", form.target);
+    payload.append("fallback_target", "notification_detail");
+    if (form.ctaLabel.trim()) payload.append("cta_label", form.ctaLabel.trim());
+    if (form.entityId) payload.append("entity_id", form.entityId);
+    if (form.parentId) payload.append("parent_id", form.parentId);
     form.outlets.forEach((outlet) => payload.append("outlets", outlet));
     if (imageFile) payload.append("image", imageFile);
 
@@ -143,6 +322,33 @@ export default function NewNotificationPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Card className="p-6">
           <div className="space-y-5">
+            <div className="rounded-2xl border border-orange-100 bg-orange-50/50 p-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase text-slate-500">Gunakan Template</label>
+                  <Select onValueChange={applyTemplate}>
+                    <SelectTrigger className="h-12 rounded-xl bg-white font-bold">
+                      <SelectValue placeholder={templates.length ? "Pilih template" : "Belum ada template"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((template) => (
+                        <SelectItem key={template.id} value={String(template.id)}>{template.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase text-slate-500">Simpan sebagai Template</label>
+                  <div className="flex gap-2">
+                    <Input value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder="Nama template" className="h-12 bg-white" />
+                    <Button type="button" variant="outline" className="h-12" onClick={saveTemplate} disabled={savingTemplate}>
+                      {savingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-[11px] font-medium text-slate-500">Template menyimpan isi dan aksi, tetapi outlet serta data tujuan tetap dipilih setiap pengiriman.</p>
+            </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase text-slate-400">
@@ -171,6 +377,77 @@ export default function NewNotificationPage() {
                   selected={form.outlets}
                   onChange={handleOutletChange}
                   placeholder="Pilih outlet..."
+                />
+              </div>
+            </div>
+
+            {["transaction_detail", "customer_detail", "customer_deposit", "customer_deposit_entry", "coin_topup_detail", "addon_purchase_detail", "expense_detail"].includes(form.target) && (
+              <div className="space-y-2 rounded-2xl border border-orange-100 bg-orange-50/50 p-4">
+                <label className="text-xs font-black uppercase text-slate-500">
+                  Data Tujuan
+                </label>
+                {!selectedOutlet ? (
+                  <p className="text-xs font-bold text-amber-700">
+                    Pilih tepat satu outlet untuk mengambil data tujuan.
+                  </p>
+                ) : (
+                  <Select
+                    value={form.entityId}
+                    onValueChange={(v) => {
+                      const selected = entityOptions.find((item) => item.id === v);
+                      setForm({ ...form, entityId: v, parentId: selected?.parentId || "" });
+                    }}
+                    disabled={loadingEntities}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl bg-white font-bold">
+                      <SelectValue placeholder={loadingEntities ? "Memuat data..." : "Pilih data tujuan"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {entityOptions.map((entity) => (
+                        <SelectItem key={entity.id} value={entity.id}>
+                          {entity.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase text-slate-400">
+                  Aksi Saat Dibuka
+                </label>
+                <Select
+                  value={form.target}
+                  onValueChange={(v) => setForm({ ...form, target: v, entityId: "" })}
+                >
+                  <SelectTrigger className="h-12 rounded-xl bg-slate-50 font-bold">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {notificationTargets.map((target) => (
+                      <SelectItem key={target.value} value={target.value}>
+                        {target.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] font-medium text-slate-400">
+                  Aplikasi lama akan kembali ke detail notifikasi.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase text-slate-400">
+                  Label CTA Opsional
+                </label>
+                <Input
+                  value={form.ctaLabel}
+                  onChange={(e) => setForm({ ...form, ctaLabel: e.target.value })}
+                  placeholder="Contoh: Lihat Laporan"
+                  maxLength={80}
+                  className="h-12 rounded-xl bg-slate-50 font-bold"
                 />
               </div>
             </div>
@@ -282,6 +559,11 @@ export default function NewNotificationPage() {
                         <p className="text-[10px] leading-snug text-slate-600 line-clamp-3">
                           {form.pesan || "Pesan Anda akan muncul di sini saat mulai mengetik."}
                         </p>
+                        {form.target !== "notification_detail" && (
+                          <p className="pt-1 text-[9px] font-black uppercase tracking-wide text-primary">
+                            {form.ctaLabel || notificationTargets.find((item) => item.value === form.target)?.label}
+                          </p>
+                        )}
                       </div>
                       {imagePreview && (
                         <div className="mt-2.5 overflow-hidden rounded-xl">

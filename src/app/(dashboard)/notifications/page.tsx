@@ -56,7 +56,25 @@ type NotificationLog = {
   sender: string;
   total_target: number;
   total_read: number;
+  total_opened?: number;
+  total_navigation_success?: number;
+  total_navigation_failed?: number;
   receiver_names?: string;
+  notification_type?: string;
+  payload?: string | Record<string, unknown>;
+  cta_label?: string;
+  schema_version?: number;
+  source?: string;
+};
+
+const parseNavigationPayload = (payload?: NotificationLog["payload"]) => {
+  if (!payload) return {} as Record<string, unknown>;
+  if (typeof payload === "object") return payload;
+  try {
+    return JSON.parse(payload) as Record<string, unknown>;
+  } catch {
+    return {} as Record<string, unknown>;
+  }
 };
 
 type Tenant = {
@@ -472,6 +490,19 @@ function NotificationsContent() {
                         {selectedLog?.pesan}
                     </div>
                  </div>
+                 <div className="space-y-1.5">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Aksi Saat Dibuka</p>
+                    <div className="rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm">
+                      <p className="text-[13px] font-bold text-slate-900">
+                        {String(parseNavigationPayload(selectedLog?.payload).target || "notification_detail")}
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-medium text-slate-400">
+                        <span>CTA: {selectedLog?.cta_label || "Default"}</span>
+                        <span>Schema v{selectedLog?.schema_version || 0}</span>
+                        <span>Sumber: {selectedLog?.source || (selectedLog?.sender === "SYSTEM" ? "SYSTEM" : "ADMIN")}</span>
+                      </div>
+                    </div>
+                 </div>
                  {selectedLog?.image_url && (
                     <div className="space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Media Lampiran</p>
@@ -498,7 +529,12 @@ function NotificationsContent() {
                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status Pengiriman</p>
                        <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-slate-100 text-slate-600 border-none">{receivers.length} Target</Badge>
                        <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-emerald-50 text-emerald-700 border-none">{tokenStats.total} Token Aktif</Badge>
-                       <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-amber-50 text-amber-700 border-none">{tokenStats.missingOutletCount} Outlet Tanpa Token</Badge>
+                      <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-amber-50 text-amber-700 border-none">{tokenStats.missingOutletCount} Outlet Tanpa Token</Badge>
+                       <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-blue-50 text-blue-700 border-none">{Number(selectedLog?.total_opened || 0)} Dibuka</Badge>
+                       <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-emerald-50 text-emerald-700 border-none">{Number(selectedLog?.total_navigation_success || 0)} Berhasil Diarahkan</Badge>
+                       {Number(selectedLog?.total_navigation_failed || 0) > 0 && (
+                         <Badge variant="secondary" className="font-bold text-[9px] px-1.5 py-0 bg-rose-50 text-rose-700 border-none">{Number(selectedLog?.total_navigation_failed || 0)} Gagal</Badge>
+                       )}
                     </div>
                  </div>
                  
