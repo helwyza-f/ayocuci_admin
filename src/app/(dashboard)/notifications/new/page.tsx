@@ -43,23 +43,19 @@ type NotificationTemplate = {
 };
 
 const notificationTargets = [
-  { value: "notification_detail", label: "Detail notifikasi" },
-  { value: "coin_management", label: "Top Up & Koin" },
-  { value: "addon_purchases", label: "Riwayat Pembelian" },
-  { value: "pro_activation", label: "Aktivasi PRO" },
-  { value: "referral_dashboard", label: "Referral" },
-  { value: "transaction_list", label: "Daftar Transaksi" },
-  { value: "transaction_detail", label: "Detail Transaksi" },
-  { value: "customer_list", label: "Daftar Pelanggan" },
-  { value: "customer_detail", label: "Detail Pelanggan" },
-  { value: "customer_deposit", label: "Deposit Pelanggan" },
-  { value: "customer_deposit_entry", label: "Detail Mutasi Deposit" },
+  { value: "notification_detail", label: "Informasi atau Promo" },
+  { value: "coin_management", label: "Pengelolaan Koin" },
   { value: "coin_topup_detail", label: "Detail Top Up Koin" },
+  { value: "addon_purchases", label: "Riwayat Pembelian Add-on" },
   { value: "addon_purchase_detail", label: "Detail Pembelian Add-on" },
-  { value: "expense_list", label: "Daftar Pengeluaran" },
-  { value: "expense_detail", label: "Detail Pengeluaran" },
-  { value: "report_dashboard", label: "Laporan" },
+  { value: "pro_activation", label: "Aktivasi atau Upgrade PRO" },
+  { value: "referral_dashboard", label: "Program Referral" },
+  { value: "report_dashboard", label: "Insight dan Laporan" },
 ] as const;
+
+const adminTargetValues = new Set<string>(
+  notificationTargets.map((item) => item.value),
+);
 
 export default function NewNotificationPage() {
   const router = useRouter();
@@ -91,7 +87,11 @@ export default function NewNotificationPage() {
       })
       .catch(() => toast.error("Gagal memuat outlet"));
     api.get("/notifications/templates", { params: { active_only: true } })
-      .then((res) => setTemplates(res.data?.data || []))
+      .then((res) => setTemplates(
+        (res.data?.data || []).filter((template: NotificationTemplate) =>
+          adminTargetValues.has(template.target),
+        ),
+      ))
       .catch(() => toast.error("Gagal memuat template notifikasi"));
   }, []);
 
@@ -149,13 +149,8 @@ export default function NewNotificationPage() {
 
   useEffect(() => {
     const entityTargets = new Set([
-      "transaction_detail",
-      "customer_detail",
-      "customer_deposit",
-      "customer_deposit_entry",
       "coin_topup_detail",
       "addon_purchase_detail",
-	  "expense_detail",
     ]);
     if (!entityTargets.has(form.target) || !selectedOutlet) {
       setEntityOptions([]);
@@ -266,7 +261,7 @@ export default function NewNotificationPage() {
   const handleSubmit = async () => {
     if (!form.judul || !form.pesan) return toast.error("Data tidak lengkap");
     if (form.outlets.length === 0) return toast.error("Pilih target outlet");
-    if (["transaction_detail", "customer_detail", "customer_deposit", "customer_deposit_entry", "coin_topup_detail", "addon_purchase_detail", "expense_detail"].includes(form.target)) {
+    if (["coin_topup_detail", "addon_purchase_detail"].includes(form.target)) {
       if (!selectedOutlet) return toast.error("Tujuan spesifik hanya dapat dikirim ke satu outlet");
       if (!form.entityId) return toast.error("Pilih data tujuan notifikasi");
     }
@@ -381,7 +376,7 @@ export default function NewNotificationPage() {
               </div>
             </div>
 
-            {["transaction_detail", "customer_detail", "customer_deposit", "customer_deposit_entry", "coin_topup_detail", "addon_purchase_detail", "expense_detail"].includes(form.target) && (
+            {["coin_topup_detail", "addon_purchase_detail"].includes(form.target) && (
               <div className="space-y-2 rounded-2xl border border-orange-100 bg-orange-50/50 p-4">
                 <label className="text-xs font-black uppercase text-slate-500">
                   Data Tujuan
@@ -435,7 +430,7 @@ export default function NewNotificationPage() {
                   </SelectContent>
                 </Select>
                 <p className="text-[11px] font-medium text-slate-400">
-                  Aplikasi lama akan kembali ke detail notifikasi.
+                  Pilih halaman relasi platform yang relevan bagi owner outlet.
                 </p>
               </div>
               <div className="space-y-2">
