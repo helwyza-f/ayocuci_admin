@@ -20,6 +20,7 @@ import {
   FilterX,
   Sparkles,
   Trash2,
+  Activity,
 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { toast } from "sonner";
@@ -267,6 +268,11 @@ function NotificationsContent() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
+            <Link href="/notifications/lifecycle">
+              <Activity className="h-3.5 w-3.5" /> Lifecycle
+            </Link>
+          </Button>
           <PermissionGate module="notifications" action="broadcast">
             <Button asChild size="sm" className="h-8 px-3 font-bold text-[10px] uppercase tracking-wider gap-2 shadow-none">
               <Link href="/notifications/new">
