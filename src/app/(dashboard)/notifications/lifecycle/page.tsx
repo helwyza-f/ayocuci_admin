@@ -2,66 +2,32 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Clock3, Loader2, RefreshCw, Send, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Clock3, Loader2, Pencil, RefreshCw, Send, TriangleAlert, X } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-type Rule = { key: string; name: string; description: string; target: string; cooldown: string };
-type Stat = { RuleKey?: string; rule_key?: string; Sent?: number; sent?: number; Failed?: number; failed?: number };
-type Run = { id: number; rule_key: string; outlet_id: string; source_event_id?: string; status: string; reason?: string; created_at: string };
+type Rule={key:string;name:string;description:string;is_active:boolean;delay_hours:number;cooldown_hours:number;threshold_value:number;priority:number;title:string;message:string;cta_label:string;target:string;quiet_start_hour:number;quiet_end_hour:number};
+type Stat={rule_key?:string;RuleKey?:string;sent?:number;Sent?:number;failed?:number;Failed?:number;converted?:number;Converted?:number};
+type Run={id:number;rule_key:string;outlet_id:string;status:string;converted_at?:string;created_at:string};
 
-export default function LifecyclePage() {
-  const [rules, setRules] = useState<Rule[]>([]);
-  const [stats, setStats] = useState<Stat[]>([]);
-  const [runs, setRuns] = useState<Run[]>([]);
-  const [loading, setLoading] = useState(true);
+const field="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400";
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get("/notifications/lifecycle");
-      setRules(response.data?.data?.rules || []);
-      setStats(response.data?.data?.stats || []);
-      setRuns(response.data?.data?.recent_runs || []);
-    } catch {
-      toast.error("Gagal memuat lifecycle automation");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { void load(); }, []);
-  const statMap = useMemo(() => new Map(stats.map((item) => [item.rule_key || item.RuleKey, item])), [stats]);
-
-  return (
-    <div className="space-y-6 pb-10">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <Button asChild variant="ghost" className="mb-3 rounded-xl px-0 font-bold text-slate-500"><Link href="/notifications"><ArrowLeft className="mr-2 h-4 w-4" />Kembali</Link></Button>
-          <h2 className="text-3xl font-black tracking-tight text-slate-900">Lifecycle Automation</h2>
-          <p className="mt-1 text-sm font-medium text-slate-400">Pesan otomatis berdasarkan tahap penggunaan dan perilaku owner outlet.</p>
-        </div>
-        <Button variant="outline" onClick={load} disabled={loading}>{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}</Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {rules.map((rule) => {
-          const stat = statMap.get(rule.key);
-          return <Card key={rule.key} className="rounded-2xl p-5">
-            <div className="flex items-start justify-between gap-3"><div><p className="font-black text-slate-900">{rule.name}</p><p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">{rule.description}</p></div><Badge className="bg-emerald-50 text-emerald-700">Aktif</Badge></div>
-            <div className="mt-4 flex gap-2 text-xs"><Badge variant="outline">{rule.target}</Badge><Badge variant="outline"><Clock3 className="mr-1 h-3 w-3" />{rule.cooldown}</Badge></div>
-            <div className="mt-4 grid grid-cols-2 gap-2"><div className="rounded-xl bg-emerald-50 p-3"><p className="text-xs text-emerald-700">Terkirim 30 hari</p><p className="text-xl font-black text-emerald-800">{stat?.sent ?? stat?.Sent ?? 0}</p></div><div className="rounded-xl bg-red-50 p-3"><p className="text-xs text-red-700">Gagal</p><p className="text-xl font-black text-red-800">{stat?.failed ?? stat?.Failed ?? 0}</p></div></div>
-          </Card>;
-        })}
-      </div>
-
-      <Card className="overflow-hidden rounded-2xl">
-        <div className="border-b p-5"><h3 className="font-black text-slate-900">Eksekusi Terbaru</h3></div>
-        {loading ? <div className="flex justify-center p-12"><Loader2 className="h-6 w-6 animate-spin" /></div> : runs.length === 0 ? <div className="p-12 text-center text-sm text-slate-400">Belum ada automation yang dieksekusi.</div> : <div className="divide-y">{runs.map((run) => <div key={run.id} className="flex items-center justify-between gap-4 p-4 text-sm"><div><p className="font-bold text-slate-800">{run.rule_key}</p><p className="text-xs text-slate-400">Outlet {run.outlet_id} · {new Date(run.created_at).toLocaleString("id-ID")}</p></div><Badge className={run.status === "sent" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}>{run.status === "sent" ? <Send className="mr-1 h-3 w-3" /> : <TriangleAlert className="mr-1 h-3 w-3" />}{run.status}</Badge></div>)}</div>}
-      </Card>
-    </div>
-  );
+export default function LifecyclePage(){
+ const[rules,setRules]=useState<Rule[]>([]),[stats,setStats]=useState<Stat[]>([]),[runs,setRuns]=useState<Run[]>([]),[loading,setLoading]=useState(true),[editing,setEditing]=useState<Rule|null>(null),[saving,setSaving]=useState(false);
+ const load=async()=>{setLoading(true);try{const r=await api.get("/notifications/lifecycle");setRules(r.data?.data?.rules||[]);setStats(r.data?.data?.stats||[]);setRuns(r.data?.data?.recent_runs||[])}catch{toast.error("Gagal memuat lifecycle automation")}finally{setLoading(false)}};
+ useEffect(()=>{void load()},[]);
+ const statMap=useMemo(()=>new Map(stats.map(x=>[x.rule_key||x.RuleKey,x])),[stats]);
+ const save=async()=>{if(!editing)return;setSaving(true);try{await api.put(`/notifications/lifecycle/rules/${editing.key}`,editing);toast.success("Rule berhasil diperbarui");setEditing(null);await load()}catch{toast.error("Konfigurasi rule gagal disimpan")}finally{setSaving(false)}};
+ return <div className="space-y-6 pb-10">
+  <div className="flex items-start justify-between gap-4"><div><Button asChild variant="ghost" className="mb-3 rounded-xl px-0 font-bold text-slate-500"><Link href="/notifications"><ArrowLeft className="mr-2 h-4 w-4"/>Kembali</Link></Button><h2 className="text-3xl font-black tracking-tight text-slate-900">Lifecycle Automation</h2><p className="mt-1 text-sm font-medium text-slate-400">Atur pesan perilaku owner, jam kirim lokal, prioritas, dan ukur konversinya.</p></div><Button variant="outline" onClick={load} disabled={loading}>{loading?<Loader2 className="h-4 w-4 animate-spin"/>:<RefreshCw className="h-4 w-4"/>}</Button></div>
+  <Card className="rounded-2xl border-orange-100 bg-orange-50 p-4 text-sm text-orange-900"><b>Frequency cap global aktif:</b> maksimal satu lifecycle push per outlet dalam 24 jam. Rule dengan prioritas terbesar diproses lebih dulu.</Card>
+  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{rules.map(rule=>{const s=statMap.get(rule.key),sent=s?.sent??s?.Sent??0,converted=s?.converted??s?.Converted??0;return <Card key={rule.key} className="rounded-2xl p-5"><div className="flex items-start justify-between gap-3"><div><p className="font-black text-slate-900">{rule.name}</p><p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">{rule.description}</p></div><Badge className={rule.is_active?"bg-emerald-50 text-emerald-700":"bg-slate-100 text-slate-500"}>{rule.is_active?"Aktif":"Nonaktif"}</Badge></div><div className="mt-4 flex flex-wrap gap-2 text-xs"><Badge variant="outline">{rule.target}</Badge><Badge variant="outline"><Clock3 className="mr-1 h-3 w-3"/>{rule.cooldown_hours} jam</Badge><Badge variant="outline">Prioritas {rule.priority}</Badge></div><div className="mt-4 grid grid-cols-3 gap-2"><Metric label="Terkirim" value={sent} tone="emerald"/><Metric label="Konversi" value={converted} tone="blue"/><Metric label="Rate" value={`${sent?Math.round(converted/sent*100):0}%`} tone="violet"/></div><Button className="mt-4 w-full" variant="outline" onClick={()=>setEditing({...rule})}><Pencil className="mr-2 h-4 w-4"/>Atur Rule</Button></Card>})}</div>
+  <Card className="overflow-hidden rounded-2xl"><div className="border-b p-5"><h3 className="font-black text-slate-900">Eksekusi Terbaru</h3></div>{loading?<div className="flex justify-center p-12"><Loader2 className="h-6 w-6 animate-spin"/></div>:runs.length===0?<div className="p-12 text-center text-sm text-slate-400">Belum ada automation yang dieksekusi.</div>:<div className="divide-y">{runs.map(run=><div key={run.id} className="flex items-center justify-between gap-4 p-4 text-sm"><div><p className="font-bold text-slate-800">{run.rule_key}</p><p className="text-xs text-slate-400">Outlet {run.outlet_id} · {new Date(run.created_at).toLocaleString("id-ID")}</p></div><div className="flex gap-2">{run.converted_at&&<Badge className="bg-blue-50 text-blue-700">Konversi</Badge>}<Badge className={run.status==="sent"?"bg-emerald-50 text-emerald-700":"bg-red-50 text-red-700"}>{run.status==="sent"?<Send className="mr-1 h-3 w-3"/>:<TriangleAlert className="mr-1 h-3 w-3"/>}{run.status}</Badge></div></div>)}</div>}</Card>
+  {editing&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"><Card className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl p-6"><div className="flex items-start justify-between"><div><h3 className="text-xl font-black">Atur {editing.name}</h3><p className="text-xs text-slate-400">{editing.key}</p></div><Button size="icon" variant="ghost" onClick={()=>setEditing(null)}><X className="h-4 w-4"/></Button></div><div className="mt-5 grid gap-4 md:grid-cols-2"><label className="flex items-center gap-3 rounded-xl border p-3 font-bold"><input type="checkbox" checked={editing.is_active} onChange={e=>setEditing({...editing,is_active:e.target.checked})}/>Rule aktif</label><Num label="Prioritas (0–100)" value={editing.priority} onChange={v=>setEditing({...editing,priority:v})}/><Num label="Delay (jam)" value={editing.delay_hours} onChange={v=>setEditing({...editing,delay_hours:v})}/><Num label="Cooldown (jam)" value={editing.cooldown_hours} onChange={v=>setEditing({...editing,cooldown_hours:v})}/><Num label="Threshold" value={editing.threshold_value} onChange={v=>setEditing({...editing,threshold_value:v})}/><label className="text-sm font-bold">Target<select className={field} value={editing.target} onChange={e=>setEditing({...editing,target:e.target.value})}>{["home","service-list","coin_management","coin_topup_detail","pro_activation"].map(v=><option key={v}>{v}</option>)}</select></label><Num label="Quiet mulai" value={editing.quiet_start_hour} onChange={v=>setEditing({...editing,quiet_start_hour:v})}/><Num label="Quiet selesai" value={editing.quiet_end_hour} onChange={v=>setEditing({...editing,quiet_end_hour:v})}/><label className="text-sm font-bold md:col-span-2">Judul<input className={field} value={editing.title} onChange={e=>setEditing({...editing,title:e.target.value})}/></label><label className="text-sm font-bold md:col-span-2">Pesan<textarea className={`${field} min-h-24`} value={editing.message} onChange={e=>setEditing({...editing,message:e.target.value})}/></label><label className="text-sm font-bold md:col-span-2">Label CTA<input className={field} value={editing.cta_label} onChange={e=>setEditing({...editing,cta_label:e.target.value})}/></label></div><div className="mt-6 flex justify-end gap-2"><Button variant="outline" onClick={()=>setEditing(null)}>Batal</Button><Button onClick={save} disabled={saving}>{saving&&<Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Simpan Rule</Button></div></Card></div>}
+ </div>
 }
+function Metric({label,value,tone}:{label:string;value:number|string;tone:string}){const c:{[k:string]:string}={emerald:"bg-emerald-50 text-emerald-800",blue:"bg-blue-50 text-blue-800",violet:"bg-violet-50 text-violet-800"};return <div className={`rounded-xl p-3 ${c[tone]}`}><p className="text-[11px] opacity-70">{label}</p><p className="text-lg font-black">{value}</p></div>}
+function Num({label,value,onChange}:{label:string;value:number;onChange:(v:number)=>void}){return <label className="text-sm font-bold">{label}<input type="number" className={field} value={value} onChange={e=>onChange(Number(e.target.value))}/></label>}
