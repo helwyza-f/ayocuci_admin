@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -22,7 +22,7 @@ import {
   Trash2,
   Activity,
 } from "lucide-react";
-import { format, isSameDay } from "date-fns";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { resolveImageVariantUrl } from "@/lib/upload-url";
 import { Badge } from "@/components/ui/badge";
@@ -115,6 +115,10 @@ function NotificationsContent() {
   const [logs, setLogs] = useState<NotificationLog[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
+	const [loadingOutlets, setLoadingOutlets] = useState(true);
+	const [page, setPage] = useState(1);
+	const [total, setTotal] = useState(0);
+	const pageSize = 25;
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("ALL");
   const [outlet, setOutlet] = useState("ALL");
@@ -128,52 +132,50 @@ function NotificationsContent() {
   const [receiverPage, setReceiverPage] = useState(1);
   const receiversPerPage = 10;
 
-  const fetchData = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const [resLogs, resTenants] = await Promise.all([
-        api.get("/notifications/logs"),
-        api.get("/tenants"),
-      ]);
-      if (resLogs.data.status) setLogs(resLogs.data.data || []);
-      if (resTenants.data.status) setTenants(resTenants.data.data || []);
+      const response = await api.get("/notifications/logs", { params: {
+        page, limit: pageSize, search: search || undefined,
+        category: category === "ALL" ? undefined : category,
+        outlet_id: outlet === "ALL" ? undefined : outlet,
+        date: date || undefined, source,
+      }});
+      if (response.data.status) {
+        setLogs(response.data.data?.items || []);
+        setTotal(Number(response.data.data?.total) || 0);
+      }
     } catch {
       toast.error("Gagal memuat riwayat notifikasi");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search, category, outlet, date, source]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+	const timer = window.setTimeout(() => void fetchLogs(), 300);
+	return () => window.clearTimeout(timer);
+  }, [fetchLogs]);
 
-  const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
-      const q = search.toLowerCase();
-      const matchesSearch = log.judul?.toLowerCase().includes(q) || log.pesan?.toLowerCase().includes(q);
-      const matchesCategory = category === "ALL" || log.kategori === category;
-      const matchesOutlet = outlet === "ALL" || log.receiver_names?.includes(outlet);
-      const matchesDate = !date || isSameDay(new Date(log.created_at), new Date(date));
-      
-      const isSystem = log.sender === "SYSTEM";
-      const matchesSource = 
-        source === "ALL" ? true :
-        source === "SYSTEM" ? isSystem :
-        !isSystem;
-
-      return matchesSearch && matchesCategory && matchesOutlet && matchesDate && matchesSource;
-    });
-  }, [logs, search, category, outlet, date, source]);
+	useEffect(() => {
+		const loadOutlets = async () => {
+			try {
+				const response = await api.get("/notifications/outlet-options");
+				if (response.data.status) setTenants(response.data.data || []);
+			} catch { toast.error("Gagal memuat pilihan outlet"); }
+			finally { setLoadingOutlets(false); }
+		};
+		void loadOutlets();
+	}, []);
 
   const stats = useMemo(
     () => ({
-      total: logs.length,
+      total,
       promo: logs.filter((log) => log.kategori === "PROMO").length,
       info: logs.filter((log) => log.kategori === "INFO").length,
       read: logs.reduce((sum, log) => sum + (Number(log.total_read) || 0), 0),
     }),
-    [logs]
+    [logs, total]
   );
 
   const fetchDetail = async (log: NotificationLog) => {
@@ -237,6 +239,7 @@ function NotificationsContent() {
     setOutlet("ALL");
     setDate("");
     setSource("ADMIN");
+		setPage(1);
   };
 
   const handleDelete = async (id: string) => {
@@ -294,7 +297,7 @@ function NotificationsContent() {
       {/* SOURCE TABS */}
       <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg w-fit">
         <button
-          onClick={() => setSource("ADMIN")}
+          onClick={() => { setSource("ADMIN"); setPage(1); }}
           className={cn(
             "px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
             source === "ADMIN" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
@@ -303,7 +306,7 @@ function NotificationsContent() {
           Siaran Admin
         </button>
         <button
-          onClick={() => setSource("SYSTEM")}
+          onClick={() => { setSource("SYSTEM"); setPage(1); }}
           className={cn(
             "px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
             source === "SYSTEM" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
@@ -312,7 +315,7 @@ function NotificationsContent() {
           Log Sistem
         </button>
         <button
-          onClick={() => setSource("ALL")}
+          onClick={() => { setSource("ALL"); setPage(1); }}
           className={cn(
             "px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
             source === "ALL" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
@@ -330,7 +333,7 @@ function NotificationsContent() {
             <Input
               placeholder="Filter berdasarkan judul atau konten..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="pl-9 h-9 border-none shadow-none focus-visible:ring-0 text-xs font-medium placeholder:text-slate-400"
             />
           </div>
@@ -338,7 +341,7 @@ function NotificationsContent() {
           <div className="h-5 w-px bg-slate-100 hidden xl:block" />
 
           <div className="flex flex-wrap items-center gap-1 p-1 xl:p-0">
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={(value) => { setCategory(value); setPage(1); }}>
               <SelectTrigger className="h-8 font-bold text-[10px] border-none shadow-none focus:ring-0 w-36 gap-2">
                 <SelectValue placeholder="Kategori" />
               </SelectTrigger>
@@ -352,15 +355,16 @@ function NotificationsContent() {
 
             <div className="h-4 w-px bg-slate-100" />
 
-            <Select value={outlet} onValueChange={setOutlet}>
+            <Select value={outlet} onValueChange={(value) => { setOutlet(value); setPage(1); }}>
               <SelectTrigger className="h-8 font-bold text-[10px] border-none shadow-none focus:ring-0 w-44 gap-2">
                 <Store className="h-3 w-3 opacity-40" />
                 <SelectValue placeholder="Outlet" />
               </SelectTrigger>
               <SelectContent className="rounded-md">
                 <SelectItem value="ALL" className="text-xs font-bold">Semua Outlet</SelectItem>
+                {loadingOutlets && <SelectItem value="LOADING" disabled className="text-xs">Memuat outlet...</SelectItem>}
                 {tenants.map(t => (
-                  <SelectItem key={t.ot_id} value={t.ot_nama} className="text-xs font-bold">{t.ot_nama}</SelectItem>
+                  <SelectItem key={t.ot_id} value={t.ot_id} className="text-xs font-bold">{t.ot_nama}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -381,14 +385,14 @@ function NotificationsContent() {
       <Card className="border border-slate-200 rounded-lg overflow-hidden bg-white min-h-[400px] shadow-none">
         {loading ? (
           <div className="p-20 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-        ) : filteredLogs.length === 0 ? (
+        ) : logs.length === 0 ? (
           <div className="py-24 text-center">
             <FileText className="h-8 w-8 text-slate-200 mx-auto mb-2" />
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Tidak ada riwayat ditemukan</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filteredLogs.map((log) => {
+            {logs.map((log) => {
               const totalTarget = Number(log.total_target) || 0;
               const totalRead = Number(log.total_read) || 0;
               const percent = totalTarget ? (totalRead / totalTarget) * 100 : 0;
@@ -462,6 +466,18 @@ function NotificationsContent() {
           </div>
         )}
       </Card>
+
+		{total > pageSize && (
+			<div className="flex items-center justify-between">
+				<p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+					Menampilkan {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} dari {total} siaran
+				</p>
+				<div className="flex gap-2">
+					<Button variant="outline" size="sm" disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>Sebelumnya</Button>
+					<Button variant="outline" size="sm" disabled={page * pageSize >= total || loading} onClick={() => setPage(value => value + 1)}>Selanjutnya</Button>
+				</div>
+			</div>
+		)}
 
       {/* AUDIT DIALOG */}
       <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
