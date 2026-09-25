@@ -75,16 +75,20 @@ function classifyTopupMethod(raw?: string): TopupMethodKey {
   if (m === "midtrans") return "midtrans";
   return "lainnya";
 }
-// Klasifikasi nasabah berdasarkan riwayat top up berhasil outlet:
-//  - "baru"   : outlet belum pernah / baru pertama kali top up berhasil (<= 1)
-//  - "repeat" : outlet sudah pernah top up berhasil sebelumnya (>= 2)
-type NasabahTopupType = "baru" | "repeat";
-function classifyNasabahTopup(paidCount?: number): NasabahTopupType {
-  return Number(paidCount || 0) >= 2 ? "repeat" : "baru";
+// Status diberikan API per transaksi agar baris lama tidak berubah ketika
+// outlet melakukan top up berikutnya.
+type NasabahTopupType = "bonus_baru" | "baru" | "repeat" | "lainnya";
+function classifyNasabahTopup(item: Topup): NasabahTopupType {
+  if (item.customer_topup_type === "bonus_nasabah_baru") return "bonus_baru";
+  if (item.customer_topup_type === "nasabah_baru") return "baru";
+  if (item.customer_topup_type === "repeat_topup") return "repeat";
+  return "lainnya";
 }
 const NASABAH_TOPUP_LABEL: Record<NasabahTopupType, string> = {
+  bonus_baru: "Bonus Nasabah Baru",
   baru: "Nasabah Baru",
   repeat: "Repeat Top Up",
+  lainnya: "Bukan Top Up",
 };
 
 const TOPUP_METHOD_META: Record<TopupMethodKey, { label: string; badge: string }> = {
@@ -250,7 +254,7 @@ function TopupsManagementContent() {
         methodFilter === "all" || classifyTopupMethod(item.tk_metode_bayar) === methodFilter;
       const matchesNasabahType =
         nasabahTypeFilter === "all" ||
-        classifyNasabahTopup(item.outlet_paid_count) === nasabahTypeFilter;
+        classifyNasabahTopup(item) === nasabahTypeFilter;
       return matchesSearch && matchesOutlet && matchesOwner && matchesMethod && matchesNasabahType;
     });
   }, [data, searchQuery, outletFilter, ownerFilter, methodFilter, nasabahTypeFilter]);
@@ -294,8 +298,8 @@ function TopupsManagementContent() {
           tk_total: item.tk_total ?? 0,
           tk_metode_bayar: item.tk_metode_bayar ?? "",
           tk_status: item.tk_status ?? "",
-          nasabah_type: NASABAH_TOPUP_LABEL[classifyNasabahTopup(item.outlet_paid_count)],
-          outlet_paid_count: item.outlet_paid_count ?? 0,
+          nasabah_type: NASABAH_TOPUP_LABEL[classifyNasabahTopup(item)],
+          topup_sequence: item.topup_sequence ?? 0,
         };
       }),
     [filteredData, ownerByNameMap, ownerMap, regionNames, tenantMap],
@@ -412,7 +416,7 @@ function TopupsManagementContent() {
               { header: "Total Bayar", key: "tk_total", width: 18, format: (v) => v != null ? `Rp ${Number(v).toLocaleString()}` : "Rp 0" },
               { header: "Metode", key: "tk_metode_bayar", width: 15 },
               { header: "Tipe Nasabah", key: "nasabah_type", width: 16 },
-              { header: "Top Up Berhasil Outlet", key: "outlet_paid_count", width: 20 },
+              { header: "Urutan Top Up", key: "topup_sequence", width: 15, format: (v) => Number(v) > 0 ? `Top Up ke-${v}` : "-" },
               {
                 header: "Status",
                 key: "tk_status",
@@ -568,7 +572,7 @@ function TopupsManagementContent() {
             <div className="hidden h-4 w-px bg-slate-100 xl:block" />
 
             <div className="flex flex-wrap items-center gap-1">
-               {["all", "baru", "repeat"].map((n) => (
+               {["all", "bonus_baru", "baru", "repeat"].map((n) => (
                  <Button
                     key={n}
                     variant={nasabahTypeFilter === n ? "secondary" : "ghost"}
@@ -652,16 +656,15 @@ function TopupsManagementContent() {
                         {item.owner_code && (
                           <div className="text-[9px] font-mono text-slate-400">Kode Referral: {item.owner_code}</div>
                         )}
-                        {typeof item.outlet_paid_count === "number" && (
-                          item.outlet_paid_count >= 2 ? (
-                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold text-blue-600">
-                              🔁 Repeat · {item.outlet_paid_count}× bayar
-                            </span>
-                          ) : (
-                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600">
-                              🟢 Pelanggan Baru
-                            </span>
-                          )
+                        {Number(item.topup_sequence || 0) > 0 && (
+                          <span className={cn(
+                            "mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold",
+                            classifyNasabahTopup(item) === "repeat"
+                              ? "bg-blue-50 text-blue-600"
+                              : "bg-emerald-50 text-emerald-600",
+                          )}>
+                            {NASABAH_TOPUP_LABEL[classifyNasabahTopup(item)]} · Top Up ke-{item.topup_sequence}
+                          </span>
                         )}
                       </td>
                       <td className="px-5 py-3 text-center">

@@ -121,8 +121,17 @@ function TenantsPageContent() {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [page, setPage] = useState(Number(searchParams.get("page") || "1"));
+  const tenantApiPath = useMemo(() => {
+    const params = new URLSearchParams();
+    const txStart = searchParams.get("tx_start");
+    const txEnd = searchParams.get("tx_end");
+    if (txStart) params.set("tx_start", txStart);
+    if (txEnd) params.set("tx_end", txEnd);
+    const query = params.toString();
+    return query ? `/tenants?${query}` : "/tenants";
+  }, [searchParams]);
   const { data: tenantsResponse, isLoading } = useSWR<ApiResponse<Tenant[]>>(
-    "/tenants",
+    tenantApiPath,
     apiFetcher,
     {
       dedupingInterval: 60_000,
@@ -155,8 +164,8 @@ function TenantsPageContent() {
     start: searchParams.get("start") || "",
     end: searchParams.get("end") || "",
   });
-  // Filter periode transaksi (berbasis transaksi laundry terakhir), terpisah
-  // dari filter tanggal daftar outlet di atas.
+  // Filter periode transaksi dilakukan API dengan EXISTS, sehingga outlet
+  // tetap ditemukan walaupun transaksi terbarunya berada di luar periode.
   const [txDateRange, setTxDateRange] = useState<DateRange>({
     start: searchParams.get("tx_start") || "",
     end: searchParams.get("tx_end") || "",
@@ -285,12 +294,7 @@ function TenantsPageContent() {
         matchesAddon
       );
     });
-    const byRegDate = filterByDateRange(byFilter, (t) => t.ot_created, dateRange);
-    return filterByDateRange(
-      byRegDate,
-      (t) => t.last_tx_at || "",
-      txDateRange,
-    );
+    return filterByDateRange(byFilter, (t) => t.ot_created, dateRange);
   }, [
     search,
     selectedOwner,

@@ -15,8 +15,10 @@ export interface Topup {
   tk_outlet?: string;
   keterangan?: string;
   bonus_type?: string;
-  /** Jumlah top up SUKSES outlet ini sepanjang waktu: <=1 = pelanggan baru, >=2 = repeat (retensi). */
-  outlet_paid_count?: number;
+  /** Urutan top up historis; nil/0 untuk pemasukan koin yang bukan top up. */
+  topup_sequence?: number;
+  /** Status historis dari API: bonus_nasabah_baru, nasabah_baru, atau repeat_topup. */
+  customer_topup_type?: string;
   tk_lastupdate?: string | null;
   tk_tanggal_upload_bukti?: string | null;
   tk_tanggal_validasi?: string | null;
