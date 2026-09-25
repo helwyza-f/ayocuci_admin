@@ -75,6 +75,15 @@ import {
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import PermissionGate from "@/components/shared/permission-gate";
 
+function isIapTopup(method?: string) {
+  const normalized = (method || "").trim().toLowerCase();
+  return normalized === "iap" || normalized === "iap_topup" || normalized === "apple_iap";
+}
+
+function topupMethodLabel(method?: string) {
+  return isIapTopup(method) ? "Apple IAP" : method || "-";
+}
+
 export default function TenantDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -1645,7 +1654,7 @@ export default function TenantDetailPage() {
                                       </div>
                                    ) : (
                                       <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-100 text-[8px] font-bold uppercase">
-                                         {topup.tk_metode_bayar || "-"}
+                                         {topupMethodLabel(topup.tk_metode_bayar)}
                                       </Badge>
                                    )}
                                 </td>
@@ -1735,7 +1744,7 @@ export default function TenantDetailPage() {
                             </>
                           ) : (
                             <Badge variant="outline" className="border-slate-100 bg-white text-[8px] font-bold uppercase text-slate-600">
-                              {topup.tk_metode_bayar || "-"}
+                              {topupMethodLabel(topup.tk_metode_bayar)}
                             </Badge>
                           )}
                         </div>
@@ -1882,6 +1891,13 @@ export default function TenantDetailPage() {
                       </div>
                    )}
                 </div>
+             ) : isIapTopup(selectedKoin?.tk_metode_bayar) ? (
+                <div className="rounded-xl border border-fuchsia-100 bg-fuchsia-50/60 p-4">
+                   <p className="flex items-center gap-2 text-xs font-semibold text-fuchsia-700">
+                      <Smartphone className="h-4 w-4" />
+                      Pembayaran terverifikasi melalui Apple In-App Purchase.
+                   </p>
+                </div>
              ) : (
                 <div className="space-y-2">
                    <div className="flex items-center justify-between">
@@ -1912,7 +1928,7 @@ export default function TenantDetailPage() {
              <div className="grid grid-cols-2 gap-3">
                 <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
                    <p className="text-[9px] font-bold uppercase text-slate-400 mb-1">Metode</p>
-                   <p className="font-bold text-xs text-slate-800 uppercase">{selectedKoin?.tk_metode_bayar}</p>
+                   <p className="font-bold text-xs text-slate-800 uppercase">{topupMethodLabel(selectedKoin?.tk_metode_bayar)}</p>
                 </div>
                 <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
                    <p className="text-[9px] font-bold uppercase text-slate-400 mb-1">Total Bayar</p>
