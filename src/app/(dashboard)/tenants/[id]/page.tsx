@@ -693,7 +693,7 @@ export default function TenantDetailPage() {
           trend={{ value: `${metrics.total_orders.toLocaleString()} Lifetime`, isUp: true }}
         />
         <StatCard 
-          label="Performa Omzet" 
+          label="Performa Penjualan"
           value={`Rp ${metrics.today_revenue.toLocaleString()}`} 
           icon={CreditCard} 
           trend={{ value: `Total Rp ${metrics.total_revenue.toLocaleString()}`, isUp: true }}

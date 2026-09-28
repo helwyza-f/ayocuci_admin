@@ -17,7 +17,7 @@ interface ChatMsg {
 const SAMPLES = [
   "Daftar outlet PRO yang pernah transaksi > 5x dan sisa koin < 5",
   "Total pendapatan top up (transfer + midtrans) bulan ini",
-  "10 outlet dengan omzet tertinggi bulan ini",
+  "10 outlet dengan penjualan tertinggi bulan ini",
   "Berapa outlet trial yang akan expired 7 hari ke depan?",
 ];
 

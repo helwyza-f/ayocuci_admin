@@ -122,7 +122,7 @@ export default function SalesTargetsPage() {
     if (!resp?.data.length) return;
     const head = [
       "Skor", "Tier", "Outlet", "Owner", "No HP", "Channel", "Kota", "Plan",
-      "Sisa Koin", "Total Trx", "Omzet", "Trx 7hr", "Hari sejak trx", "Status", "Alasan",
+      "Sisa Koin", "Total Trx", "Penjualan", "Trx 7hr", "Hari sejak trx", "Status", "Alasan",
     ];
     const rows = resp.data.map((d) => [
       d.score, d.tier, d.outlet_name, d.owner_name, d.owner_phone || d.outlet_phone,
@@ -227,7 +227,7 @@ export default function SalesTargetsPage() {
                   <th className="px-3 py-2.5 font-semibold">Sinyal</th>
                   <th className="px-3 py-2.5 text-right font-semibold">Koin</th>
                   <th className="px-3 py-2.5 text-right font-semibold">Trx</th>
-                  <th className="px-3 py-2.5 text-right font-semibold">Omzet</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Penjualan</th>
                   <th className="px-3 py-2.5 font-semibold">Status</th>
                   <th className="px-3 py-2.5 font-semibold">Aksi</th>
                 </tr>
@@ -252,7 +252,7 @@ export default function SalesTargetsPage() {
                       {t.data_flag && (
                         <div className="mt-1 flex items-center gap-1 text-[11px] text-amber-600">
                           <AlertTriangle className="h-3 w-3" />
-                          {t.data_flag === "omzet_janggal" ? "omzet janggal — cek input" : "omzet 0 — cek input"}
+                          {t.data_flag === "omzet_janggal" ? "penjualan janggal — cek input" : "penjualan 0 — cek input"}
                         </div>
                       )}
                     </td>
