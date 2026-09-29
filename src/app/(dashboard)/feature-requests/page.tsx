@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import api from "@/lib/api-client";
 import { apiFetcher } from "@/lib/fetcher";
 import type { ApiResponse } from "@/types/api";
+import { resolveUploadUrl } from "@/lib/upload-url";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,6 +29,7 @@ type FeatureRequest = {
   vote_count: number;
   created_at: string;
   status_updated_at?: string;
+  attachments: { id: string; file_url: string }[];
 };
 
 const statuses: Record<FeatureStatus, { label: string; badge: string }> = {
@@ -139,6 +141,7 @@ export default function FeatureRequestsPage() {
                 </div>
               </div>
               {item.admin_note && <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600"><span className="font-bold">Update publik:</span> {item.admin_note}</div>}
+              {item.attachments?.length > 0 && <div className="flex gap-2 overflow-x-auto">{item.attachments.map((attachment) => <img key={attachment.id} src={resolveUploadUrl(attachment.file_url)} alt="Lampiran usulan" className="h-16 w-16 rounded-lg border border-slate-200 object-cover" />)}</div>}
               <div className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                 <div><p className="text-xs font-semibold text-slate-700">{item.creator_name}</p><p className="text-[10px] text-slate-400">{item.outlet_id || "Tanpa outlet"}</p></div>
                 <Button size="sm" variant="outline" onClick={() => openStatus(item)}>Ubah Status</Button>
@@ -150,9 +153,10 @@ export default function FeatureRequestsPage() {
 
       <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Perbarui status usulan</DialogTitle><DialogDescription>Status dan catatan ini langsung terlihat oleh pengguna aplikasi.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Detail & status usulan</DialogTitle><DialogDescription>Status dan catatan ini langsung terlihat oleh pengguna aplikasi.</DialogDescription></DialogHeader>
           <div className="space-y-4 pt-2">
-            <div className="rounded-lg bg-slate-50 p-3"><p className="text-sm font-bold text-slate-900">{selected?.title}</p><p className="mt-1 text-xs text-slate-500">{selected?.creator_name}</p></div>
+            <div className="rounded-lg bg-slate-50 p-3"><p className="text-sm font-bold text-slate-900">{selected?.title}</p><p className="mt-2 text-xs leading-5 text-slate-600">{selected?.description}</p><p className="mt-2 text-xs text-slate-400">{selected?.creator_name} • {selected?.vote_count} vote</p></div>
+            {selected?.attachments?.length ? <div className="flex gap-2 overflow-x-auto">{selected.attachments.map((attachment) => <a key={attachment.id} href={resolveUploadUrl(attachment.file_url)} target="_blank" rel="noreferrer"><img src={resolveUploadUrl(attachment.file_url)} alt="Lampiran usulan" className="h-24 w-24 rounded-lg border border-slate-200 object-cover" /></a>)}</div> : null}
             <Select value={nextStatus} onValueChange={(value) => setNextStatus(value as FeatureStatus)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{(Object.entries(statuses) as [FeatureStatus, (typeof statuses)[FeatureStatus]][]).map(([key, meta]) => <SelectItem key={key} value={key}>{meta.label}</SelectItem>)}</SelectContent>
