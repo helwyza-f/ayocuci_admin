@@ -23,6 +23,7 @@ import {
   Receipt,
   Sparkles,
   Target,
+  Lightbulb,
 } from "lucide-react";
 
 export interface MenuItem {
@@ -49,6 +50,7 @@ export const adminMenus: MenuGroup[] = [
       { label: "AI Analyst",         href: "/ai-analyst", icon: Sparkles,   module: "dashboard", masterOnly: true },
       { label: "Target Sales",       href: "/sales-targets", icon: Target,  module: "dashboard", masterOnly: true },
       { label: "Riwayat Transaksi", href: "/transactions", icon: Receipt, module: "dashboard" },
+      { label: "Request Fitur", href: "/feature-requests", icon: Lightbulb, module: "dashboard" },
     ],
   },
   {

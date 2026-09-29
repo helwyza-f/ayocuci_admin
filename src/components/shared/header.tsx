@@ -37,6 +37,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
       "otp-logs": "Log OTP",
       packages: "Paket Layanan",
       subscriptions: "Aktivasi Lisensi",
+      "feature-requests": "Request Fitur",
     };
 
     return (
