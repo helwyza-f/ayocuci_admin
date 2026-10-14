@@ -12,7 +12,6 @@ import {
   X,
   RefreshCw,
   Coins,
-  ShieldCheck,
   Zap,
   Percent,
   ArrowDownCircle,
@@ -32,6 +31,7 @@ function KoinPackagesContent() {
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<number | null>(null);
   const [pricePerCoin, setPricePerCoin] = useState<number>(100);
 
   const [formData, setFormData] = useState({
@@ -112,6 +112,23 @@ function KoinPackagesContent() {
       },
       error: "Deletion failed",
     });
+  };
+
+  const handleStatusChange = async (pkg: KoinPackage, isActive: boolean) => {
+    setUpdatingStatusId(pkg.id);
+    try {
+      await economyService.updatePackageStatus(pkg.id, isActive);
+      setPackages((current) =>
+        current.map((item) =>
+          item.id === pkg.id ? { ...item, is_active: isActive } : item,
+        ),
+      );
+      toast.success(isActive ? "Paket ditampilkan kembali" : "Paket disembunyikan dari aplikasi");
+    } catch {
+      toast.error("Gagal mengubah status paket");
+    } finally {
+      setUpdatingStatusId(null);
+    }
   };
 
   const calculatePricing = (koin: number, discountPct: number) => {
@@ -227,8 +244,13 @@ function KoinPackagesContent() {
         ) : (
           packages.map((pkg) => {
             const pricing = calculatePricing(pkg.jumlah_koin, pkg.discount_pct || 0);
+            const isActive = pkg.is_active !== false;
+            const isUpdatingStatus = updatingStatusId === pkg.id;
             return (
-              <Card key={pkg.id} className="p-4 border border-slate-200 shadow-none rounded-lg bg-white hover:border-primary transition-colors group relative overflow-hidden">
+              <Card key={pkg.id} className={cn(
+                "p-4 border border-slate-200 shadow-none rounded-lg bg-white transition-all group relative overflow-hidden",
+                isActive ? "hover:border-primary" : "bg-slate-50/70 opacity-70",
+              )}>
                 <div className="flex justify-between items-start mb-4">
                   <div className="h-8 w-8 rounded bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
                     <Zap className="h-4 w-4" />
@@ -294,10 +316,36 @@ function KoinPackagesContent() {
                   )}>
                     {pricing.hasDiscount ? `Diskon ${pkg.discount_pct}%` : "Standar"}
                   </Badge>
-                  <div className="flex items-center gap-1 opacity-30">
-                     <ShieldCheck className="h-3 w-3 text-emerald-500" />
-                     <span className="text-[8px] font-bold uppercase tracking-tight">Aktif</span>
-                  </div>
+                  <PermissionGate module="packages" action="update">
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "text-[8px] font-bold uppercase tracking-tight",
+                        isActive ? "text-emerald-600" : "text-slate-400",
+                      )}>
+                        {isActive ? "Aktif" : "Disembunyikan"}
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-label={`${isActive ? "Sembunyikan" : "Tampilkan"} paket ${pkg.jumlah_koin} koin`}
+                        aria-checked={isActive}
+                        disabled={isUpdatingStatus}
+                        onClick={() => handleStatusChange(pkg, !isActive)}
+                        className={cn(
+                          "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50",
+                          isActive ? "bg-emerald-500" : "bg-slate-300",
+                        )}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
+                            isActive ? "translate-x-4" : "translate-x-0",
+                          )}
+                        />
+                      </button>
+                    </div>
+                  </PermissionGate>
                 </div>
               </Card>
             );

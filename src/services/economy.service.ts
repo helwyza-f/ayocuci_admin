@@ -23,6 +23,8 @@ export const economyService = {
     api.post("/economy/packages", data),
   updatePackage: (id: number, data: { jumlah_koin: number; discount_pct: number }) =>
     api.put(`/economy/packages/${id}`, data),
+  updatePackageStatus: (id: number, isActive: boolean) =>
+    api.patch(`/economy/packages/${id}/status`, { is_active: isActive }),
   deletePackage: (id: number) => api.delete(`/economy/packages/${id}`),
 
   // 🧩 Addon Catalog

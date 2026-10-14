@@ -30,7 +30,7 @@ export interface KoinPackage {
   id: number;
   jumlah_koin: number;
   discount_pct: number;
-  is_active?: number;
+  is_active?: boolean;
   created_at?: string;
 }
 
