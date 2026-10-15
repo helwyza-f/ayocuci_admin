@@ -19,9 +19,9 @@ export const economyService = {
 
   // 🚀 Koin Packages (Dinamis untuk Mobile)
   getPackages: () => api.get<ApiResponse<KoinPackage[]>>("/economy/packages"),
-  createPackage: (data: { jumlah_koin: number; discount_pct: number }) =>
+  createPackage: (data: { jumlah_koin: number; discount_pct: number; apple_product_id?: string }) =>
     api.post("/economy/packages", data),
-  updatePackage: (id: number, data: { jumlah_koin: number; discount_pct: number }) =>
+  updatePackage: (id: number, data: { jumlah_koin: number; discount_pct: number; apple_product_id?: string }) =>
     api.put(`/economy/packages/${id}`, data),
   updatePackageStatus: (id: number, isActive: boolean) =>
     api.patch(`/economy/packages/${id}/status`, { is_active: isActive }),
