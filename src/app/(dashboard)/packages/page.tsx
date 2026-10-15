@@ -76,8 +76,9 @@ function KoinPackagesContent() {
   const handleSubmit = async () => {
     if (!formData.jumlah_koin) return toast.error("Coin quantity is required");
     const productId = formData.apple_product_id.trim();
-    if (productId && !/^com\.ayocuci\.coin_[A-Za-z0-9._-]+$/.test(productId)) {
-      return toast.error("Apple Product ID harus mengikuti pola com.ayocuci.coin_...");
+    const expectedProductId = `com.ayocuci.coin_${Number(formData.jumlah_koin)}`;
+    if (productId && productId !== expectedProductId) {
+      return toast.error(`Apple Product ID untuk paket ini harus ${expectedProductId}`);
     }
     try {
       const payload = {
