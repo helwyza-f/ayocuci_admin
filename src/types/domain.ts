@@ -31,6 +31,7 @@ export interface KoinPackage {
   jumlah_koin: number;
   discount_pct: number;
   is_active?: boolean;
+  apple_product_id?: string | null;
   created_at?: string;
 }
 
