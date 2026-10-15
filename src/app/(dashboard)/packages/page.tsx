@@ -6,19 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Plus,
   Trash2,
   Edit3,
   X,
-  RefreshCw,
   Coins,
   Zap,
   Percent,
-  ArrowDownCircle,
   Database,
   PlusCircle,
-  History,
-  TrendingDown,
 } from "lucide-react";
 import { economyService } from "@/services/economy.service";
 import { toast } from "sonner";
@@ -37,12 +32,14 @@ function KoinPackagesContent() {
   const [formData, setFormData] = useState({
     jumlah_koin: "",
     discount_pct: "",
+    apple_product_id: "",
   });
 
   const handleEdit = (pkg: KoinPackage) => {
     setFormData({
       jumlah_koin: pkg.jumlah_koin.toString(),
       discount_pct: pkg.discount_pct?.toString() || "0",
+      apple_product_id: pkg.apple_product_id || "",
     });
     setEditingId(pkg.id);
     setIsAdding(true);
@@ -78,10 +75,16 @@ function KoinPackagesContent() {
 
   const handleSubmit = async () => {
     if (!formData.jumlah_koin) return toast.error("Coin quantity is required");
+    const productId = formData.apple_product_id.trim();
+    const expectedProductId = `com.ayocuci.coin_${Number(formData.jumlah_koin)}`;
+    if (productId && productId !== expectedProductId) {
+      return toast.error(`Apple Product ID untuk paket ini harus ${expectedProductId}`);
+    }
     try {
       const payload = {
         jumlah_koin: Number(formData.jumlah_koin),
         discount_pct: Number(formData.discount_pct || 0),
+        apple_product_id: productId,
       };
 
       let res;
@@ -95,11 +98,14 @@ function KoinPackagesContent() {
         toast.success(editingId ? "Package updated successfully" : "Package published to ecosystem");
         setIsAdding(false);
         setEditingId(null);
-        setFormData({ jumlah_koin: "", discount_pct: "" });
+        setFormData({ jumlah_koin: "", discount_pct: "", apple_product_id: "" });
         initData();
       }
-    } catch {
-      toast.error(editingId ? "Failed to update package" : "Failed to publish package");
+    } catch (error: unknown) {
+      const message = typeof error === "object" && error !== null && "response" in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+      toast.error(message || (editingId ? "Failed to update package" : "Failed to publish package"));
     }
   };
 
@@ -162,6 +168,9 @@ function KoinPackagesContent() {
           <p className="text-xs font-medium text-slate-500">
             Kelola paket pembelian koin dan harga promosi.
           </p>
+          <p className="text-[10px] font-medium text-amber-700">
+            Harga dan diskon di halaman ini hanya berlaku untuk Android. Harga iOS harus diatur manual di App Store Connect.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -174,7 +183,7 @@ function KoinPackagesContent() {
                 setIsAdding(!isAdding);
                 if (isAdding) {
                   setEditingId(null);
-                  setFormData({ jumlah_koin: "", discount_pct: "" });
+                  setFormData({ jumlah_koin: "", discount_pct: "", apple_product_id: "" });
                 }
               }}
               variant={isAdding ? "outline" : "default"}
@@ -191,7 +200,7 @@ function KoinPackagesContent() {
       {/* OPERATIONAL FORM */}
       {isAdding && (
         <Card className="p-4 border border-slate-200 shadow-none rounded-lg bg-white animate-in slide-in-from-top-1 duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div className="space-y-1">
               <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Jumlah Koin</label>
               <div className="relative">
@@ -201,12 +210,24 @@ function KoinPackagesContent() {
                   placeholder="e.g. 1000"
                   value={formData.jumlah_koin}
                   onChange={(e) => setFormData({ ...formData, jumlah_koin: e.target.value })}
+                  disabled={Boolean(editingId && packages.find((pkg) => pkg.id === editingId)?.apple_product_id)}
                   className="pl-8 h-9 rounded border-slate-200 font-bold text-xs shadow-none"
                 />
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Diskon (%)</label>
+              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Apple Product ID</label>
+              <Input
+                type="text"
+                placeholder="com.ayocuci.coin_2500"
+                value={formData.apple_product_id}
+                onChange={(e) => setFormData({ ...formData, apple_product_id: e.target.value })}
+                disabled={Boolean(editingId && packages.find((pkg) => pkg.id === editingId)?.apple_product_id)}
+                className="h-9 rounded border-slate-200 font-mono text-xs shadow-none disabled:bg-slate-100"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Diskon Android (%)</label>
               <div className="relative">
                 <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                 <Input
@@ -266,7 +287,7 @@ function KoinPackagesContent() {
                         <Edit3 className="h-3.5 w-3.5" />
                       </Button>
                     </PermissionGate>
-                    <PermissionGate module="packages" action="delete">
+                    {!pkg.apple_product_id && <PermissionGate module="packages" action="delete">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -275,7 +296,7 @@ function KoinPackagesContent() {
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
-                    </PermissionGate>
+                    </PermissionGate>}
                   </div>
                 </div>
 
@@ -285,6 +306,13 @@ function KoinPackagesContent() {
                       {(pkg.jumlah_koin || 0).toLocaleString()}
                     </h3>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Koin</span>
+                  </div>
+
+                  <div className="min-h-8 rounded border border-slate-100 bg-slate-50/50 px-2 py-1.5">
+                    <p className="text-[8px] font-bold uppercase tracking-wide text-slate-400">Apple Product ID</p>
+                    <p className="mt-0.5 break-all font-mono text-[9px] text-slate-600">
+                      {pkg.apple_product_id || "Belum dihubungkan"}
+                    </p>
                   </div>
 
                   <div className="space-y-2 p-3 bg-slate-50/30 rounded border border-slate-100">
