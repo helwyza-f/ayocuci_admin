@@ -168,6 +168,9 @@ function KoinPackagesContent() {
           <p className="text-xs font-medium text-slate-500">
             Kelola paket pembelian koin dan harga promosi.
           </p>
+          <p className="text-[10px] font-medium text-amber-700">
+            Harga dan diskon di halaman ini hanya berlaku untuk Android. Harga iOS harus diatur manual di App Store Connect.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -224,7 +227,7 @@ function KoinPackagesContent() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Diskon (%)</label>
+              <label className="text-[9px] font-bold uppercase text-slate-400 ml-1">Diskon Android (%)</label>
               <div className="relative">
                 <Percent className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                 <Input
