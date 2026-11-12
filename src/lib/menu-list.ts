@@ -48,7 +48,7 @@ export const adminMenus: MenuGroup[] = [
       { label: "Pusat Kontrol",     href: "/",          icon: LayoutGrid, module: "dashboard" },
       { label: "Analisis & Laporan", href: "/analytics", icon: BarChart2,  module: "analytics" },
       { label: "AI Analyst",         href: "/ai-analyst", icon: Sparkles,   module: "dashboard", masterOnly: true },
-      { label: "Target Sales",       href: "/sales-targets", icon: Target,  module: "dashboard", masterOnly: true },
+      { label: "Target Sales",       href: "/sales-targets", icon: Target,  module: "dashboard" },
       { label: "Riwayat Transaksi", href: "/transactions", icon: Receipt, module: "dashboard" },
       { label: "Request Fitur", href: "/feature-requests", icon: Lightbulb, module: "dashboard" },
     ],
