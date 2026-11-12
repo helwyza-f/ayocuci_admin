@@ -56,34 +56,14 @@ type Run = {
 const field =
   "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400";
 
-const ADDON_RECOMMENDATION_KEY = "LIFECYCLE_ADDON_RECOMMENDATION";
-const DEPRECATED_RULE_KEYS = new Set(["LIFECYCLE_ONBOARDING_H2"]);
-const addonRecommendationScenarios = [
-  [
-    "Extra Slot Pegawai",
-    "Slot gratis penuh dan ada pegawai tambahan yang belum aktif.",
-  ],
-  ["Laporan Piutang", "Minimal 3 transaksi pelanggan belum lunas."],
-  [
-    "Laporan Laba Rugi",
-    "Minimal 10 transaksi dan 3 pengeluaran dalam 30 hari.",
-  ],
-  ["Laporan Deposit", "Minimal 3 aktivitas deposit dalam 30 hari."],
-  ["Payroll Karyawan", "Absensi aktif dan minimal 2 pegawai tercatat hadir."],
-  ["Absensi Karyawan", "Minimal 2 pegawai aktif."],
-  [
-    "Karyawan Performance",
-    "Minimal 3 pegawai aktif dan 20 transaksi dalam 30 hari.",
-  ],
-  [
-    "Ringkasan Per Layanan",
-    "Minimal 3 layanan dan 20 transaksi dalam 30 hari.",
-  ],
-  [
-    "Analisa Pertumbuhan Pelanggan",
-    "Minimal 20 pelanggan aktif dan 5 pelanggan berulang dalam 60 hari.",
-  ],
-] as const;
+const LEGACY_ADDON_RECOMMENDATION_KEY = "LIFECYCLE_ADDON_RECOMMENDATION";
+const DEPRECATED_RULE_KEYS = new Set([
+  "LIFECYCLE_ONBOARDING_H2",
+  LEGACY_ADDON_RECOMMENDATION_KEY,
+]);
+const isAddonRule = (key: string) =>
+  key.startsWith("LIFECYCLE_ADDON_") &&
+  key !== LEGACY_ADDON_RECOMMENDATION_KEY;
 
 export default function LifecyclePage() {
   const [rules, setRules] = useState<Rule[]>([]),
@@ -165,8 +145,10 @@ export default function LifecyclePage() {
         </Button>
       </div>
       <Card className="rounded-2xl border-orange-100 bg-orange-50 p-4 text-sm text-orange-900">
-        <b>Frequency cap global aktif:</b> maksimal satu lifecycle push per
-        outlet dalam 24 jam. Rule dengan prioritas terbesar diproses lebih dulu.
+        <b>Frequency cap aktif:</b> maksimal satu lifecycle push per outlet
+        dalam 24 jam. Khusus rekomendasi add-on, add-on berbeda juga diberi
+        jeda 48 jam; add-on yang sama mengikuti cooldown rule masing-masing.
+        Prioritas terbesar diproses lebih dulu.
       </Card>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleRules.map((rule) => {
@@ -199,9 +181,9 @@ export default function LifecyclePage() {
                   {rule.cooldown_hours} jam
                 </Badge>
                 <Badge variant="outline">Prioritas {rule.priority}</Badge>
-                {rule.key === ADDON_RECOMMENDATION_KEY && (
+                {isAddonRule(rule.key) && (
                   <Badge className="bg-orange-50 text-orange-700">
-                    9 skenario
+                    Add-on independen
                   </Badge>
                 )}
               </div>
@@ -292,33 +274,17 @@ export default function LifecyclePage() {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            {editing.key === ADDON_RECOMMENDATION_KEY && (
+            {isAddonRule(editing.key) && (
               <div className="mt-5 rounded-2xl border border-orange-100 bg-orange-50/70 p-4">
                 <p className="font-black text-slate-900">
-                  9 rekomendasi berbasis kebutuhan outlet
+                  Trigger otomatis
                 </p>
                 <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
-                  Sistem memilih satu kebutuhan paling relevan, melewati fitur
-                  yang sudah aktif, lalu membatasi rekomendasi add-on berbeda
-                  sesuai cooldown rule. Add-on yang sama hanya dapat ditawarkan
-                  kembali setelah 30 hari. Judul dan pesan dibuat otomatis untuk
-                  setiap add-on.
+                  {editing.description} Rule ini berdiri sendiri dan memiliki
+                  metrik serta cooldown sendiri. Dispatcher pusat tetap menahan
+                  rekomendasi add-on lain selama 48 jam agar owner tidak merasa
+                  menerima spam.
                 </p>
-                <div className="mt-4 grid gap-2 md:grid-cols-2">
-                  {addonRecommendationScenarios.map(([name, condition]) => (
-                    <div
-                      key={name}
-                      className="rounded-xl border border-orange-100 bg-white p-3"
-                    >
-                      <p className="text-sm font-black text-slate-800">
-                        {name}
-                      </p>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                        {condition}
-                      </p>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -337,7 +303,7 @@ export default function LifecyclePage() {
                 value={editing.priority}
                 onChange={(v) => setEditing({ ...editing, priority: v })}
               />
-              {editing.key !== ADDON_RECOMMENDATION_KEY && (
+              {!isAddonRule(editing.key) && (
                 <Num
                   label="Delay (jam)"
                   value={editing.delay_hours}
@@ -349,7 +315,7 @@ export default function LifecyclePage() {
                 value={editing.cooldown_hours}
                 onChange={(v) => setEditing({ ...editing, cooldown_hours: v })}
               />
-              {editing.key !== ADDON_RECOMMENDATION_KEY && (
+              {!isAddonRule(editing.key) && (
                 <>
                   <Num
                     label="Threshold"
@@ -393,30 +359,26 @@ export default function LifecyclePage() {
                 value={editing.quiet_end_hour}
                 onChange={(v) => setEditing({ ...editing, quiet_end_hour: v })}
               />
-              {editing.key !== ADDON_RECOMMENDATION_KEY && (
-                <>
-                  <label className="text-sm font-bold md:col-span-2">
-                    Judul
-                    <input
-                      className={field}
-                      value={editing.title}
-                      onChange={(e) =>
-                        setEditing({ ...editing, title: e.target.value })
-                      }
-                    />
-                  </label>
-                  <label className="text-sm font-bold md:col-span-2">
-                    Pesan
-                    <textarea
-                      className={`${field} min-h-24`}
-                      value={editing.message}
-                      onChange={(e) =>
-                        setEditing({ ...editing, message: e.target.value })
-                      }
-                    />
-                  </label>
-                </>
-              )}
+              <label className="text-sm font-bold md:col-span-2">
+                Judul
+                <input
+                  className={field}
+                  value={editing.title}
+                  onChange={(e) =>
+                    setEditing({ ...editing, title: e.target.value })
+                  }
+                />
+              </label>
+              <label className="text-sm font-bold md:col-span-2">
+                Pesan
+                <textarea
+                  className={`${field} min-h-24`}
+                  value={editing.message}
+                  onChange={(e) =>
+                    setEditing({ ...editing, message: e.target.value })
+                  }
+                />
+              </label>
               <label className="text-sm font-bold md:col-span-2">
                 Label CTA
                 <input
