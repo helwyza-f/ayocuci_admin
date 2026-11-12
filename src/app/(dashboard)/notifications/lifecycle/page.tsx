@@ -299,8 +299,10 @@ export default function LifecyclePage() {
                 </p>
                 <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
                   Sistem memilih satu kebutuhan paling relevan, melewati fitur
-                  yang sudah aktif, lalu membatasi pengiriman sesuai cooldown.
-                  Judul dan pesan dibuat otomatis untuk setiap add-on.
+                  yang sudah aktif, lalu membatasi rekomendasi add-on berbeda
+                  sesuai cooldown rule. Add-on yang sama hanya dapat ditawarkan
+                  kembali setelah 30 hari. Judul dan pesan dibuat otomatis untuk
+                  setiap add-on.
                 </p>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   {addonRecommendationScenarios.map(([name, condition]) => (
