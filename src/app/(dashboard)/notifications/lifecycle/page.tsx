@@ -43,6 +43,10 @@ type Stat = {
   Failed?: number;
   converted?: number;
   Converted?: number;
+  email_sent?: number;
+  EmailSent?: number;
+  email_failed?: number;
+  EmailFailed?: number;
 };
 type Run = {
   id: number;
@@ -154,7 +158,9 @@ export default function LifecyclePage() {
         {visibleRules.map((rule) => {
           const s = statMap.get(rule.key),
             sent = s?.sent ?? s?.Sent ?? 0,
-            converted = s?.converted ?? s?.Converted ?? 0;
+            converted = s?.converted ?? s?.Converted ?? 0,
+            emailSent = s?.email_sent ?? s?.EmailSent ?? 0,
+            emailFailed = s?.email_failed ?? s?.EmailFailed ?? 0;
           return (
             <Card key={rule.key} className="rounded-2xl p-5">
               <div className="flex items-start justify-between gap-3">
@@ -195,6 +201,13 @@ export default function LifecyclePage() {
                   value={`${sent ? Math.round((converted / sent) * 100) : 0}%`}
                   tone="violet"
                 />
+              </div>
+              <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
+                <span>Email pendamping</span>
+                <span>
+                  {emailSent} terkirim
+                  {emailFailed > 0 ? ` · ${emailFailed} gagal` : ""}
+                </span>
               </div>
               <Button
                 className="mt-4 w-full"
