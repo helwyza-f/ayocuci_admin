@@ -56,6 +56,35 @@ type Run = {
 const field =
   "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400";
 
+const ADDON_RECOMMENDATION_KEY = "LIFECYCLE_ADDON_RECOMMENDATION";
+const DEPRECATED_RULE_KEYS = new Set(["LIFECYCLE_ONBOARDING_H2"]);
+const addonRecommendationScenarios = [
+  [
+    "Extra Slot Pegawai",
+    "Slot gratis penuh dan ada pegawai tambahan yang belum aktif.",
+  ],
+  ["Laporan Piutang", "Minimal 3 transaksi pelanggan belum lunas."],
+  [
+    "Laporan Laba Rugi",
+    "Minimal 10 transaksi dan 3 pengeluaran dalam 30 hari.",
+  ],
+  ["Laporan Deposit", "Minimal 3 aktivitas deposit dalam 30 hari."],
+  ["Payroll Karyawan", "Absensi aktif dan minimal 2 pegawai tercatat hadir."],
+  ["Absensi Karyawan", "Minimal 2 pegawai aktif."],
+  [
+    "Karyawan Performance",
+    "Minimal 3 pegawai aktif dan 20 transaksi dalam 30 hari.",
+  ],
+  [
+    "Ringkasan Per Layanan",
+    "Minimal 3 layanan dan 20 transaksi dalam 30 hari.",
+  ],
+  [
+    "Analisa Pertumbuhan Pelanggan",
+    "Minimal 20 pelanggan aktif dan 5 pelanggan berulang dalam 60 hari.",
+  ],
+] as const;
+
 export default function LifecyclePage() {
   const [rules, setRules] = useState<Rule[]>([]),
     [stats, setStats] = useState<Stat[]>([]),
@@ -82,6 +111,14 @@ export default function LifecyclePage() {
   const statMap = useMemo(
     () => new Map(stats.map((x) => [x.rule_key || x.RuleKey, x])),
     [stats],
+  );
+  const visibleRules = useMemo(
+    () => rules.filter((rule) => !DEPRECATED_RULE_KEYS.has(rule.key)),
+    [rules],
+  );
+  const visibleRuns = useMemo(
+    () => runs.filter((run) => !DEPRECATED_RULE_KEYS.has(run.rule_key)),
+    [runs],
   );
   const save = async () => {
     if (!editing) return;
@@ -132,7 +169,7 @@ export default function LifecyclePage() {
         outlet dalam 24 jam. Rule dengan prioritas terbesar diproses lebih dulu.
       </Card>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {rules.map((rule) => {
+        {visibleRules.map((rule) => {
           const s = statMap.get(rule.key),
             sent = s?.sent ?? s?.Sent ?? 0,
             converted = s?.converted ?? s?.Converted ?? 0;
@@ -162,6 +199,11 @@ export default function LifecyclePage() {
                   {rule.cooldown_hours} jam
                 </Badge>
                 <Badge variant="outline">Prioritas {rule.priority}</Badge>
+                {rule.key === ADDON_RECOMMENDATION_KEY && (
+                  <Badge className="bg-orange-50 text-orange-700">
+                    9 skenario
+                  </Badge>
+                )}
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2">
                 <Metric label="Terkirim" value={sent} tone="emerald" />
@@ -192,13 +234,13 @@ export default function LifecyclePage() {
           <div className="flex justify-center p-12">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
-        ) : runs.length === 0 ? (
+        ) : visibleRuns.length === 0 ? (
           <div className="p-12 text-center text-sm text-slate-400">
             Belum ada automation yang dieksekusi.
           </div>
         ) : (
           <div className="divide-y">
-            {runs.map((run) => (
+            {visibleRuns.map((run) => (
               <div
                 key={run.id}
                 className="flex items-center justify-between gap-4 p-4 text-sm"
@@ -250,6 +292,33 @@ export default function LifecyclePage() {
                 <X className="h-4 w-4" />
               </Button>
             </div>
+            {editing.key === ADDON_RECOMMENDATION_KEY && (
+              <div className="mt-5 rounded-2xl border border-orange-100 bg-orange-50/70 p-4">
+                <p className="font-black text-slate-900">
+                  9 rekomendasi berbasis kebutuhan outlet
+                </p>
+                <p className="mt-1 text-xs font-medium leading-relaxed text-slate-500">
+                  Sistem memilih satu kebutuhan paling relevan, melewati fitur
+                  yang sudah aktif, lalu membatasi pengiriman sesuai cooldown.
+                  Judul dan pesan dibuat otomatis untuk setiap add-on.
+                </p>
+                <div className="mt-4 grid gap-2 md:grid-cols-2">
+                  {addonRecommendationScenarios.map(([name, condition]) => (
+                    <div
+                      key={name}
+                      className="rounded-xl border border-orange-100 bg-white p-3"
+                    >
+                      <p className="text-sm font-black text-slate-800">
+                        {name}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                        {condition}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <label className="flex items-center gap-3 rounded-xl border p-3 font-bold">
                 <input
@@ -266,42 +335,50 @@ export default function LifecyclePage() {
                 value={editing.priority}
                 onChange={(v) => setEditing({ ...editing, priority: v })}
               />
-              <Num
-                label="Delay (jam)"
-                value={editing.delay_hours}
-                onChange={(v) => setEditing({ ...editing, delay_hours: v })}
-              />
+              {editing.key !== ADDON_RECOMMENDATION_KEY && (
+                <Num
+                  label="Delay (jam)"
+                  value={editing.delay_hours}
+                  onChange={(v) => setEditing({ ...editing, delay_hours: v })}
+                />
+              )}
               <Num
                 label="Cooldown (jam)"
                 value={editing.cooldown_hours}
                 onChange={(v) => setEditing({ ...editing, cooldown_hours: v })}
               />
-              <Num
-                label="Threshold"
-                value={editing.threshold_value}
-                onChange={(v) => setEditing({ ...editing, threshold_value: v })}
-              />
-              <label className="text-sm font-bold">
-                Target
-                <select
-                  className={field}
-                  value={editing.target}
-                  onChange={(e) =>
-                    setEditing({ ...editing, target: e.target.value })
-                  }
-                >
-                  {[
-                    "home",
-                    "service-list",
-                    "coin_management",
-                    "coin_topup_detail",
-                    "pro_activation",
-                    "addon_shop",
-                  ].map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
-              </label>
+              {editing.key !== ADDON_RECOMMENDATION_KEY && (
+                <>
+                  <Num
+                    label="Threshold"
+                    value={editing.threshold_value}
+                    onChange={(v) =>
+                      setEditing({ ...editing, threshold_value: v })
+                    }
+                  />
+                  <label className="text-sm font-bold">
+                    Target
+                    <select
+                      className={field}
+                      value={editing.target}
+                      onChange={(e) =>
+                        setEditing({ ...editing, target: e.target.value })
+                      }
+                    >
+                      {[
+                        "home",
+                        "service-list",
+                        "coin_management",
+                        "coin_topup_detail",
+                        "pro_activation",
+                        "addon_shop",
+                      ].map((v) => (
+                        <option key={v}>{v}</option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              )}
               <Num
                 label="Quiet mulai"
                 value={editing.quiet_start_hour}
@@ -314,26 +391,30 @@ export default function LifecyclePage() {
                 value={editing.quiet_end_hour}
                 onChange={(v) => setEditing({ ...editing, quiet_end_hour: v })}
               />
-              <label className="text-sm font-bold md:col-span-2">
-                Judul
-                <input
-                  className={field}
-                  value={editing.title}
-                  onChange={(e) =>
-                    setEditing({ ...editing, title: e.target.value })
-                  }
-                />
-              </label>
-              <label className="text-sm font-bold md:col-span-2">
-                Pesan
-                <textarea
-                  className={`${field} min-h-24`}
-                  value={editing.message}
-                  onChange={(e) =>
-                    setEditing({ ...editing, message: e.target.value })
-                  }
-                />
-              </label>
+              {editing.key !== ADDON_RECOMMENDATION_KEY && (
+                <>
+                  <label className="text-sm font-bold md:col-span-2">
+                    Judul
+                    <input
+                      className={field}
+                      value={editing.title}
+                      onChange={(e) =>
+                        setEditing({ ...editing, title: e.target.value })
+                      }
+                    />
+                  </label>
+                  <label className="text-sm font-bold md:col-span-2">
+                    Pesan
+                    <textarea
+                      className={`${field} min-h-24`}
+                      value={editing.message}
+                      onChange={(e) =>
+                        setEditing({ ...editing, message: e.target.value })
+                      }
+                    />
+                  </label>
+                </>
+              )}
               <label className="text-sm font-bold md:col-span-2">
                 Label CTA
                 <input
