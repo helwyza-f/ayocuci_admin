@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/use-auth-store";
 import {
   Store, Coins, Zap, Activity, ArrowRight, RefreshCw,
   LayoutGrid, AlertCircle, UserPlus, TrendingUp, Clock,
-  Users, ArrowUpRight,
+  Users, ArrowUpRight, Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -35,6 +35,12 @@ import { Badge } from "@/components/ui/badge";
 import { type ActivityFeedItem } from "@/components/modules/dashboard/activity-feed";
 import { Topup } from "@/types/topup";
 import PermissionGate from "@/components/shared/permission-gate";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // ─── Tipe data summary platform ───────────────────────────
 interface DashboardSummary {
@@ -371,29 +377,37 @@ export default function DashboardPage() {
             Klasifikasi outlet berdasarkan transaksi laundry terakhir &amp; kepemilikan Add-On.
           </p>
         </div>
+        <TooltipProvider>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {[
-            { label: "Aktif (7 hari)", value: dashboardStats.nasabahAktif7d, href: "/tenants?keaktifan=aktif_7d", color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
-            { label: "Aktif (30 hari)", value: dashboardStats.nasabahAktif30d, href: "/tenants?keaktifan=aktif_30d", color: "text-lime-700 bg-lime-50 border-lime-200" },
-            { label: "Pasif (31-60 hr)", value: dashboardStats.nasabahPasif, href: "/tenants?keaktifan=pasif", color: "text-amber-700 bg-amber-50 border-amber-200" },
-            { label: "Dorman (>60 hr)", value: dashboardStats.nasabahDorman, href: "/tenants?keaktifan=dorman", color: "text-rose-700 bg-rose-50 border-rose-200" },
-            { label: "Belum Transaksi", value: dashboardStats.nasabahBelumTransaksi, href: "/tenants?keaktifan=belum", color: "text-slate-600 bg-slate-50 border-slate-200" },
-            { label: "Add-On Aktif", value: dashboardStats.outletsAddonActive, href: "/tenants?addon=addon_active", color: "text-violet-700 bg-violet-50 border-violet-200" },
+            { label: "Aktif (7 hari)", value: dashboardStats.nasabahAktif7d, href: "/tenants?keaktifan=aktif_7d", color: "text-emerald-700 bg-emerald-50 border-emerald-200", explanation: "Outlet yang transaksi laundry terakhirnya terjadi dalam 7 hari terakhir." },
+            { label: "Aktif (30 hari)", value: dashboardStats.nasabahAktif30d, href: "/tenants?keaktifan=aktif_30d", color: "text-lime-700 bg-lime-50 border-lime-200", explanation: "Outlet yang terakhir bertransaksi lebih dari 7 hari hingga 30 hari lalu." },
+            { label: "Pasif (31-60 hr)", value: dashboardStats.nasabahPasif, href: "/tenants?keaktifan=pasif", color: "text-amber-700 bg-amber-50 border-amber-200", explanation: "Outlet yang transaksi terakhirnya terjadi 31–60 hari lalu dan mulai perlu dihubungi kembali." },
+            { label: "Dorman (>60 hr)", value: dashboardStats.nasabahDorman, href: "/tenants?keaktifan=dorman", color: "text-rose-700 bg-rose-50 border-rose-200", explanation: "Outlet yang sudah lebih dari 60 hari tidak mencatat transaksi laundry." },
+            { label: "Belum Transaksi", value: dashboardStats.nasabahBelumTransaksi, href: "/tenants?keaktifan=belum", color: "text-slate-600 bg-slate-50 border-slate-200", explanation: "Outlet yang sudah terdaftar tetapi belum pernah mencatat transaksi laundry." },
+            { label: "Add-On Aktif", value: dashboardStats.outletsAddonActive, href: "/tenants?addon=addon_active", color: "text-violet-700 bg-violet-50 border-violet-200", explanation: "Outlet yang memiliki minimal satu Add-On dengan masa aktif yang belum berakhir." },
           ].map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`rounded-2xl border p-4 transition-colors hover:brightness-[0.97] ${item.color}`}
-            >
-              <p className="text-2xl font-extrabold tracking-tight tabular-nums">
-                {isLoading ? "—" : item.value.toLocaleString("id-ID")}
-              </p>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-widest opacity-80">
-                {item.label}
-              </p>
-            </Link>
+            <Tooltip key={item.label}>
+              <TooltipTrigger asChild>
+                <Link
+                  href={item.href}
+                  aria-label={`${item.label}. ${item.explanation}`}
+                  className={`group relative rounded-2xl border p-4 transition-colors hover:brightness-[0.97] focus:outline-none focus:ring-2 focus:ring-orange-200 ${item.color}`}
+                >
+                  <Info className="absolute right-3 top-3 h-3.5 w-3.5 opacity-45 transition group-hover:opacity-80" />
+                  <p className="text-2xl font-extrabold tracking-tight tabular-nums">
+                    {isLoading ? "—" : item.value.toLocaleString("id-ID")}
+                  </p>
+                  <p className="mt-1 pr-4 text-[10px] font-bold uppercase tracking-widest opacity-80">
+                    {item.label}
+                  </p>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="top">{item.explanation}</TooltipContent>
+            </Tooltip>
           ))}
         </div>
+        </TooltipProvider>
       </div>
 
       {/* ── RECENT REGISTRATIONS + ACTIVITY FEED ── */}
