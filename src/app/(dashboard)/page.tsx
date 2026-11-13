@@ -50,6 +50,8 @@ interface DashboardSummary {
   total_koin_purchased?: number;
   total_koin_used?: number;
   koin_used_today?: number;
+  koin_used_transaction_today?: number;
+  koin_used_addon_today?: number;
   new_users_today?: number;
   transactions_today?: number;
   active_tenant: number;
@@ -206,6 +208,8 @@ export default function DashboardPage() {
     totalKoinPurchased: stats.total_koin_purchased ?? 0,
     totalKoinUsed: stats.total_koin_used ?? 0,
     koinUsedToday: stats.koin_used_today ?? 0,
+    koinUsedTransactionToday: stats.koin_used_transaction_today ?? 0,
+    koinUsedAddonToday: stats.koin_used_addon_today ?? 0,
     newUsersToday: stats.new_users_today ?? 0,
     transactionsToday: stats.transactions_today ?? 0,
     trialOutlets: stats.trial_outlets ?? 0,
@@ -350,7 +354,7 @@ export default function DashboardPage() {
           />
           <KpiCard
             label="Koin Terpakai Hari Ini"
-            sub="Koin keluar hari ini dari seluruh outlet"
+            sub={`Transaksi ${dashboardStats.koinUsedTransactionToday.toLocaleString("id-ID")} · Add-On ${dashboardStats.koinUsedAddonToday.toLocaleString("id-ID")}`}
             value={isLoading ? "—" : dashboardStats.koinUsedToday.toLocaleString("id-ID")}
             icon={Coins}
             color="bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-orange-200"
