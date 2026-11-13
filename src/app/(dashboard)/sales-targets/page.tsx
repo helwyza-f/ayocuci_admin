@@ -172,10 +172,25 @@ export default function SalesTargetsPage() {
 
       {/* Summary tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SummaryTile label="Total target" value={s?.total} icon={<Target className="h-4 w-4" />} tone="slate" />
-        <SummaryTile label="🔥 Hot" value={s?.hot} tone="red" />
-        <SummaryTile label="🟡 Warm" value={s?.warm} tone="amber" />
-        <SummaryTile label="🔵 Cold" value={s?.cold} tone="sky" />
+        <SummaryTile
+          label="Total target"
+          value={s?.total}
+          description="Outlet aktif yang belum pernah top up"
+          icon={<Target className="h-4 w-4" />}
+          tone="slate"
+        />
+        <SummaryTile label="🔥 Hot" value={s?.hot} description="Skor 70–100 · prioritas utama" tone="red" />
+        <SummaryTile label="🟡 Warm" value={s?.warm} description="Skor 40–69 · perlu ditindaklanjuti" tone="amber" />
+        <SummaryTile label="🔵 Cold" value={s?.cold} description="Skor di bawah 40 · prioritas rendah" tone="sky" />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-xl border border-orange-100 bg-orange-50/70 px-4 py-3 text-xs text-slate-600">
+        <span className="font-semibold text-slate-700">Dasar penilaian:</span>
+        <span>Transaksi <b className="text-slate-800">30 poin</b></span>
+        <span>Sisa koin <b className="text-slate-800">25 poin</b></span>
+        <span>Aktivitas terakhir <b className="text-slate-800">20 poin</b></span>
+        <span>Momentum 7 hari <b className="text-slate-800">15 poin</b></span>
+        <span>Status PRO <b className="text-slate-800">10 poin</b></span>
       </div>
 
       {/* Filters */}
@@ -348,9 +363,13 @@ export default function SalesTargetsPage() {
 }
 
 function SummaryTile({
-  label, value, icon, tone,
+  label, value, description, icon, tone,
 }: {
-  label: string; value?: number; icon?: React.ReactNode; tone: "slate" | "red" | "amber" | "sky";
+  label: string;
+  value?: number;
+  description: string;
+  icon?: React.ReactNode;
+  tone: "slate" | "red" | "amber" | "sky";
 }) {
   const tones: Record<string, string> = {
     slate: "text-slate-800",
@@ -367,6 +386,7 @@ function SummaryTile({
       <div className={cn("mt-1 text-2xl font-black", tones[tone])}>
         {value ?? <CheckCircle2 className="h-5 w-5 animate-pulse text-slate-300" />}
       </div>
+      <p className="mt-1 text-[11px] leading-4 text-slate-400">{description}</p>
     </Card>
   );
 }
