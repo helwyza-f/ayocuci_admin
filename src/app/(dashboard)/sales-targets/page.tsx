@@ -13,6 +13,8 @@ import {
   Download,
   Loader2,
   RefreshCw,
+  SlidersHorizontal,
+  X,
   AlertTriangle,
   CheckCircle2,
   Coins,
@@ -177,36 +179,64 @@ export default function SalesTargetsPage() {
       </div>
 
       {/* Filters */}
-      <Card className="flex flex-wrap items-center gap-2 border border-slate-200 p-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari outlet / owner..."
-            className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none"
-          />
+      <Card className="border border-slate-200 p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-primary">
+              <SlidersHorizontal className="h-4 w-4" />
+            </span>
+            Filter target
+          </div>
+          {(search || tier || channel) && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearch("");
+                setTier("");
+                setChannel("");
+              }}
+              className="h-8 gap-1.5 text-xs text-slate-500 hover:text-primary"
+            >
+              <X className="h-3.5 w-3.5" /> Bersihkan
+            </Button>
+          )}
         </div>
-        <select
-          value={tier}
-          onChange={(e) => setTier(e.target.value as SalesTier | "")}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
-        >
-          <option value="">Semua tier</option>
-          <option value="hot">🔥 Hot</option>
-          <option value="warm">🟡 Warm</option>
-          <option value="cold">🔵 Cold</option>
-        </select>
-        <select
-          value={channel}
-          onChange={(e) => setChannel(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
-        >
-          <option value="">Semua channel</option>
-          {channels.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+
+        <div className="grid gap-2.5 md:grid-cols-[minmax(260px,1fr)_160px_200px]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari outlet atau pemilik..."
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-orange-100"
+            />
+          </div>
+          <select
+            value={tier}
+            onChange={(e) => setTier(e.target.value as SalesTier | "")}
+            aria-label="Filter berdasarkan tier"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-orange-100"
+          >
+            <option value="">Semua tier</option>
+            <option value="hot">🔥 Hot</option>
+            <option value="warm">🟡 Warm</option>
+            <option value="cold">🔵 Cold</option>
+          </select>
+          <select
+            value={channel}
+            onChange={(e) => setChannel(e.target.value)}
+            aria-label="Filter berdasarkan channel"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-orange-100"
+          >
+            <option value="">Semua channel</option>
+            {channels.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
       </Card>
 
       {/* Table */}
