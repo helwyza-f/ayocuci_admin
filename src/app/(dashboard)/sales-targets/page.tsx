@@ -15,6 +15,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
   X,
+  Info,
   AlertTriangle,
   CheckCircle2,
   Coins,
@@ -27,6 +28,12 @@ import {
   type ContactStatus,
 } from "@/services/sales-target.service";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const TIER_META: Record<SalesTier, { label: string; cls: string; dot: string }> = {
   hot: { label: "🔥 Hot", cls: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500" },
@@ -179,9 +186,27 @@ export default function SalesTargetsPage() {
           icon={<Target className="h-4 w-4" />}
           tone="slate"
         />
-        <SummaryTile label="🔥 Hot" value={s?.hot} description="Skor 70–100 · prioritas utama" tone="red" />
-        <SummaryTile label="🟡 Warm" value={s?.warm} description="Skor 40–69 · perlu ditindaklanjuti" tone="amber" />
-        <SummaryTile label="🔵 Cold" value={s?.cold} description="Skor di bawah 40 · prioritas rendah" tone="sky" />
+        <SummaryTile
+          label="🔥 Hot"
+          value={s?.hot}
+          description="Skor 70–100 · prioritas utama"
+          explanation="Peluang closing tertinggi. Biasanya outlet aktif bertransaksi, koinnya mendesak, baru aktif, memiliki momentum transaksi, atau sudah PRO. Prioritaskan untuk dihubungi."
+          tone="red"
+        />
+        <SummaryTile
+          label="🟡 Warm"
+          value={s?.warm}
+          description="Skor 40–69 · perlu ditindaklanjuti"
+          explanation="Peluang closing cukup baik. Sudah ada sinyal penggunaan, tetapi aktivitas atau urgensinya belum sekuat kategori Hot. Hubungi setelah target Hot."
+          tone="amber"
+        />
+        <SummaryTile
+          label="🔵 Cold"
+          value={s?.cold}
+          description="Skor di bawah 40 · prioritas rendah"
+          explanation="Peluang closing masih rendah. Aktivitas outlet, kebutuhan koin, atau momentum transaksinya belum cukup kuat. Pantau dahulu dan hubungi setelah Hot serta Warm."
+          tone="sky"
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-xl border border-orange-100 bg-orange-50/70 px-4 py-3 text-xs text-slate-600">
@@ -363,11 +388,12 @@ export default function SalesTargetsPage() {
 }
 
 function SummaryTile({
-  label, value, description, icon, tone,
+  label, value, description, explanation, icon, tone,
 }: {
   label: string;
   value?: number;
   description: string;
+  explanation?: string;
   icon?: React.ReactNode;
   tone: "slate" | "red" | "amber" | "sky";
 }) {
@@ -380,7 +406,25 @@ function SummaryTile({
   return (
     <Card className="border border-slate-200 p-4">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-500">{label}</span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-medium text-slate-500">{label}</span>
+          {explanation && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Lihat kriteria ${label.replace(/[^a-zA-Z ]/g, "").trim()}`}
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{explanation}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
         {icon && <span className="text-slate-400">{icon}</span>}
       </div>
       <div className={cn("mt-1 text-2xl font-black", tones[tone])}>
