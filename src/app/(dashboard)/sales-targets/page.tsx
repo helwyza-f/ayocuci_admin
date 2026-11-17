@@ -13,6 +13,9 @@ import {
   Download,
   Loader2,
   RefreshCw,
+  SlidersHorizontal,
+  X,
+  Info,
   AlertTriangle,
   CheckCircle2,
   Coins,
@@ -25,6 +28,12 @@ import {
   type ContactStatus,
 } from "@/services/sales-target.service";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const TIER_META: Record<SalesTier, { label: string; cls: string; dot: string }> = {
   hot: { label: "🔥 Hot", cls: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500" },
@@ -170,43 +179,104 @@ export default function SalesTargetsPage() {
 
       {/* Summary tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SummaryTile label="Total target" value={s?.total} icon={<Target className="h-4 w-4" />} tone="slate" />
-        <SummaryTile label="🔥 Hot" value={s?.hot} tone="red" />
-        <SummaryTile label="🟡 Warm" value={s?.warm} tone="amber" />
-        <SummaryTile label="🔵 Cold" value={s?.cold} tone="sky" />
+        <SummaryTile
+          label="Total target"
+          value={s?.total}
+          description="Outlet aktif yang belum pernah top up"
+          icon={<Target className="h-4 w-4" />}
+          tone="slate"
+        />
+        <SummaryTile
+          label="🔥 Hot"
+          value={s?.hot}
+          description="Skor 70–100 · prioritas utama"
+          explanation="Peluang closing tertinggi. Biasanya outlet aktif bertransaksi, koinnya mendesak, baru aktif, memiliki momentum transaksi, atau sudah PRO. Prioritaskan untuk dihubungi."
+          tone="red"
+        />
+        <SummaryTile
+          label="🟡 Warm"
+          value={s?.warm}
+          description="Skor 40–69 · perlu ditindaklanjuti"
+          explanation="Peluang closing cukup baik. Sudah ada sinyal penggunaan, tetapi aktivitas atau urgensinya belum sekuat kategori Hot. Hubungi setelah target Hot."
+          tone="amber"
+        />
+        <SummaryTile
+          label="🔵 Cold"
+          value={s?.cold}
+          description="Skor di bawah 40 · prioritas rendah"
+          explanation="Peluang closing masih rendah. Aktivitas outlet, kebutuhan koin, atau momentum transaksinya belum cukup kuat. Pantau dahulu dan hubungi setelah Hot serta Warm."
+          tone="sky"
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-xl border border-orange-100 bg-orange-50/70 px-4 py-3 text-xs text-slate-600">
+        <span className="font-semibold text-slate-700">Dasar penilaian:</span>
+        <span>Transaksi <b className="text-slate-800">30 poin</b></span>
+        <span>Sisa koin <b className="text-slate-800">25 poin</b></span>
+        <span>Aktivitas terakhir <b className="text-slate-800">20 poin</b></span>
+        <span>Momentum 7 hari <b className="text-slate-800">15 poin</b></span>
+        <span>Status PRO <b className="text-slate-800">10 poin</b></span>
       </div>
 
       {/* Filters */}
-      <Card className="flex flex-wrap items-center gap-2 border border-slate-200 p-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari outlet / owner..."
-            className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none"
-          />
+      <Card className="border border-slate-200 p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-primary">
+              <SlidersHorizontal className="h-4 w-4" />
+            </span>
+            Filter target
+          </div>
+          {(search || tier || channel) && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearch("");
+                setTier("");
+                setChannel("");
+              }}
+              className="h-8 gap-1.5 text-xs text-slate-500 hover:text-primary"
+            >
+              <X className="h-3.5 w-3.5" /> Bersihkan
+            </Button>
+          )}
         </div>
-        <select
-          value={tier}
-          onChange={(e) => setTier(e.target.value as SalesTier | "")}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
-        >
-          <option value="">Semua tier</option>
-          <option value="hot">🔥 Hot</option>
-          <option value="warm">🟡 Warm</option>
-          <option value="cold">🔵 Cold</option>
-        </select>
-        <select
-          value={channel}
-          onChange={(e) => setChannel(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
-        >
-          <option value="">Semua channel</option>
-          {channels.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+
+        <div className="grid gap-2.5 md:grid-cols-[minmax(260px,1fr)_160px_200px]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari outlet atau pemilik..."
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-orange-100"
+            />
+          </div>
+          <select
+            value={tier}
+            onChange={(e) => setTier(e.target.value as SalesTier | "")}
+            aria-label="Filter berdasarkan tier"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-orange-100"
+          >
+            <option value="">Semua tier</option>
+            <option value="hot">🔥 Hot</option>
+            <option value="warm">🟡 Warm</option>
+            <option value="cold">🔵 Cold</option>
+          </select>
+          <select
+            value={channel}
+            onChange={(e) => setChannel(e.target.value)}
+            aria-label="Filter berdasarkan channel"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-primary focus:ring-2 focus:ring-orange-100"
+          >
+            <option value="">Semua channel</option>
+            {channels.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
       </Card>
 
       {/* Table */}
@@ -318,9 +388,14 @@ export default function SalesTargetsPage() {
 }
 
 function SummaryTile({
-  label, value, icon, tone,
+  label, value, description, explanation, icon, tone,
 }: {
-  label: string; value?: number; icon?: React.ReactNode; tone: "slate" | "red" | "amber" | "sky";
+  label: string;
+  value?: number;
+  description: string;
+  explanation?: string;
+  icon?: React.ReactNode;
+  tone: "slate" | "red" | "amber" | "sky";
 }) {
   const tones: Record<string, string> = {
     slate: "text-slate-800",
@@ -331,12 +406,31 @@ function SummaryTile({
   return (
     <Card className="border border-slate-200 p-4">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-500">{label}</span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-medium text-slate-500">{label}</span>
+          {explanation && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Lihat kriteria ${label.replace(/[^a-zA-Z ]/g, "").trim()}`}
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-200"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{explanation}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
         {icon && <span className="text-slate-400">{icon}</span>}
       </div>
       <div className={cn("mt-1 text-2xl font-black", tones[tone])}>
         {value ?? <CheckCircle2 className="h-5 w-5 animate-pulse text-slate-300" />}
       </div>
+      <p className="mt-1 text-[11px] leading-4 text-slate-400">{description}</p>
     </Card>
   );
 }
