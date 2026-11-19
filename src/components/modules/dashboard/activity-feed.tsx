@@ -16,6 +16,7 @@ function formatMetodeLabel(metode?: string): string {
 
 export interface ActivityFeedItem {
   tk_internal_note?: string | null;
+  tk_customer_message?: string | null;
   tk_id: string;
   tk_created: string;
   tk_jumlah?: number;

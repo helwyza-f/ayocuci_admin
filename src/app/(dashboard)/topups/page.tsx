@@ -913,6 +913,12 @@ function TopupsManagementContent() {
                 <p className="text-[10px] text-slate-500">Tidak ditampilkan kepada owner di aplikasi.</p>
               </div>
             )}
+            {selectedTopup?.tk_customer_message && (
+              <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 space-y-2">
+                <p className="text-[10px] font-bold uppercase text-blue-700">Pesan untuk Nasabah</p>
+                <p className="text-xs whitespace-pre-wrap break-words text-slate-700">{selectedTopup.tk_customer_message}</p>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 bg-white border border-slate-200 rounded">
                 <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Metode</p>
