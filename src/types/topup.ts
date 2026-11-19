@@ -14,6 +14,7 @@ export interface Topup {
   owner_code?: string;
   tk_outlet?: string;
   keterangan?: string;
+  tk_internal_note?: string | null;
   bonus_type?: string;
   /** Urutan top up historis; nil/0 untuk pemasukan koin yang bukan top up. */
   topup_sequence?: number;

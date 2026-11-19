@@ -906,6 +906,13 @@ function TopupsManagementContent() {
             ) : null}
 
             {/* TRANSACTION SUMMARY */}
+            {selectedTopup?.tk_internal_note && (
+              <div className="space-y-2 rounded-lg border border-amber-100 bg-amber-50/50 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Alasan penambahan · Internal admin</p>
+                <p className="text-xs whitespace-pre-wrap break-words text-slate-700">{selectedTopup.tk_internal_note}</p>
+                <p className="text-[10px] text-slate-500">Tidak ditampilkan kepada owner di aplikasi.</p>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 bg-white border border-slate-200 rounded">
                 <p className="text-[8px] font-bold uppercase text-slate-400 mb-0.5">Metode</p>

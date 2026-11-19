@@ -1893,6 +1893,13 @@ export default function TenantDetailPage() {
           </div>
 
           <div className="p-5 space-y-5 bg-slate-50/30">
+             {selectedKoin?.tk_internal_note && (
+               <div className="space-y-2 rounded-lg border border-amber-100 bg-amber-50/50 p-3">
+                 <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Alasan penambahan · Internal admin</p>
+                 <p className="text-xs whitespace-pre-wrap break-words text-slate-700">{selectedKoin.tk_internal_note}</p>
+                 <p className="text-[10px] text-slate-500">Tidak ditampilkan kepada owner di aplikasi.</p>
+               </div>
+             )}
              {/* Section khusus bonus / inject dari admin */}
              {(selectedKoin?.tk_metode_bayar === 'bonus' || selectedKoin?.tk_metode_bayar === 'inject') ? (
                 <div className="space-y-4">
@@ -2220,9 +2227,10 @@ export default function TenantDetailPage() {
                ) : <p className="text-xs text-slate-500">Bonus / penyesuaian dicatat dengan nominal Rp0.</p>}
 
                <div className="space-y-1">
-                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alasan Penambahan</label>
+                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alasan Penambahan (Internal Admin)</label>
                  <textarea
-                   placeholder="Tuliskan alasan penambahan koin (wajib)..."
+                   placeholder="Wajib: alasan untuk catatan internal admin. Tidak ditampilkan kepada owner atau di ledger aplikasi."
+                   maxLength={255}
                    rows={3}
                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-all resize-none"
                    value={injectReason}
