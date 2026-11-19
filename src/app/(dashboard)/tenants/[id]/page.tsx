@@ -165,6 +165,10 @@ export default function TenantDetailPage() {
     }
   }, [isInjectModalOpen]);
   const [injectReason, setInjectReason] = useState("");
+  const [injectCustomerMessage, setInjectCustomerMessage] = useState("");
+  useEffect(() => {
+    if (!isInjectModalOpen) setInjectCustomerMessage("");
+  }, [isInjectModalOpen]);
   const [injectMethod, setInjectMethod] = useState<"transfer" | "bonus">("transfer");
   const [injectBukti, setInjectBukti] = useState<File | null>(null);
   const [injectLoading, setInjectLoading] = useState(false);
@@ -403,7 +407,8 @@ export default function TenantDetailPage() {
         injectReason,
         injectMethod,
         injectMethod === "bonus" ? 0 : Number(injectNominal),
-        injectBukti || undefined
+        injectBukti || undefined,
+        injectCustomerMessage
       );
       if (res.status) {
         toast.success(res.message || "Koin berhasil ditambahkan ke outlet");
@@ -2236,6 +2241,12 @@ export default function TenantDetailPage() {
                    value={injectReason}
                    onChange={(e) => setInjectReason(e.target.value)}
                  />
+               </div>
+
+               <div className="space-y-1">
+                 <label htmlFor="inject-customer-message" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pesan untuk Nasabah (Opsional)</label>
+                 <textarea id="inject-customer-message" rows={2} maxLength={200} value={injectCustomerMessage} onChange={(e) => setInjectCustomerMessage(e.target.value)} placeholder="Contoh: Bonus kompensasi kendala layanan. Kosongkan untuk memakai pesan standar." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs resize-none" />
+                 <p className="text-xs text-slate-500">Ditambahkan ke keterangan mutasi dan notifikasi nasabah. {injectCustomerMessage.length}/200</p>
                </div>
 
                <div className="space-y-1">
