@@ -26,11 +26,13 @@ export const tenantService = {
   },
 
   // Inject koin ke outlet
-  injectCoin: async (id: string, jumlahKoin: number, alasan: string, metode: "transfer" | "bonus", bukti?: File) => {
+  injectCoin: async (id: string, jumlahKoin: number, alasan: string, metode: "transfer" | "bonus", nominalRupiah: number, bukti?: File, pesanNasabah?: string) => {
     const formData = new FormData();
     formData.append("jumlah_koin", jumlahKoin.toString());
     formData.append("alasan", alasan);
     formData.append("metode_bayar", metode);
+    formData.append("nominal_rupiah", nominalRupiah.toString());
+    formData.append("pesan_nasabah", pesanNasabah?.trim() || "");
     if (bukti) {
       formData.append("bukti", bukti);
     }

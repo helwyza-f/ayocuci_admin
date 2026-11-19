@@ -50,9 +50,11 @@ import { tenantService } from "@/services/tenant.service";
 import { addonService } from "@/services/addon.service";
 import { topupService } from "@/services/topup.service";
 import { economyService } from "@/services/economy.service";
+import { KoinPackage } from "@/types/domain";
 import api from "@/lib/api-client";
 import { Tenant } from "@/types/tenant";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -145,7 +147,28 @@ export default function TenantDetailPage() {
   // Inject Koin States
   const [isInjectModalOpen, setIsInjectModalOpen] = useState(false);
   const [injectAmount, setInjectAmount] = useState<number | "">("");
+  const [injectNominal, setInjectNominal] = useState<number | "">("");
+  const [injectNominalEdited, setInjectNominalEdited] = useState(false);
+  const [coinPackages, setCoinPackages] = useState<KoinPackage[]>([]);
+  const [pricingReady, setPricingReady] = useState(false);
+  const injectSuggestedNominal = useMemo(() => {
+    const pkg = coinPackages.find((p) => p.is_active && p.jumlah_koin === Number(injectAmount));
+    return Math.round(Number(injectAmount) * pricePerCoin * (1 - (pkg?.discount_pct || 0) / 100));
+  }, [injectAmount, coinPackages, pricePerCoin]);
+  useEffect(() => {
+    if (!injectNominalEdited && pricingReady) setInjectNominal(injectAmount === "" ? "" : injectSuggestedNominal);
+  }, [injectAmount, injectSuggestedNominal, injectNominalEdited, pricingReady]);
+  useEffect(() => {
+    if (!isInjectModalOpen) {
+      setInjectNominalEdited(false);
+      setInjectNominal("");
+    }
+  }, [isInjectModalOpen]);
   const [injectReason, setInjectReason] = useState("");
+  const [injectCustomerMessage, setInjectCustomerMessage] = useState("");
+  useEffect(() => {
+    if (!isInjectModalOpen) setInjectCustomerMessage("");
+  }, [isInjectModalOpen]);
   const [injectMethod, setInjectMethod] = useState<"transfer" | "bonus">("transfer");
   const [injectBukti, setInjectBukti] = useState<File | null>(null);
   const [injectLoading, setInjectLoading] = useState(false);
@@ -162,14 +185,17 @@ export default function TenantDetailPage() {
 
   const fetchDetail = async () => {
     try {
-      const [res, configRes] = await Promise.all([
+      const [res, configRes, packagesRes] = await Promise.all([
         tenantService.getTenantDetail(params.id as string),
-        economyService.getConfigs()
+        economyService.getConfigs(),
+        economyService.getPackages()
       ]);
       
       const configs = configRes.data?.data || [];
       const priceConfig = configs.find((c: any) => c.cfg_key === "price_per_coin");
       if (priceConfig) setPricePerCoin(Number(priceConfig.cfg_value));
+      setCoinPackages(packagesRes.data?.data || []);
+      setPricingReady(!!priceConfig && Number(priceConfig.cfg_value) > 0);
 
       if (res.status && res.data) {
         setProfile(res.data.profile);
@@ -355,6 +381,14 @@ export default function TenantDetailPage() {
   };
 
   const handleInjectCoin = async () => {
+    if (!Number.isSafeInteger(Number(injectAmount))) {
+      toast.error("Jumlah koin harus bilangan bulat");
+      return;
+    }
+    if (injectMethod === "transfer" && (!Number.isSafeInteger(injectNominal) || Number(injectNominal) <= 0)) {
+      toast.error("Nominal diterima wajib berupa rupiah bulat lebih dari 0");
+      return;
+    }
     if (!injectAmount || Number(injectAmount) <= 0) {
       toast.error("Jumlah koin harus lebih dari 0");
       return;
@@ -364,6 +398,7 @@ export default function TenantDetailPage() {
       return;
     }
 
+    if (!window.confirm(`Tambahkan ${Number(injectAmount).toLocaleString("id-ID")} koin dengan ${injectMethod === "bonus" ? "bonus Rp0" : `pembayaran Rp${Number(injectNominal).toLocaleString("id-ID")}`}?`)) return;
     setInjectLoading(true);
     try {
       const res = await tenantService.injectCoin(
@@ -371,7 +406,9 @@ export default function TenantDetailPage() {
         Number(injectAmount),
         injectReason,
         injectMethod,
-        injectBukti || undefined
+        injectMethod === "bonus" ? 0 : Number(injectNominal),
+        injectBukti || undefined,
+        injectCustomerMessage
       );
       if (res.status) {
         toast.success(res.message || "Koin berhasil ditambahkan ke outlet");
@@ -1861,6 +1898,19 @@ export default function TenantDetailPage() {
           </div>
 
           <div className="p-5 space-y-5 bg-slate-50/30">
+             {selectedKoin?.tk_internal_note && (
+               <div className="space-y-2 rounded-lg border border-amber-100 bg-amber-50/50 p-3">
+                 <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Alasan penambahan · Internal admin</p>
+                 <p className="text-xs whitespace-pre-wrap break-words text-slate-700">{selectedKoin.tk_internal_note}</p>
+                 <p className="text-[10px] text-slate-500">Tidak ditampilkan kepada owner di aplikasi.</p>
+               </div>
+             )}
+             {selectedKoin?.tk_customer_message && (
+               <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 space-y-2">
+                 <p className="text-[10px] font-bold uppercase text-blue-700">Pesan untuk Nasabah</p>
+                 <p className="text-xs whitespace-pre-wrap break-words text-slate-700">{selectedKoin.tk_customer_message}</p>
+               </div>
+             )}
              {/* Section khusus bonus / inject dari admin */}
              {(selectedKoin?.tk_metode_bayar === 'bonus' || selectedKoin?.tk_metode_bayar === 'inject') ? (
                 <div className="space-y-4">
@@ -2173,15 +2223,36 @@ export default function TenantDetailPage() {
                  </div>
                </div>
 
+               {injectMethod === "transfer" ? (
+                 <div className="space-y-1">
+                   <label htmlFor="inject-nominal" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nominal Diterima (Rp)</label>
+                   <Input id="inject-nominal" type="text" inputMode="numeric" value={injectNominal === "" ? "" : injectNominal.toLocaleString("id-ID")} onChange={(e) => {
+                     const digits = e.target.value.replace(/\D/g, "");
+                     const amount = digits === "" ? "" : Number(digits);
+                     if (amount !== "" && !Number.isSafeInteger(amount)) return;
+                     setInjectNominalEdited(true);
+                     setInjectNominal(amount);
+                   }} placeholder="Uang yang benar-benar diterima" />
+                   {pricingReady ? <p className="text-xs text-slate-500">Saran harga saat ini: Rp{injectSuggestedNominal.toLocaleString("id-ID")}. Mengikuti diskon paket aktif jika tersedia.</p> : <p className="text-xs text-amber-600">Saran harga belum tersedia. Isi sesuai pembayaran yang diterima.</p>}
+                 </div>
+               ) : <p className="text-xs text-slate-500">Bonus / penyesuaian dicatat dengan nominal Rp0.</p>}
+
                <div className="space-y-1">
-                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alasan Penambahan</label>
+                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alasan Penambahan (Internal Admin)</label>
                  <textarea
-                   placeholder="Tuliskan alasan penambahan koin (wajib)..."
+                   placeholder="Wajib: alasan untuk catatan internal admin. Tidak ditampilkan kepada owner atau di ledger aplikasi."
+                   maxLength={255}
                    rows={3}
                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-all resize-none"
                    value={injectReason}
                    onChange={(e) => setInjectReason(e.target.value)}
                  />
+               </div>
+
+               <div className="space-y-1">
+                 <label htmlFor="inject-customer-message" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pesan untuk Nasabah (Opsional)</label>
+                 <textarea id="inject-customer-message" rows={2} maxLength={200} value={injectCustomerMessage} onChange={(e) => setInjectCustomerMessage(e.target.value)} placeholder="Contoh: Bonus kompensasi kendala layanan. Kosongkan untuk memakai pesan standar." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs resize-none" />
+                 <p className="text-xs text-slate-500">Ditambahkan ke keterangan mutasi dan notifikasi nasabah. {injectCustomerMessage.length}/200</p>
                </div>
 
                <div className="space-y-1">
