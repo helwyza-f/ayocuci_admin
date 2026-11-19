@@ -2208,10 +2208,14 @@ export default function TenantDetailPage() {
                {injectMethod === "transfer" ? (
                  <div className="space-y-1">
                    <label htmlFor="inject-nominal" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nominal Diterima (Rp)</label>
-                   <Input id="inject-nominal" type="number" min={1} step={1} value={injectNominal} onChange={(e) => { setInjectNominalEdited(true); setInjectNominal(e.target.value === "" ? "" : Number(e.target.value)); }} placeholder="Uang yang benar-benar diterima" />
+                   <Input id="inject-nominal" type="text" inputMode="numeric" value={injectNominal === "" ? "" : injectNominal.toLocaleString("id-ID")} onChange={(e) => {
+                     const digits = e.target.value.replace(/\D/g, "");
+                     const amount = digits === "" ? "" : Number(digits);
+                     if (amount !== "" && !Number.isSafeInteger(amount)) return;
+                     setInjectNominalEdited(true);
+                     setInjectNominal(amount);
+                   }} placeholder="Uang yang benar-benar diterima" />
                    {pricingReady ? <p className="text-xs text-slate-500">Saran harga saat ini: Rp{injectSuggestedNominal.toLocaleString("id-ID")}. Mengikuti diskon paket aktif jika tersedia.</p> : <p className="text-xs text-amber-600">Saran harga belum tersedia. Isi sesuai pembayaran yang diterima.</p>}
-                   {injectNominalEdited && pricingReady && <button type="button" className="text-xs text-orange-600" onClick={() => setInjectNominalEdited(false)}>Gunakan saran harga</button>}
-                   {Number(injectNominal) !== injectSuggestedNominal && pricingReady && <p className="text-xs text-amber-600">Nominal berbeda dari saran. Jelaskan selisih pada alasan penambahan.</p>}
                  </div>
                ) : <p className="text-xs text-slate-500">Bonus / penyesuaian dicatat dengan nominal Rp0.</p>}
 
