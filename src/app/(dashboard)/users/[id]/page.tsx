@@ -247,10 +247,10 @@ export default function UserDetailPage() {
       </div>
 
       {/* ── MAIN GRID ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-5">
 
         {/* LEFT: Tabs */}
-        <div>
+        <div className="min-w-0">
           <Tabs defaultValue="portfolio" className="w-full">
             <TabsList className="mb-4 flex h-auto w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white p-0.5 shadow-none">
               {[
