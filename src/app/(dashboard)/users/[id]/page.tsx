@@ -30,6 +30,8 @@ import { cn } from "@/lib/utils";
 import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { toast } from "sonner";
 import PermissionGate from "@/components/shared/permission-gate";
+import { OwnerCoinCatalog } from "@/components/modules/owner-coin-catalog";
+import { DeviceActivity } from "@/components/modules/device-activity";
 
 // ── Compact KPI ────────────────────────────────────────────────────────────────
 function Kpi({ label, value }: { label: string; value: string | number }) {
@@ -245,14 +247,16 @@ export default function UserDetailPage() {
       </div>
 
       {/* ── MAIN GRID ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-5">
 
         {/* LEFT: Tabs */}
-        <div>
+        <div className="min-w-0">
           <Tabs defaultValue="portfolio" className="w-full">
             <TabsList className="mb-4 flex h-auto w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white p-0.5 shadow-none">
               {[
                 { value: "portfolio", icon: Layers, label: "Portfolio" },
+                { value: "coin-catalog", icon: Store, label: "Katalog Paket Koin" },
+                { value: "devices", icon: Users, label: "Perangkat & Aktivitas" },
                 { value: "referrals", icon: Target, label: "Network" },
                 { value: "komisi", icon: GitBranch, label: "Komisi" },
                 { value: "ledger", icon: Activity, label: "Ledger" },
@@ -268,6 +272,8 @@ export default function UserDetailPage() {
             </TabsList>
 
             {/* TAB: PORTFOLIO */}
+            <TabsContent value="coin-catalog"><OwnerCoinCatalog ownerId={String(params.id)} /></TabsContent>
+            <TabsContent value="devices"><DeviceActivity endpoint={`/users/${params.id}/devices`} /></TabsContent>
             <TabsContent value="portfolio">
               <Card className="border border-slate-200 shadow-none bg-white overflow-hidden p-0 rounded-lg">
                 <SectionHeader
