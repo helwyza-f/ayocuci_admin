@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Smartphone, RefreshCw } from "lucide-react";
@@ -23,12 +23,20 @@ export function DeviceActivity({ endpoint, outlet = false }: {endpoint: string; 
   const [data, setData] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const requestVersion = useRef(0);
   const load = useCallback(async () => {
+    const version = ++requestVersion.current;
     setLoading(true); setFailed(false);
-    try {const res = await api.get(endpoint); if (!res.data.status) throw new Error(); setData(res.data.data);}
-    catch {setFailed(true);} finally {setLoading(false);}
+    try {const res = await api.get(endpoint); if (!res.data.status) throw new Error(); if (version === requestVersion.current) setData(res.data.data);}
+    catch {if (version === requestVersion.current) setFailed(true);} finally {if (version === requestVersion.current) setLoading(false);}
   }, [endpoint]);
-  useEffect(() => {setData(null); void load();}, [load]);
+  useEffect(() => {
+    setData(null); void load();
+    const refresh = () => {if (document.visibilityState === "visible") void load();};
+    const timer = window.setInterval(refresh, 60000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {requestVersion.current++; window.clearInterval(timer); document.removeEventListener("visibilitychange", refresh);};
+  }, [load]);
   const groups = useMemo(() => {
     const map = new Map<string, Session[]>();
     for (const s of data?.sessions || []) {const rows = map.get(s.installation_id) || []; rows.push(s); map.set(s.installation_id, rows);}
