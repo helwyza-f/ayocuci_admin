@@ -31,6 +31,7 @@ import { ExportExcelButton } from "@/components/shared/export-excel-button";
 import { toast } from "sonner";
 import PermissionGate from "@/components/shared/permission-gate";
 import { OwnerCoinCatalog } from "@/components/modules/owner-coin-catalog";
+import { DeviceActivity } from "@/components/modules/device-activity";
 
 // ── Compact KPI ────────────────────────────────────────────────────────────────
 function Kpi({ label, value }: { label: string; value: string | number }) {
@@ -255,6 +256,7 @@ export default function UserDetailPage() {
               {[
                 { value: "portfolio", icon: Layers, label: "Portfolio" },
                 { value: "coin-catalog", icon: Store, label: "Katalog Paket Koin" },
+                { value: "devices", icon: Users, label: "Perangkat & Aktivitas" },
                 { value: "referrals", icon: Target, label: "Network" },
                 { value: "komisi", icon: GitBranch, label: "Komisi" },
                 { value: "ledger", icon: Activity, label: "Ledger" },
@@ -271,6 +273,7 @@ export default function UserDetailPage() {
 
             {/* TAB: PORTFOLIO */}
             <TabsContent value="coin-catalog"><OwnerCoinCatalog ownerId={String(params.id)} /></TabsContent>
+            <TabsContent value="devices"><DeviceActivity endpoint={`/users/${params.id}/devices`} /></TabsContent>
             <TabsContent value="portfolio">
               <Card className="border border-slate-200 shadow-none bg-white overflow-hidden p-0 rounded-lg">
                 <SectionHeader

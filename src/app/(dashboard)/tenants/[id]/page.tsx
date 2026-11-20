@@ -47,6 +47,7 @@ import {
   Trash2
 } from "lucide-react";
 import { tenantService } from "@/services/tenant.service";
+import { DeviceActivity } from "@/components/modules/device-activity";
 import { addonService } from "@/services/addon.service";
 import { topupService } from "@/services/topup.service";
 import { economyService } from "@/services/economy.service";
@@ -768,12 +769,14 @@ export default function TenantDetailPage() {
           <TabsTrigger value="topups" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Receipt className="h-3 w-3" /> Riwayat Top Up
           </TabsTrigger>
+          <TabsTrigger value="devices" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"><Smartphone className="h-3 w-3" /> Perangkat & Aktivitas</TabsTrigger>
           <TabsTrigger value="data-management" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Trash2 className="h-3 w-3" /> Reset Data
           </TabsTrigger>
         </TabsList>
 
         {/* TAB: DASHBOARD */}
+        <TabsContent value="devices"><DeviceActivity endpoint={`/tenants/${params.id}/devices`} outlet /></TabsContent>
         <TabsContent value="dashboard" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
            <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
               <div className="space-y-6">
