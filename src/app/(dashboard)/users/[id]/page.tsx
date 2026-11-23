@@ -23,7 +23,8 @@ import { userService } from "@/services/user.service";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollableTabsList } from "@/components/ui/scrollable-tabs-list";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -252,7 +253,7 @@ export default function UserDetailPage() {
         {/* LEFT: Tabs */}
         <div className="min-w-0">
           <Tabs defaultValue="portfolio" className="min-w-0 w-full">
-            <TabsList className="mb-4 flex h-auto min-w-0 w-full max-w-full flex-nowrap justify-start gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white p-0.5 shadow-none">
+            <ScrollableTabsList aria-label="Navigasi detail owner" className="mb-4">
               {[
                 { value: "portfolio", icon: Layers, label: "Portfolio" },
                 { value: "coin-catalog", icon: Store, label: "Katalog Paket Koin" },
@@ -269,7 +270,7 @@ export default function UserDetailPage() {
                   <Icon className="h-3 w-3" />{label}
                 </TabsTrigger>
               ))}
-            </TabsList>
+            </ScrollableTabsList>
 
             {/* TAB: PORTFOLIO */}
             <TabsContent value="coin-catalog"><OwnerCoinCatalog ownerId={String(params.id)} /></TabsContent>

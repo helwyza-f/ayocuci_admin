@@ -58,7 +58,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollableTabsList } from "@/components/ui/scrollable-tabs-list";
 import { format, differenceInDays } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -745,7 +746,7 @@ export default function TenantDetailPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 w-full">
-        <TabsList className="sticky top-3 z-20 mb-4 flex h-auto min-w-0 w-full max-w-full flex-nowrap justify-start gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white/95 p-0.5 shadow-none backdrop-blur">
+        <ScrollableTabsList aria-label="Navigasi detail outlet" className="sticky top-3 z-20 mb-4">
           <TabsTrigger value="dashboard" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <LayoutGrid className="h-3 w-3" /> Dashboard
           </TabsTrigger>
@@ -773,7 +774,7 @@ export default function TenantDetailPage() {
           <TabsTrigger value="data-management" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Trash2 className="h-3 w-3" /> Reset Data
           </TabsTrigger>
-        </TabsList>
+        </ScrollableTabsList>
 
         {/* TAB: DASHBOARD */}
         <TabsContent value="devices"><DeviceActivity endpoint={`/tenants/${params.id}/devices`} outlet /></TabsContent>
