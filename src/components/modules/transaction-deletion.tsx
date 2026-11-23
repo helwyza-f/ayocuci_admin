@@ -97,7 +97,7 @@ export function TransactionDeletionHistory({ outletId = "" }: { outletId?: strin
   }
   return <PermissionGate module="fixer" action="read"><section className="rounded-xl border bg-white p-4 space-y-4">
     <button type="button" onClick={() => setExpanded(value => !value)} aria-expanded={expanded} className="flex w-full items-center justify-between gap-3 text-left text-sm font-semibold"><span className="flex items-center gap-2"><History className="h-4 w-4" />Riwayat penghapusan transaksi</span><span className="text-xs text-slate-500">{expanded ? "Tutup" : "Lihat"}</span></button>
-    {expanded && <><p className="text-xs text-slate-500">50 penghapusan terbaru di outlet ini. Alasan dan identitas admin disimpan untuk audit.</p>
+    {expanded && <><p className="text-xs text-slate-500">50 penghapusan terbaru{outletId ? " di outlet ini" : " dari seluruh outlet"}. Alasan dan identitas admin disimpan untuk audit.</p>
       {isLoading && <p className="text-sm text-slate-500">Memuat riwayat…</p>}
       {error && <div role="alert" className="flex items-center gap-2 text-sm text-red-600"><AlertCircle className="h-4 w-4" />Gagal memuat riwayat.<Button variant="outline" size="sm" onClick={() => void mutate()}>Coba lagi</Button></div>}
       {data?.data?.length === 0 && <p className="text-sm text-slate-500">Belum ada penghapusan melalui admin panel.</p>}
