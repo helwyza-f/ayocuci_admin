@@ -39,6 +39,8 @@ export type PermissionKey =
   | "create"
   | "update"
   | "delete"
+  | "delete_transaction"
+  | "restore_transaction"
   | "approve"
   | "reject"
   | "suspend"
@@ -184,7 +186,7 @@ export const ADMIN_PERMISSIONS: AdminPermissionResource[] = [
     key: "fixer",
     label: "Sistem Pemulihan",
     description: "Reset data, recovery, dan prosedur perbaikan.",
-    actions: ["read", "reset_data"],
+    actions: ["read", "reset_data", "delete_transaction", "restore_transaction"],
   },
   {
     key: "admin-management",
@@ -206,6 +208,8 @@ export const ADMIN_ACTIONS: AdminPermissionAction[] = [
   { key: "create", label: "Buat" },
   { key: "update", label: "Ubah" },
   { key: "delete", label: "Hapus" },
+  { key: "delete_transaction", label: "Hapus Transaksi" },
+  { key: "restore_transaction", label: "Pulihkan Transaksi" },
   { key: "approve", label: "Setujui" },
   { key: "reject", label: "Tolak" },
   { key: "suspend", label: "Nonaktifkan" },
