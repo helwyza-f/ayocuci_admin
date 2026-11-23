@@ -251,8 +251,8 @@ export default function UserDetailPage() {
 
         {/* LEFT: Tabs */}
         <div className="min-w-0">
-          <Tabs defaultValue="portfolio" className="w-full">
-            <TabsList className="mb-4 flex h-auto w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white p-0.5 shadow-none">
+          <Tabs defaultValue="portfolio" className="min-w-0 w-full">
+            <TabsList className="mb-4 flex h-auto min-w-0 w-full max-w-full flex-nowrap justify-start gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white p-0.5 shadow-none">
               {[
                 { value: "portfolio", icon: Layers, label: "Portfolio" },
                 { value: "coin-catalog", icon: Store, label: "Katalog Paket Koin" },
@@ -264,7 +264,7 @@ export default function UserDetailPage() {
               ].map(({ value, icon: Icon, label }) => (
                 <TabsTrigger
                   key={value} value={value}
-                  className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+                  className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
                 >
                   <Icon className="h-3 w-3" />{label}
                 </TabsTrigger>
