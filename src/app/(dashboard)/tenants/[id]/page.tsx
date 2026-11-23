@@ -58,7 +58,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollableTabsList } from "@/components/ui/scrollable-tabs-list";
 import { format, differenceInDays } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -744,36 +745,36 @@ export default function TenantDetailPage() {
         />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="sticky top-3 z-20 mb-4 flex h-auto w-full flex-nowrap gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-white/95 p-0.5 shadow-none backdrop-blur">
-          <TabsTrigger value="dashboard" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 w-full">
+        <ScrollableTabsList aria-label="Navigasi detail outlet" className="sticky top-3 z-20 mb-4">
+          <TabsTrigger value="dashboard" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <LayoutGrid className="h-3 w-3" /> Dashboard
           </TabsTrigger>
-          <TabsTrigger value="identitas" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="identitas" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Building2 className="h-3 w-3" /> Identitas
           </TabsTrigger>
-          <TabsTrigger value="transaksi" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="transaksi" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <History className="h-3 w-3" /> Transaksi
           </TabsTrigger>
           <PermissionGate module="staff-accounts" action="read">
-            <TabsTrigger value="staff" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+            <TabsTrigger value="staff" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
               <Users className="h-3 w-3" /> Akun Karyawan
             </TabsTrigger>
           </PermissionGate>
-          <TabsTrigger value="addons" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="addons" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Zap className="h-3 w-3" /> Layanan Add-on
           </TabsTrigger>
-          <TabsTrigger value="koin" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="koin" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Coins className="h-3 w-3" /> Ekonomi Koin
           </TabsTrigger>
-          <TabsTrigger value="topups" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="topups" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Receipt className="h-3 w-3" /> Riwayat Top Up
           </TabsTrigger>
-          <TabsTrigger value="devices" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"><Smartphone className="h-3 w-3" /> Perangkat & Aktivitas</TabsTrigger>
-          <TabsTrigger value="data-management" className="h-8 shrink-0 rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="devices" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"><Smartphone className="h-3 w-3" /> Perangkat & Aktivitas</TabsTrigger>
+          <TabsTrigger value="data-management" className="h-8 flex-none rounded px-4 font-bold text-[10px] uppercase gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
             <Trash2 className="h-3 w-3" /> Reset Data
           </TabsTrigger>
-        </TabsList>
+        </ScrollableTabsList>
 
         {/* TAB: DASHBOARD */}
         <TabsContent value="devices"><DeviceActivity endpoint={`/tenants/${params.id}/devices`} outlet /></TabsContent>
