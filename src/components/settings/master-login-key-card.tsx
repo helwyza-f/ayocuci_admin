@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
-import { Copy, KeyRound, Loader2, RefreshCw, ShieldCheck, X } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Loader2, Save, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api-client";
 import { useAuthStore } from "@/store/use-auth-store";
@@ -25,10 +25,9 @@ export default function MasterLoginKeyCard() {
   const [data, setData] = useState<Registry | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [password, setPassword] = useState("");
+  const [masterKey, setMasterKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
   const [busy, setBusy] = useState(false);
-  // Deliberately kept only in component memory; never persisted in browser storage.
-  const [secret, setSecret] = useState("");
 
   async function load() {
     setLoading(true); setError("");
@@ -51,15 +50,14 @@ export default function MasterLoginKeyCard() {
   }, [master]);
 
   async function change(disable: boolean) {
-    if (!password || busy) return;
-    setBusy(true); setSecret("");
+    if (busy || (!disable && (Array.from(masterKey).length < 8 || new TextEncoder().encode(masterKey).length > 72))) return;
+    setBusy(true);
     try {
       const res = disable
-        ? await api.delete("/master-login-key", { data: { admin_password: password } })
-        : await api.post("/master-login-key", { admin_password: password });
-      setPassword("");
-      setSecret(res.data.data.master_key || "");
-      toast.success(disable ? "Master key dinonaktifkan" : "Master key baru berhasil dibuat");
+        ? await api.delete("/master-login-key")
+        : await api.post("/master-login-key", { master_key: masterKey });
+      setMasterKey(""); setShowKey(false);
+      toast.success(res.data.message || (disable ? "Master key dinonaktifkan" : "Master key berhasil disimpan"));
       await load();
     } catch (err) {
       toast.error(isAxiosError(err) ? err.response?.data?.message || "Gagal memperbarui master key" : "Gagal memperbarui master key");
@@ -84,19 +82,18 @@ export default function MasterLoginKeyCard() {
         </dl>
         <p className="text-sm text-slate-600">Hanya berlaku untuk akun owner aktif. Sesi berlaku maksimal 2 jam. Rotasi atau penonaktifan langsung mencabut sesi master key lama; login dengan password nasabah tetap berlaku.</p>
         <div className="max-w-md space-y-2">
-          <Label htmlFor="master-key-admin-password">Password akun Master Admin Anda</Label>
-          <Input id="master-key-admin-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={busy} placeholder="Verifikasi untuk rotasi atau nonaktifkan" />
+          <Label htmlFor="owner-master-key">{data.key.enabled ? "Master key baru" : "Master key"}</Label>
+          <div className="relative">
+            <Input id="owner-master-key" type={showKey ? "text" : "password"} autoComplete="new-password" value={masterKey} onChange={(e) => setMasterKey(e.target.value)} disabled={busy} placeholder="Tentukan master key Anda sendiri" className="pr-12" />
+            <Button type="button" size="icon" variant="ghost" className="absolute right-0 top-0" disabled={busy} aria-label={showKey ? "Sembunyikan master key" : "Tampilkan master key"} onClick={() => setShowKey(!showKey)}>{showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
+          </div>
+          <p className="text-xs text-slate-500">Minimal 8 karakter, maksimal 72 byte. Isi dengan kunci yang ingin dipakai saat login ke akun owner. Kunci tersimpan tidak ditampilkan kembali.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => change(false)} disabled={busy || !password || loading}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}{data.key.enabled ? "Rotasi Master Key" : "Buat Master Key"}</Button>
-          <Button variant="outline" onClick={() => change(true)} disabled={busy || !password || !data.key.enabled || loading}>Nonaktifkan</Button>
+          <Button onClick={() => change(false)} disabled={busy || Array.from(masterKey).length < 8 || new TextEncoder().encode(masterKey).length > 72 || loading}>{busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}{data.key.enabled ? "Ganti Master Key" : "Simpan Master Key"}</Button>
+          <Button variant="outline" onClick={() => change(true)} disabled={busy || !data.key.enabled || loading}>Nonaktifkan</Button>
         </div>
       </>}
-      {secret && <div className="space-y-3 rounded-lg border border-orange-200 bg-orange-50 p-4" aria-live="polite">
-        <div className="flex items-start justify-between gap-2"><p className="text-sm font-semibold">Salin sekarang. Kunci hanya ditampilkan sekali.</p><Button size="icon" variant="ghost" aria-label="Tutup kunci" onClick={() => setSecret("")}><X className="h-4 w-4" /></Button></div>
-        <code className="block select-all break-all rounded bg-white p-3 text-sm">{secret}</code>
-        <Button variant="outline" size="sm" onClick={async () => { try { await navigator.clipboard.writeText(secret); toast.success("Master key disalin"); } catch { toast.error("Tidak dapat menyalin. Pilih dan salin kunci secara manual."); } }}><Copy className="mr-2 h-4 w-4" />Salin kunci</Button>
-      </div>}
       {data && <div className="space-y-3 border-t pt-4">
         <h3 className="text-sm font-semibold">Riwayat penggunaan & perubahan</h3>
         <p className="text-xs text-slate-500">100 aktivitas terakhir. Pengelola adalah master yang membuat kunci; pemakai kunci bersama dikenali dari email tujuan dan alamat IP.</p>
