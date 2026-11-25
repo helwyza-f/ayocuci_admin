@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import api from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import PermissionGate from "@/components/shared/permission-gate";
+import MasterLoginKeyCard from "@/components/settings/master-login-key-card";
 
 function SettingsContent() {
   const [loading, setLoading] = useState(true);
@@ -85,6 +86,7 @@ function SettingsContent() {
 
   return (
     <div className="space-y-6">
+      <MasterLoginKeyCard />
       {/* COMMAND BAR HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-0.5">
