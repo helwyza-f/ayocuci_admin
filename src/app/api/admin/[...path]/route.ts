@@ -37,6 +37,8 @@ async function proxyAdminRequest(request: NextRequest, context: RouteContext) {
   if (responseContentType) {
     responseHeaders.set("content-type", responseContentType);
   }
+  const cacheControl = response.headers.get("cache-control");
+  if (cacheControl) responseHeaders.set("cache-control", cacheControl);
 
   return new NextResponse(response.body, {
     status: response.status,
