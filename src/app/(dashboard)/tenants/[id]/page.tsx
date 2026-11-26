@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, ElementType } from "react";
+import { isAxiosError } from "axios";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -78,6 +79,8 @@ import {
 } from "@/components/ui/dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import PermissionGate from "@/components/shared/permission-gate";
+import { useAuthStore } from "@/store/use-auth-store";
+import { loadTenantDetailResources, tenantDetailLoadError } from "@/lib/tenant-detail-loader";
 
 function isIapTopup(method?: string) {
   const normalized = (method || "").trim().toLowerCase();
@@ -93,6 +96,8 @@ export default function TenantDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<ReturnType<typeof tenantDetailLoadError> | null>(null);
+  const hasPermission = useAuthStore((state) => state.hasPermission);
   const [activeTab, setActiveTab] = useState("dashboard");
   
   // Real Data State
@@ -186,20 +191,23 @@ export default function TenantDetailPage() {
   }, [searchParams]);
 
   const fetchDetail = async () => {
+    setLoadError(null);
     try {
-      const [res, configRes, packagesRes] = await Promise.all([
-        tenantService.getTenantDetail(params.id as string),
-        economyService.getConfigs(),
-        economyService.getPackages()
-      ]);
+      const { detail: res, configs: configRes, packages: packagesRes } = await loadTenantDetailResources({
+        getDetail: () => tenantService.getTenantDetail(params.id as string),
+        getConfigs: economyService.getConfigs,
+        getPackages: economyService.getPackages,
+        canReadEconomy: hasPermission("economy", "read"),
+        canReadPackages: hasPermission("packages", "read"),
+      });
       
-      const configs = configRes.data?.data || [];
+      const configs = configRes?.data?.data || [];
       const priceConfig = configs.find((c: any) => c.cfg_key === "price_per_coin");
       if (priceConfig) setPricePerCoin(Number(priceConfig.cfg_value));
-      setCoinPackages(packagesRes.data?.data || []);
+      setCoinPackages(packagesRes?.data?.data || []);
       setPricingReady(!!priceConfig && Number(priceConfig.cfg_value) > 0);
 
-      if (res.status && res.data) {
+      if (res.status && res.data?.profile) {
         setProfile(res.data.profile);
         setKoinHistory(res.data.koin_history || []);
         setTopupHistory(res.data.topup_history || []);
@@ -207,8 +215,11 @@ export default function TenantDetailPage() {
         setTrxHistory(res.data.trx_history || []);
         setStaffAccounts(res.data.staff_accounts || []);
         setMetrics(res.data.metrics || { today_orders: 0, today_revenue: 0, active_staff: 0 });
+      } else {
+        setLoadError(tenantDetailLoadError());
       }
     } catch (error) {
+      setLoadError(tenantDetailLoadError(isAxiosError(error) ? error.response?.status : undefined));
       toast.error("Gagal memuat detail outlet");
     } finally {
       setLoading(false);
@@ -623,7 +634,9 @@ export default function TenantDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
         <ShieldAlert className="h-8 w-8 text-rose-500" />
-        <p className="text-sm font-bold text-slate-900">Outlet Tidak Ditemukan</p>
+        <p className="text-sm font-bold text-slate-900">{(loadError || tenantDetailLoadError()).title}</p>
+        <p className="text-sm text-slate-500 text-center">{(loadError || tenantDetailLoadError()).message}</p>
+        <Button variant="outline" onClick={() => { setLoading(true); fetchDetail(); }} size="sm">Coba Lagi</Button>
         <Button variant="ghost" onClick={() => router.push(backHref)} size="sm">Kembali ke Daftar</Button>
       </div>
     );
